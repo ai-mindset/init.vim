@@ -188,6 +188,9 @@ hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 
 " Theme Configuration
+if $COLORTERM == 'gnome-terminal'
+    set t_Co=256
+endif
 colorscheme onedark
 
 " LSP and Mason Configuration
