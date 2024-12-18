@@ -58,6 +58,10 @@ let g:copilot_filetypes = {
             \ 'typescript': v:true,
             \ 'javascript': v:true,
             \ 'clojure': v:true,
+            \ 'sh': v:true,
+            \ 'bash': v:true,
+            \ 'zsh': v:true,
+            \ 'vim': v:true,
             \ }
 let g:copilot_model = 'gpt-4o'
 
