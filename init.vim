@@ -193,6 +193,12 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 if $COLORTERM == 'gnome-terminal'
     set t_Co=256
 endif
+" !Before colorscheme onedark!
+let g:onedark_color_overrides = {
+            \ "gutter_fg_grey": {"gui": "#BEBEBE" , "cterm": "NONE" , "cterm16": "NONE"}, 
+            \ "comment_grey": {"gui": "#808080" , "cterm": "NONE" , "cterm16": "NONE"},
+            \}
+
 colorscheme onedark
 
 " LSP and Mason Configuration
