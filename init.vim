@@ -56,8 +56,10 @@ let g:copilot_filetypes = {
             \ '*': v:false,
             \ 'python': v:true,
             \ 'typescript': v:true,
+            \ 'javascript': v:true,
             \ 'clojure': v:true,
             \ }
+let g:copilot_model = 'gpt-4o'
 
 " Leader Configuration
 let mapleader = ","
