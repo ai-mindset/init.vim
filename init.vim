@@ -49,6 +49,7 @@ Plug 'windwp/nvim-autopairs'
 Plug 'lukas-reineke/indent-blankline.nvim'
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'wolandark/vim-piper'
+Plug 'machakann/vim-highlightedyank'
 
 " which-key
 Plug 'folke/which-key.nvim'
