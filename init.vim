@@ -58,7 +58,7 @@ Plug 'echasnovski/mini.nvim'        " Contains mini.icons
 call plug#end()
 
 " Disable old which-key spec warning
-let g:loaded_which_key_health = 1
+let g:which_key_disable_health_check = 1
 
 " GitHub Copilot
 let g:copilot_telemetry = v:false
@@ -334,7 +334,6 @@ local icons = {
   LSP = "⚡ "
 }
 
--- Which-key registration with icons
 local wk = require("which-key")
 
 wk.register({
@@ -364,6 +363,42 @@ wk.setup({
     breadcrumb = "",
     separator = "",
     group = "",
+    mappings = false,
+    rules = false,
+    keys = {
+      -- Explicitly set all key icons to empty strings
+      Up = "",
+      Down = "",
+      Left = "",
+      Right = "",
+      C = "",
+      M = "",
+      D = "",
+      S = "",
+      CR = "",
+      Esc = "",
+      ScrollWheelDown = "",
+      ScrollWheelUp = "",
+      NL = "",
+      BS = "",
+      Space = "",
+      Tab = "",
+      F1 = "",
+      F2 = "",
+      F3 = "",
+      F4 = "",
+      F5 = "",
+      F6 = "",
+      F7 = "",
+      F8 = "",
+      F9 = "",
+      F10 = "",
+      F11 = "",
+      F12 = ""
+    }  
+  },
+  plugins = {
+    presets = false  
   },
   window = {
     border = "single",
