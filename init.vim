@@ -53,8 +53,6 @@ Plug 'machakann/vim-highlightedyank'
 
 " which-key
 Plug 'folke/which-key.nvim'
-Plug 'nvim-tree/nvim-web-devicons'  " Icons pack
-Plug 'echasnovski/mini.nvim'        " Contains mini.icons
 call plug#end()
 
 " Disable old which-key spec warning
