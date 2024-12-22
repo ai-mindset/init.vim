@@ -7,52 +7,54 @@ endif
 
 call plug#begin()
 " LSP Support with Mason
-Plug 'williamboman/mason.nvim'
-Plug 'williamboman/mason-lspconfig.nvim'
-Plug 'neovim/nvim-lspconfig'
-Plug 'hrsh7th/nvim-cmp'
-Plug 'PaterJason/cmp-conjure'
-Plug 'hrsh7th/cmp-nvim-lsp'
-Plug 'hrsh7th/cmp-buffer'
-Plug 'hrsh7th/cmp-path'
+Plug 'williamboman/mason.nvim'                                " Mason
+Plug 'williamboman/mason-lspconfig.nvim'                      " Mason LSP Config
+Plug 'neovim/nvim-lspconfig'                                  " LSP Configuration
+Plug 'mfussenegger/nvim-lint'                                 " Linting engine
+Plug 'stevearc/conform.nvim'                                  " Formatting engine
+Plug 'hrsh7th/nvim-cmp'                                       " Completion Engine
+Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
+Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
+Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion 
+Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Snippets
-Plug 'L3MON4D3/LuaSnip'
-Plug 'saadparwaiz1/cmp_luasnip'
-Plug 'rafamadriz/friendly-snippets'
+Plug 'L3MON4D3/LuaSnip'                                       " Snippets
+Plug 'saadparwaiz1/cmp_luasnip'                               " Snippets completion
+Plug 'rafamadriz/friendly-snippets'                           " Snippets 
 
 " GitHub Copilot
-Plug 'github/copilot.vim'
+Plug 'github/copilot.vim'                                     " GitHub Copilot
 
 " Clojure Development
-Plug 'Olical/conjure'
-Plug 'guns/vim-sexp'
-Plug 'tpope/vim-sexp-mappings-for-regular-people'
+Plug 'Olical/conjure'                                         " Clojure REPL 
+Plug 'guns/vim-sexp'                                          " Clojure S-Expression 
+Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expression Mappings 
 
 " Theme
-Plug 'joshdick/onedark.vim'
+Plug 'joshdick/onedark.vim'                                   " One Dark Theme
 
 " Telescope and dependencies
-Plug 'nvim-lua/plenary.nvim'
-Plug 'nvim-telescope/telescope.nvim'
+Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency for Telescope
+Plug 'nvim-telescope/telescope.nvim'                          " Plugin for fuzzy finding
 
 " Tim Pope's Essential Plugins
-Plug 'tpope/vim-fugitive'
-Plug 'tpope/vim-surround'
-Plug 'tpope/vim-commentary'
-Plug 'tpope/vim-repeat'
-Plug 'tpope/vim-unimpaired'
+Plug 'tpope/vim-fugitive'                                     " Git integration
+Plug 'tpope/vim-surround'                                     " Plugin for surrounding text
+Plug 'tpope/vim-commentary'                                   " Commenting plugin 
+Plug 'tpope/vim-repeat'                                       " Repeat plugin
+Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugin
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-Plug 'windwp/nvim-autopairs'
-Plug 'lukas-reineke/indent-blankline.nvim'
-Plug 'lewis6991/gitsigns.nvim'
-Plug 'wolandark/vim-piper'
-Plug 'machakann/vim-highlightedyank'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
+Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
+Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
+Plug 'lewis6991/gitsigns.nvim'                                " Git signs
+Plug 'wolandark/vim-piper'                                    " Text to speech
+Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 
 " which-key
-Plug 'folke/which-key.nvim'
+Plug 'folke/which-key.nvim'                                   " which-key for keybindings
 call plug#end()
 
 " Disable old which-key spec warning
@@ -212,25 +214,30 @@ let g:onedark_color_overrides = {
             \}
 colorscheme onedark
 
-" LSP and Mason Configuration
+" Mason Configuration
 lua << EOF
--- Mason Setup
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "lua_ls",         -- Lua
-    "clojure_lsp",    -- Clojure
-    "pyright",        -- Python
-    "denols",         -- Deno
---    "rust_analyzer",  -- Rust
+    "lua_ls",                -- Lua
+    "clojure_lsp",           -- Clojure
+    "jedi_language_server",  -- Python
+    "denols",                -- Deno
+--    "rust_analyzer",        -- Rust
   },
   automatic_installation = true,
 })
+EOF
 
+" LuaSnip setup
+lua << EOF
 -- LuaSnip Setup
 local luasnip = require('luasnip')
 require('luasnip.loaders.from_vscode').lazy_load()
+EOF
 
+" Completion setup
+lua << EOF
 -- Completion Setup
 local cmp = require('cmp')
 cmp.setup({
@@ -270,7 +277,10 @@ cmp.setup({
     { name = 'buffer' },
   })
 })
+EOF
 
+" LSP Configuration
+lua << EOF
 -- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 local lspconfig = require('lspconfig')
@@ -288,7 +298,96 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
 end
 
--- Specific setup for Deno
+-- Language specific Setup
+lspconfig.clojure_lsp.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  cmd = { "clojure-lsp" },
+  filetypes = { "clojure", "edn" },
+  root_dir = lspconfig.util.root_pattern("deps.edn", "project.clj", "project.clj.edn", ".git"),
+})
+
+lspconfig.jedi_language_server.setup({
+  on_attach = function(client, bufnr)
+    -- Print capabilities when server attaches
+    print("Jedi capabilities:", vim.inspect(client.server_capabilities))
+    
+    local opts = { noremap=true, silent=true, buffer=bufnr }
+    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+    vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+    vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+    vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
+    vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, opts)
+    vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+  end,
+  capabilities = capabilities,
+  init_options = {
+    hover = {
+      enabled = true,
+    },
+    completion = {
+      enabled = true,
+      include_params = true,
+    },
+  },
+  settings = {
+    -- Enable Jedi's hover
+    jedi = {
+      enable = true,
+      hover = {
+        enabled = true,
+      },
+    },
+  },
+})
+
+-- Create custom hover handler
+vim.lsp.handlers["textDocument/hover"] = function(_, result, ctx, config)
+  config = config or {}
+  config.focus = true
+  config.border = "single"
+  
+  if not result or not result.contents then
+    -- print for debugging
+    print("No hover content received")
+    return
+  end
+
+  -- print for debugging
+  print("Hover content:", vim.inspect(result.contents))
+  
+  local markdown_lines = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
+  markdown_lines = vim.lsp.util.trim_empty_lines(markdown_lines)
+  
+  if vim.tbl_isempty(markdown_lines) then
+    -- print for debugging
+    print("No markdown lines after conversion")
+    return
+  end
+
+  return vim.lsp.util.open_floating_preview(markdown_lines, "markdown", config)
+end
+
+-- Add a custom hover handler for better formatting
+vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
+  vim.lsp.handlers.hover, {
+    border = "single",
+    max_width = 80,
+    -- Set focus to floating window
+    focusable = true,
+    -- Position the hover window at cursor
+    anchor = "NW",
+    -- Prevent the hover window from printing to REPL
+    silent = true,
+    -- Format the docstring as markdown
+    format = function(contents)
+      return vim.lsp.util.convert_input_to_markdown_lines(contents)
+    end
+  }
+)
+
 lspconfig.denols.setup({
   on_attach = on_attach,
   capabilities = capabilities,
@@ -308,18 +407,138 @@ lspconfig.denols.setup({
     }
   }
 })
-
--- Setup other installed LSP servers
-local servers = require('mason-lspconfig').get_installed_servers()
-for _, lsp in ipairs(servers) do
-  if lsp ~= "denols" then  -- Skip denols as it's configured separately
-    lspconfig[lsp].setup {
-      on_attach = on_attach,
-      capabilities = capabilities,
-    }
-  end
-end
 EOF
+
+" Configure diagnostic display
+lua << EOF
+-- Configure diagnostic display
+vim.diagnostic.config({
+  virtual_text = true,
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+  float = {
+    focusable = true,
+    border = "single",
+    source = "always",
+    header = "",
+    prefix = "",
+  },
+})
+
+-- Add better UI for diagnostics
+local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
+
+-- Mapping to manually trigger signature help
+vim.keymap.set('n', '<leader>s', function()
+  vim.lsp.buf.signature_help()
+end, { noremap = true, silent = true })
+EOF
+
+" Linting and Formatting Configuration
+lua << EOF
+-- Linting Configuration
+require('lint').linters_by_ft = {
+  clojure = {'clj-kondo'},
+  python = {'ruff'},
+}
+
+-- Auto-trigger linting
+vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+  callback = function()
+    require("lint").try_lint()
+  end,
+})
+
+-- Formatting Configuration
+require("conform").setup({
+  -- Formatters for your languages
+  formatters_by_ft = {
+    python = { "ruff_format" },
+    clojure = { "cljfmt" },
+    javascript = { "deno_fmt" },
+    typescript = { "deno_fmt" },
+    lua = { "stylua" },
+  },
+
+  -- Format on save
+  format_on_save = {
+    -- These options will be passed to conform.format()
+    timeout_ms = 500,
+    lsp_fallback = true,
+  },
+
+  -- For format on key mapping (optional, if you want manual formatting)
+  vim.keymap.set({ "n", "v" }, "<leader>f", function()
+    require("conform").format({
+      lsp_fallback = true,
+      async = false,
+      timeout_ms = 500,
+    })
+  end, { desc = "Format file or range" })
+})
+EOF
+
+" nvim-treesitter Configuration
+lua << EOF
+require'nvim-treesitter.configs'.setup {
+    ensure_installed = {
+        -- Essential ones for Neovim itself
+        "vim",
+        "vimdoc",
+        "query",
+
+        -- Languages you use
+        "python",
+        "clojure",
+        "lua",
+        "typescript", -- for Deno/TypeScript
+        "javascript", -- for Deno/JavaScript
+
+
+
+        -- For documentation/markdown files
+        "markdown",
+        "markdown_inline"
+        },
+
+  sync_install = false,
+  auto_install = true,
+
+  highlight = {
+    enable = true,
+    disable = function(lang, buf)
+      local max_filesize = 100 * 1024 -- 100 KB
+      local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
+      if ok and stats and stats.size > max_filesize then
+        return true
+      end
+    end,
+    additional_vim_regex_highlighting = false,
+  },
+
+  -- Optional but recommended
+  indent = {
+    enable = true,
+  },
+  
+  incremental_selection = {
+    enable = true,
+    keymaps = {
+      init_selection = "gnn",
+      node_incremental = "grn",
+      scope_incremental = "grc",
+      node_decremental = "grm",
+    },
+  },
+}
+EOF
+
 
 " Telescope + which-key Configuration with mini icons
 lua << EOF
