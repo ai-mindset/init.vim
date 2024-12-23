@@ -236,6 +236,9 @@ require("mason-lspconfig").setup({
     "clojure_lsp",           -- Clojure
     "pyright",               -- Python
     "denols",                -- Deno
+    "dockerls",              -- Docker
+    "markdown_oxide",        -- Markdown
+    "bashls",                -- Bash
   },
   automatic_installation = true,
 })
@@ -277,6 +280,13 @@ EOF
 " LSP Configuration
 lua << EOF
 vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
+function _G.dump_lsp_client()
+    local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
+    for _, client in pairs(buf_clients) do
+        print(string.format("Client: %s, Resolved capabilities:", client.name))
+        print(vim.inspect(client.resolved_capabilities))
+    end
+end
 
 vim.diagnostic.config({
     virtual_text = true,
@@ -301,6 +311,26 @@ vim.cmd([[
     autocmd FileType python setlocal omnifunc=v:lua.vim.lsp.omnifunc
   augroup END
 ]])
+
+-- Add this before your LSP configurations
+vim.api.nvim_create_autocmd('LspAttach', {
+    group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+    callback = function(ev)
+        -- Enable completion triggered by <c-x><c-o>
+        vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+
+        -- Buffer local mappings.
+        local opts = { buffer = ev.buf }
+        vim.keymap.set('n', 'K', function()
+            local winid = require('vim.lsp.util').open_floating_preview(
+                {'Fetching documentation...'}, 'markdown', {
+                    border = 'rounded',
+                    focusable = false,
+                })
+            vim.lsp.buf.hover()
+        end, opts)
+    end,
+})
 
 -- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
@@ -329,15 +359,6 @@ lspconfig.clojure_lsp.setup({
   root_dir = lspconfig.util.root_pattern("deps.edn", "project.clj", "project.clj.edn", ".git"),
 })
 
--- Add this to your lua config section
-function _G.dump_lsp_client()
-    local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
-    for _, client in pairs(buf_clients) do
-        print(string.format("Client: %s, Resolved capabilities:", client.name))
-        print(vim.inspect(client.resolved_capabilities))
-    end
-end
-
 lspconfig.pyright.setup({
     on_attach = function(client, bufnr)
         print("Pyright attached to buffer:", bufnr)  -- Debug print
@@ -363,26 +384,6 @@ lspconfig.pyright.setup({
     }
 })
 
--- Add this before your LSP configurations
-vim.api.nvim_create_autocmd('LspAttach', {
-    group = vim.api.nvim_create_augroup('UserLspConfig', {}),
-    callback = function(ev)
-        -- Enable completion triggered by <c-x><c-o>
-        vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
-
-        -- Buffer local mappings.
-        local opts = { buffer = ev.buf }
-        vim.keymap.set('n', 'K', function()
-            local winid = require('vim.lsp.util').open_floating_preview(
-                {'Fetching documentation...'}, 'markdown', {
-                    border = 'rounded',
-                    focusable = false,
-                })
-            vim.lsp.buf.hover()
-        end, opts)
-    end,
-})
-
 lspconfig.denols.setup({
   on_attach = on_attach,
   capabilities = capabilities,
@@ -401,6 +402,28 @@ lspconfig.denols.setup({
       }
     }
   }
+})
+
+lspconfig.dockerls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  cmd = { "docker-langserver", "--stdio" },
+  filetypes = { "Dockerfile", "dockerfile" },
+  root_dir = lspconfig.util.root_pattern("Dockerfile", ".git"),
+})
+
+lspconfig.markdown_oxide.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  filetypes = { "markdown", "markdown.mdx" },
+  root_dir = lspconfig.util.root_pattern(".git"),
+})
+
+lspconfig.bashls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  filetypes = { "sh", "bash", "zsh" },
+  root_dir = lspconfig.util.root_pattern(".git"),
 })
 EOF
 
