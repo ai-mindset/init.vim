@@ -62,6 +62,7 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - Neovim
 - git
 - node.js (for copilot.vim)
+- [glow](https://github.com/charmbracelet/glow) for Markdown preview
 - [Deno](https://ai-mindset.github.io/deno/) (for TypeScript/JavaScript)
 - [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) with IPython and matplotlib
 - [Clojure](https://github.com/ai-mindset/clj-installer)
