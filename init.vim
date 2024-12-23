@@ -13,7 +13,6 @@ Plug 'neovim/nvim-lspconfig'                                  " LSP Configuratio
 Plug 'mfussenegger/nvim-lint'                                 " Linting engine
 Plug 'stevearc/conform.nvim'                                  " Formatting engine
 Plug 'hrsh7th/nvim-cmp'                                       " Completion Engine
-Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
 Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion 
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
@@ -24,6 +23,7 @@ Plug 'github/copilot.vim'                                     " GitHub Copilot
 
 " Clojure Development
 Plug 'Olical/conjure'                                         " Clojure REPL 
+Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
 Plug 'guns/vim-sexp'                                          " Clojure S-Expression 
 Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expression Mappings 
 
@@ -288,20 +288,7 @@ lspconfig.clojure_lsp.setup({
 })
 
 lspconfig.jedi_language_server.setup({
-  on_attach = function(client, bufnr)
-    -- Print capabilities when server attaches
-    -- print("Jedi capabilities:", vim.inspect(client.server_capabilities))
-    
-    local opts = { noremap=true, silent=true, buffer=bufnr }
-    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-    vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-    vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-    vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-    vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, opts)
-    vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-  end,
+  on_attach = on_attach,
   capabilities = capabilities,
   init_options = {
     hover = {
@@ -408,7 +395,8 @@ vim.diagnostic.config({
 })
 
 -- Add better UI for diagnostics
-local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
+local signs = { Error = "x", Warn = "!", Hint = ">", Info = "i" }
+
 for type, icon in pairs(signs) do
   local hl = "DiagnosticSign" .. type
   vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
@@ -522,7 +510,6 @@ EOF
 lua << EOF
 require('fzfx').setup()
 -- ======== files ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -560,7 +547,6 @@ vim.keymap.set(
 )
 
 -- ======== live grep ========
-
 -- live grep
 vim.keymap.set(
   "n",
@@ -598,7 +584,6 @@ vim.keymap.set(
 )
 
 -- ======== buffers ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -608,7 +593,6 @@ vim.keymap.set(
 )
 
 -- ======== git files ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -618,7 +602,6 @@ vim.keymap.set(
 )
 
 -- ======== git live grep ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -656,7 +639,6 @@ vim.keymap.set(
 )
 
 -- ======== git changed files (status) ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -666,7 +648,6 @@ vim.keymap.set(
 )
 
 -- ======== git branches ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -676,7 +657,6 @@ vim.keymap.set(
 )
 
 -- ======== git commits ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -686,7 +666,6 @@ vim.keymap.set(
 )
 
 -- ======== git blame ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -696,7 +675,6 @@ vim.keymap.set(
 )
 
 -- ======== lsp diagnostics ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -706,11 +684,10 @@ vim.keymap.set(
 )
 
 -- ======== lsp symbols ========
-
 -- lsp definitions
 vim.keymap.set(
   "n",
-  "gd",
+  "<space>gd",
   "<cmd>FzfxLspDefinitions<cr>",
   { silent = true, noremap = true, desc = "Goto lsp definitions" }
 )
@@ -718,7 +695,7 @@ vim.keymap.set(
 -- lsp type definitions
 vim.keymap.set(
   "n",
-  "gt",
+  "<space>gt",
   "<cmd>FzfxLspTypeDefinitions<cr>",
   { silent = true, noremap = true, desc = "Goto lsp type definitions" }
 )
@@ -726,7 +703,7 @@ vim.keymap.set(
 -- lsp references
 vim.keymap.set(
   "n",
-  "gr",
+  "<space>gr",
   "<cmd>FzfxLspReferences<cr>",
   { silent = true, noremap = true, desc = "Goto lsp references" }
 )
@@ -734,7 +711,7 @@ vim.keymap.set(
 -- lsp implementations
 vim.keymap.set(
   "n",
-  "gi",
+  "<space>gi",
   "<cmd>FzfxLspImplementations<cr>",
   { silent = true, noremap = true, desc = "Goto lsp implementations" }
 )
@@ -742,7 +719,7 @@ vim.keymap.set(
 -- lsp incoming calls
 vim.keymap.set(
   "n",
-  "gI",
+  "<space>gI",
   "<cmd>FzfxLspIncomingCalls<cr>",
   { silent = true, noremap = true, desc = "Goto lsp incoming calls" }
 )
@@ -750,13 +727,12 @@ vim.keymap.set(
 -- lsp outgoing calls
 vim.keymap.set(
   "n",
-  "gO",
+  "<space>gO",
   "<cmd>FzfxLspOutgoingCalls<cr>",
   { silent = true, noremap = true, desc = "Goto lsp outgoing calls" }
 )
 
 -- ======== vim commands ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -776,7 +752,6 @@ vim.keymap.set(
 )
 
 -- ======== vim marks ========
-
 -- by args
 vim.keymap.set(
   "n",
@@ -786,7 +761,6 @@ vim.keymap.set(
 )
 
 -- ======== file explorer ========
-
 -- by args
 vim.keymap.set(
   "n",
