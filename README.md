@@ -15,7 +15,7 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - REPL-driven development with Conjure
 - Structural editing via `vim-sexp`
 - Automatic formatting with `cljfmt`
-- Linting with `clj-kondo
+- Linting with `clj-kondo`
 
 ### Deno (TypeScript/JavaScript)
 - Advanced LSP features for modern JavaScript/TypeScript
@@ -44,7 +44,6 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - Definition: `gd`
 - References: `gr`
 - Code actions: `<space>ca`
-- Rename symbol: `<space>rn`
 
 ### Navigation
 - Find files: `<space>f`
@@ -90,4 +89,4 @@ Vim-plug and plugins will install automatically on first launch.
 ## Customization
 - LSP servers: Modify `ensure_installed` in the Mason setup
 - Copilot: Edit `g:copilot_filetypes` to enable/disable for specific languages
-- Colour scheme: Change `colorscheme onedark` to your preferred theme
+- Colour scheme: Change `colorscheme vscode` to your preferred theme
