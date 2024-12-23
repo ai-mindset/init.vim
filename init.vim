@@ -234,7 +234,7 @@ require("mason-lspconfig").setup({
   ensure_installed = {
     "lua_ls",                -- Lua
     "clojure_lsp",           -- Clojure
-    "jedi_language_server",  -- Python
+    "pyright",               -- Python
     "denols",                -- Deno
   },
   automatic_installation = true,
@@ -276,12 +276,39 @@ EOF
 
 " LSP Configuration
 lua << EOF
+vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
+
+vim.diagnostic.config({
+    virtual_text = true,
+    signs = true,
+    underline = true,
+    update_in_insert = false,
+    severity_sort = false,
+})
+
+-- Signs for better visibility
+local signs = { Error = "✘", Warn = "▲", Hint = "⚑", Info = "🛈" }
+for type, icon in pairs(signs) do
+    local hl = "DiagnosticSign" .. type
+    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
+
+-- Proper file type detection
+vim.cmd([[
+  augroup python_lsp
+    autocmd!
+    autocmd FileType python lua vim.diagnostic.enable(0)
+    autocmd FileType python setlocal omnifunc=v:lua.vim.lsp.omnifunc
+  augroup END
+]])
+
 -- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 local lspconfig = require('lspconfig')
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
+  print("LSP attached:", client.name)  -- Debug print
   local opts = { noremap=true, silent=true }
   vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
@@ -302,73 +329,59 @@ lspconfig.clojure_lsp.setup({
   root_dir = lspconfig.util.root_pattern("deps.edn", "project.clj", "project.clj.edn", ".git"),
 })
 
-lspconfig.jedi_language_server.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  init_options = {
-    hover = {
-      enabled = true,
-    },
-    completion = {
-      enabled = true,
-      include_params = true,
-    },
-  },
-  settings = {
-    -- Enable Jedi's hover
-    jedi = {
-      enable = true,
-      hover = {
-        enabled = true,
-      },
-    },
-  },
-})
-
--- Create custom hover handler
-vim.lsp.handlers["textDocument/hover"] = function(_, result, ctx, config)
-  config = config or {}
-  config.focus = true
-  config.border = "single"
-  
-  if not result or not result.contents then
-    -- print for debugging
-    print("No hover content received")
-    return
-  end
-
-  -- print for debugging
-  print("Hover content:", vim.inspect(result.contents))
-  
-  local markdown_lines = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
-  markdown_lines = vim.lsp.util.trim_empty_lines(markdown_lines)
-  
-  if vim.tbl_isempty(markdown_lines) then
-    -- print for debugging
-    print("No markdown lines after conversion")
-    return
-  end
-
-  return vim.lsp.util.open_floating_preview(markdown_lines, "markdown", config)
+-- Add this to your lua config section
+function _G.dump_lsp_client()
+    local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
+    for _, client in pairs(buf_clients) do
+        print(string.format("Client: %s, Resolved capabilities:", client.name))
+        print(vim.inspect(client.resolved_capabilities))
+    end
 end
 
--- Add a custom hover handler for better formatting
-vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
-  vim.lsp.handlers.hover, {
-    border = "single",
-    max_width = 80,
-    -- Set focus to floating window
-    focusable = true,
-    -- Position the hover window at cursor
-    anchor = "NW",
-    -- Prevent the hover window from printing to REPL
-    silent = true,
-    -- Format the docstring as markdown
-    format = function(contents)
-      return vim.lsp.util.convert_input_to_markdown_lines(contents)
-    end
-  }
-)
+lspconfig.pyright.setup({
+    on_attach = function(client, bufnr)
+        print("Pyright attached to buffer:", bufnr)  -- Debug print
+        
+        -- Enable hover explicitly
+        client.server_capabilities.hoverProvider = true
+        
+        -- Call your existing on_attach
+        on_attach(client, bufnr)
+    end,
+    capabilities = capabilities,
+    settings = {
+        python = {
+            analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = "workspace",
+                useLibraryCodeForTypes = true
+            }
+        }
+    },
+    flags = {
+        debounce_text_changes = 150,
+    }
+})
+
+-- Add this before your LSP configurations
+vim.api.nvim_create_autocmd('LspAttach', {
+    group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+    callback = function(ev)
+        -- Enable completion triggered by <c-x><c-o>
+        vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+
+        -- Buffer local mappings.
+        local opts = { buffer = ev.buf }
+        vim.keymap.set('n', 'K', function()
+            local winid = require('vim.lsp.util').open_floating_preview(
+                {'Fetching documentation...'}, 'markdown', {
+                    border = 'rounded',
+                    focusable = false,
+                })
+            vim.lsp.buf.hover()
+        end, opts)
+    end,
+})
 
 lspconfig.denols.setup({
   on_attach = on_attach,
