@@ -50,6 +50,7 @@ Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation line
 Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
+Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 call plug#end()
 
 " GitHub Copilot
@@ -97,7 +98,7 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard=unnamedplus             " Clipboard Settings
+set clipboard+=unnamedplus             " Clipboard Settings
 set background=dark                  " Set dark background
 
 " Highlight on hover 
@@ -201,6 +202,20 @@ if $COLORTERM == 'gnome-terminal'
 endif
 
 colorscheme vscode
+
+" Conjure Configuration 
+let g:conjure#client#python#stdio#command = 'ipython --matplotlib'
+let g:conjure#client#sql#stdio = 'sqlite3'
+let g:conjure#log#wrap = 1 
+let g:conjure#log#fold#enabled = 1
+let g:conjure#preview#sample_limit = 1.0
+let g:conjure#log#hud#height = 0.5
+let g:conjure#log#hud#border = 0
+
+" Conjure with Baleia Configuration
+let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
+let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
+autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
 
 " Autopairs Configuration
 lua << EOF
