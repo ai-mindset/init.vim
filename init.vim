@@ -16,12 +16,8 @@ Plug 'hrsh7th/nvim-cmp'                                       " Completion Engin
 Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
 Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion 
+Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
 Plug 'hrsh7th/cmp-path'                                       " Path completion
-
-" Snippets
-Plug 'L3MON4D3/LuaSnip'                                       " Snippets
-Plug 'saadparwaiz1/cmp_luasnip'                               " Snippets completion
-Plug 'rafamadriz/friendly-snippets'                           " Snippets 
 
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " GitHub Copilot
@@ -32,7 +28,7 @@ Plug 'guns/vim-sexp'                                          " Clojure S-Expres
 Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expression Mappings 
 
 " Theme
-Plug 'joshdick/onedark.vim'                                   " One Dark Theme
+Plug 'Mofiqul/vscode.nvim'
 
 " Telescope and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency for Telescope
@@ -55,6 +51,8 @@ Plug 'machakann/vim-highlightedyank'                          " Highlight yanked
 
 " which-key
 Plug 'folke/which-key.nvim'                                   " which-key for keybindings
+Plug 'echasnovski/mini.icons'                                 " Mini icons for which-key
+Plug 'nvim-tree/nvim-web-devicons'                            " icons for nvim-tree
 call plug#end()
 
 " Disable old which-key spec warning
@@ -106,7 +104,7 @@ set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
 set clipboard=unnamedplus             " Clipboard Settings
-" set clipboard+=unnamedplus
+set background=dark                  " Set dark background
 
 " Highlight on hover 
 set updatetime=1000
@@ -207,12 +205,18 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 if $COLORTERM == 'gnome-terminal'
     set t_Co=256
 endif
-" !Before colorscheme onedark!
-let g:onedark_color_overrides = {
-            \ "gutter_fg_grey": {"gui": "#BEBEBE" , "cterm": "NONE" , "cterm16": "NONE"}, 
-            \ "comment_grey": {"gui": "#808080" , "cterm": "NONE" , "cterm16": "NONE"},
-            \}
-colorscheme onedark
+
+colorscheme vscode
+
+" Autopairs Configuration
+lua << EOF
+require("nvim-autopairs").setup {}
+EOF
+
+" Indent Blankline Configuration
+lua << EOF
+require("ibl").setup()
+EOF
 
 " Mason Configuration
 lua << EOF
@@ -223,17 +227,9 @@ require("mason-lspconfig").setup({
     "clojure_lsp",           -- Clojure
     "jedi_language_server",  -- Python
     "denols",                -- Deno
---    "rust_analyzer",        -- Rust
   },
   automatic_installation = true,
 })
-EOF
-
-" LuaSnip setup
-lua << EOF
--- LuaSnip Setup
-local luasnip = require('luasnip')
-require('luasnip.loaders.from_vscode').lazy_load()
 EOF
 
 " Completion setup
@@ -241,39 +237,29 @@ lua << EOF
 -- Completion Setup
 local cmp = require('cmp')
 cmp.setup({
-  snippet = {
-    expand = function(args)
-      luasnip.lsp_expand(args.body)
-    end,
-  },
-  mapping = cmp.mapping.preset.insert({
-    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-f>'] = cmp.mapping.scroll_docs(4),
-    ['<C-Space>'] = cmp.mapping.complete(),
-    ['<C-e>'] = cmp.mapping.abort(),
-    ['<CR>'] = cmp.mapping.confirm({ select = true }),
-    ['<Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      elseif luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
-  }),
+   snippet = {
+     -- REQUIRED - you must specify a snippet engine
+     expand = function(args)
+     -- vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
+     -- require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+     -- require('snippy').expand_snippet(args.body) -- For `snippy` users.
+     -- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
+     vim.snippet.expand(args.body) -- For native neovim snippets (Neovim v0.10+)
+   end,
+   },
+   window = {
+      -- completion = cmp.config.window.bordered(),
+      -- documentation = cmp.config.window.bordered(),
+    },
+    mapping = cmp.mapping.preset.insert({
+      ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+      ['<C-f>'] = cmp.mapping.scroll_docs(4),
+      ['<C-Space>'] = cmp.mapping.complete(),
+      ['<C-e>'] = cmp.mapping.abort(),
+      ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+    }),
   sources = cmp.config.sources({
     { name = 'nvim_lsp' },
-    { name = 'luasnip' },
     { name = 'buffer' },
   })
 })
@@ -310,7 +296,7 @@ lspconfig.clojure_lsp.setup({
 lspconfig.jedi_language_server.setup({
   on_attach = function(client, bufnr)
     -- Print capabilities when server attaches
-    print("Jedi capabilities:", vim.inspect(client.server_capabilities))
+    -- print("Jedi capabilities:", vim.inspect(client.server_capabilities))
     
     local opts = { noremap=true, silent=true, buffer=bufnr }
     vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
@@ -553,7 +539,7 @@ local icons = {
 
 local wk = require("which-key")
 
-wk.register({
+wk.add({
   f = {
     name = icons.File .. "Find/Files",
     f = { "<cmd>Telescope find_files<cr>", icons.File .. "Find files in project" },
