@@ -51,6 +51,7 @@ Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
+Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 call plug#end()
 
 " GitHub Copilot
@@ -216,6 +217,21 @@ let g:conjure#log#hud#border = 0
 let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
 let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
 autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
+
+" Glow configurations
+lua << EOF
+require('glow').setup({
+  glow_path = "/usr/bin/glow", -- will be filled automatically with your glow bin in $PATH, if any
+  install_path = "/usr/bin", -- default path for installing glow binary
+  border = "shadow", -- floating window border config
+  style = "dark", -- filled automatically with your current editor background, you can override using glow json style
+  pager = false,
+  width = 80,
+  height = 100,
+  width_ratio = 0.7, -- maximum width of the Glow window compared to the nvim window size (overrides `width`)
+  height_ratio = 0.7,
+})
+EOF
 
 " Autopairs Configuration
 lua << EOF
