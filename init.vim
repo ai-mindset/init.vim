@@ -30,9 +30,11 @@ Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expres
 " Theme
 Plug 'Mofiqul/vscode.nvim'
 
-" Telescope and dependencies
+" Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency for Telescope
-Plug 'nvim-telescope/telescope.nvim'                          " Plugin for fuzzy finding
+Plug 'nvim-tree/nvim-web-devicons'                            " optional for icons
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }           " optional for the 'fzf' command
+Plug 'linrongbin16/fzfx.nvim' ", { 'tag': 'v5.0.0' }          " Fuzzy Finder
 
 " Tim Pope's Essential Plugins
 Plug 'tpope/vim-fugitive'                                     " Git integration
@@ -48,15 +50,7 @@ Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation line
 Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
-
-" which-key
-Plug 'folke/which-key.nvim'                                   " which-key for keybindings
-Plug 'echasnovski/mini.icons'                                 " Mini icons for which-key
-Plug 'nvim-tree/nvim-web-devicons'                            " icons for nvim-tree
 call plug#end()
-
-" Disable old which-key spec warning
-let g:which_key_disable_health_check = 1
 
 " GitHub Copilot
 let g:copilot_telemetry = v:false
@@ -74,7 +68,7 @@ let g:copilot_filetypes = {
 let g:copilot_model = 'gpt-4o'
 
 " Leader Configuration
-let mapleader = ","
+let mapleader = " "
 let maplocalleader = ","
 
 " Basic Settings
@@ -486,8 +480,6 @@ require'nvim-treesitter.configs'.setup {
         "typescript", -- for Deno/TypeScript
         "javascript", -- for Deno/JavaScript
 
-
-
         -- For documentation/markdown files
         "markdown",
         "markdown_inline"
@@ -526,91 +518,281 @@ require'nvim-treesitter.configs'.setup {
 EOF
 
 
-" Telescope + which-key Configuration with mini icons
+" Fuzzy finding Configuration 
 lua << EOF
--- Define custom icons (with trailing spaces for better spacing)
-local icons = {
-  File = "📄 ",
-  Search = "🔍 ",
-  Git = "⎇  ",
-  Folder = "📁 ",
-  LSP = "⚡ "
-}
+require('fzfx').setup()
+-- ======== files ========
 
-local wk = require("which-key")
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>f",
+  "<cmd>FzfxFiles<cr>",
+  { silent = true, noremap = true, desc = "Find files" }
+)
+-- by visual select
+vim.keymap.set(
+  "x",
+  "<space>f",
+  "<cmd>FzfxFiles visual<CR>",
+  { silent = true, noremap = true, desc = "Find files" }
+)
+-- by cursor word
+vim.keymap.set(
+  "n",
+  "<space>wf",
+  "<cmd>FzfxFiles cword<cr>",
+  { silent = true, noremap = true, desc = "Find files by cursor word" }
+)
+-- by yank text
+vim.keymap.set(
+  "n",
+  "<space>pf",
+  "<cmd>FzfxFiles put<cr>",
+  { silent = true, noremap = true, desc = "Find files by yank text" }
+)
+-- by resume
+vim.keymap.set(
+  "n",
+  "<space>rf",
+  "<cmd>FzfxFiles resume<cr>",
+  { silent = true, noremap = true, desc = "Find files by resume last" }
+)
 
-wk.add({
-  f = {
-    name = icons.File .. "Find/Files",
-    f = { "<cmd>Telescope find_files<cr>", icons.File .. "Find files in project" },
-    g = { "<cmd>Telescope live_grep<cr>", icons.Search .. "Search for string in project" },
-    b = { "<cmd>Telescope buffers<cr>", icons.Folder .. "Show open buffers" },
-    h = { "<cmd>Telescope help_tags<cr>", icons.Search .. "Search help documentation" },
-    r = { "<cmd>Telescope oldfiles<cr>", icons.File .. "Show recently opened files" },
-    w = { "<cmd>Telescope grep_string<cr>", icons.Search .. "Search word under cursor" },
-    o = { "<cmd>Telescope treesitter<cr>", icons.LSP .. "Show code outline/structure" },
-    s = { "<cmd>Telescope lsp_document_symbols<cr>", icons.LSP .. "Show LSP symbols" },
-  },
-  g = {
-    name = icons.Git .. "Git",
-    c = { "<cmd>Telescope git_commits<cr>", icons.Git .. "Browse git commits" },
-    b = { "<cmd>Telescope git_branches<cr>", icons.Git .. "Browse git branches" },
-    s = { "<cmd>Telescope git_status<cr>", icons.Git .. "Show git status" },
-    f = { "<cmd>Telescope git_files<cr>", icons.Git .. "Search git files" },
-  },
-}, { prefix = "<leader>" })
+-- ======== live grep ========
 
--- Minimal which-key setup without any default icons
-wk.setup({
-  icons = {
-    breadcrumb = "",
-    separator = "",
-    group = "",
-    mappings = false,
-    rules = false,
-    keys = {
-      -- Explicitly set all key icons to empty strings
-      Up = "",
-      Down = "",
-      Left = "",
-      Right = "",
-      C = "",
-      M = "",
-      D = "",
-      S = "",
-      CR = "",
-      Esc = "",
-      ScrollWheelDown = "",
-      ScrollWheelUp = "",
-      NL = "",
-      BS = "",
-      Space = "",
-      Tab = "",
-      F1 = "",
-      F2 = "",
-      F3 = "",
-      F4 = "",
-      F5 = "",
-      F6 = "",
-      F7 = "",
-      F8 = "",
-      F9 = "",
-      F10 = "",
-      F11 = "",
-      F12 = ""
-    }  
-  },
-  plugins = {
-    presets = false  
-  },
-  window = {
-    border = "single",
-    margin = { 1, 0, 1, 0 },
-    padding = { 1, 2, 1, 2 },
-  },
-  layout = {
-    align = "left",
-  },
-})
+-- live grep
+vim.keymap.set(
+  "n",
+  "<space>l",
+  "<cmd>FzfxLiveGrep<cr>",
+  { silent = true, noremap = true, desc = "Live grep" }
+)
+-- by visual select
+vim.keymap.set(
+  "x",
+  "<space>l",
+  "<cmd>FzfxLiveGrep visual<cr>",
+  { silent = true, noremap = true, desc = "Live grep" }
+)
+-- by cursor word
+vim.keymap.set(
+  "n",
+  "<space>wl",
+  "<cmd>FzfxLiveGrep cword<cr>",
+  { silent = true, noremap = true, desc = "Live grep by cursor word" }
+)
+-- by yank text
+vim.keymap.set(
+  "n",
+  "<space>pl",
+  "<cmd>FzfxLiveGrep put<cr>",
+  { silent = true, noremap = true, desc = "Live grep by yank text" }
+)
+-- by resume
+vim.keymap.set(
+  "n",
+  "<space>rl",
+  "<cmd>FzfxLiveGrep resume<cr>",
+  { silent = true, noremap = true, desc = "Live grep by resume last" }
+)
+
+-- ======== buffers ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>bf",
+  "<cmd>FzfxBuffers<cr>",
+  { silent = true, noremap = true, desc = "Find buffers" }
+)
+
+-- ======== git files ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>gf",
+  "<cmd>FzfxGFiles<cr>",
+  { silent = true, noremap = true, desc = "Find git files" }
+)
+
+-- ======== git live grep ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>gl",
+  "<cmd>FzfxGLiveGrep<cr>",
+  { silent = true, noremap = true, desc = "Git live grep" }
+)
+-- by visual select
+vim.keymap.set(
+  "x",
+  "<space>gl",
+  "<cmd>FzfxGLiveGrep visual<cr>",
+  { silent = true, noremap = true, desc = "Git live grep" }
+)
+-- by cursor word
+vim.keymap.set(
+  "n",
+  "<space>wgl",
+  "<cmd>FzfxGLiveGrep cword<cr>",
+  { silent = true, noremap = true, desc = "Git live grep by cursor word" }
+)
+-- by yank text
+vim.keymap.set(
+  "n",
+  "<space>pgl",
+  "<cmd>FzfxGLiveGrep put<cr>",
+  { silent = true, noremap = true, desc = "Git live grep by yank text" }
+)
+-- by resume
+vim.keymap.set(
+  "n",
+  "<space>rgl",
+  "<cmd>FzfxGLiveGrep resume<cr>",
+  { silent = true, noremap = true, desc = "Git live grep by resume last" }
+)
+
+-- ======== git changed files (status) ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>gs",
+  "<cmd>FzfxGStatus<cr>",
+  { silent = true, noremap = true, desc = "Find git changed files (status)" }
+)
+
+-- ======== git branches ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>br",
+  "<cmd>FzfxGBranches<cr>",
+  { silent = true, noremap = true, desc = "Search git branches" }
+)
+
+-- ======== git commits ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>gc",
+  "<cmd>FzfxGCommits<cr>",
+  { silent = true, noremap = true, desc = "Search git commits" }
+)
+
+-- ======== git blame ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>gb",
+  "<cmd>FzfxGBlame<cr>",
+  { silent = true, noremap = true, desc = "Search git blame" }
+)
+
+-- ======== lsp diagnostics ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>dg",
+  "<cmd>FzfxLspDiagnostics<cr>",
+  { silent = true, noremap = true, desc = "Search lsp diagnostics" }
+)
+
+-- ======== lsp symbols ========
+
+-- lsp definitions
+vim.keymap.set(
+  "n",
+  "gd",
+  "<cmd>FzfxLspDefinitions<cr>",
+  { silent = true, noremap = true, desc = "Goto lsp definitions" }
+)
+
+-- lsp type definitions
+vim.keymap.set(
+  "n",
+  "gt",
+  "<cmd>FzfxLspTypeDefinitions<cr>",
+  { silent = true, noremap = true, desc = "Goto lsp type definitions" }
+)
+
+-- lsp references
+vim.keymap.set(
+  "n",
+  "gr",
+  "<cmd>FzfxLspReferences<cr>",
+  { silent = true, noremap = true, desc = "Goto lsp references" }
+)
+
+-- lsp implementations
+vim.keymap.set(
+  "n",
+  "gi",
+  "<cmd>FzfxLspImplementations<cr>",
+  { silent = true, noremap = true, desc = "Goto lsp implementations" }
+)
+
+-- lsp incoming calls
+vim.keymap.set(
+  "n",
+  "gI",
+  "<cmd>FzfxLspIncomingCalls<cr>",
+  { silent = true, noremap = true, desc = "Goto lsp incoming calls" }
+)
+
+-- lsp outgoing calls
+vim.keymap.set(
+  "n",
+  "gO",
+  "<cmd>FzfxLspOutgoingCalls<cr>",
+  { silent = true, noremap = true, desc = "Goto lsp outgoing calls" }
+)
+
+-- ======== vim commands ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>cm",
+  "<cmd>FzfxCommands<cr>",
+  { silent = true, noremap = true, desc = "Search vim commands" }
+)
+
+-- ======== vim key maps ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>km",
+  "<cmd>FzfxKeyMaps<cr>",
+  { silent = true, noremap = true, desc = "Search vim keymaps" }
+)
+
+-- ======== vim marks ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>mk",
+  "<cmd>FzfxMarks<cr>",
+  { silent = true, noremap = true, desc = "Search vim marks" }
+)
+
+-- ======== file explorer ========
+
+-- by args
+vim.keymap.set(
+  "n",
+  "<space>xp",
+  "<cmd>FzfxFileExplorer<cr>",
+  { silent = true, noremap = true, desc = "File explorer" }
+)
 EOF
 
