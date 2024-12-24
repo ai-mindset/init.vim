@@ -58,13 +58,14 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - Documentation: `<localleader>hd`
 
 ## Requirements
-- Neovim
-- git
-- node.js (for copilot.vim)
-- ripgrep for global line completions through fzf.vim (optional)
+- [Neovim](https://neovim.io/)
+- [git](https://git-scm.com/)
+- [node.js](https://nodejs.org/) (for copilot.vim)
+- [ollama](https://ollama.com/) (for [ollama.nvim](https://github.com/nomnivore/ollama.nvim))
+- [ripgrep](https://github.com/BurntSushi/ripgrep) for global line completions through fzf.vim (optional)
 - [glow](https://github.com/charmbracelet/glow) for Markdown preview (optional)
 - [Deno](https://ai-mindset.github.io/deno/) (for TypeScript/JavaScript)
-- [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) with IPython and matplotlib
+- [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) with [IPython](https://ipython.org/) and [matplotlib](https://matplotlib.org/)
 - [Clojure](https://github.com/ai-mindset/clj-installer)
 - [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
 - Alba voice [model](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx?download=true) and [config](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json?download=true.json), in `/usr/share/piper-voices/`. You can replace Alba with another [voice model](https://github.com/rhasspy/piper/blob/master/VOICES.md) of your choice
