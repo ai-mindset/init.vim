@@ -3,6 +3,7 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 
 ## Development Environments
 - GitHub Copilot AI assistance
+- Ollama local AI assistance 🚧 
 
 ### Python (Data Science/AI)
 - Full LSP support via Pyright
@@ -39,18 +40,17 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - **VSCode-like** theme
 
 ## Key Bindings
+- `<leader>` = `<space>`
+- `<localleader>` = `,`
+
 ### Development
 - LSP hover: `K`
 - Definition: `gd`
 - References: `gr`
-- Code actions: `<space>ca`
+- Code actions: `<leader>ca`
 
 ### Navigation
-- Find files: `<space>f`
-- Live grep: `<space>l`
-- Buffers: `<space>bf`
-- Git files: `<space>gf`
-- Diagnostics: `<space>dg`
+- Find keymappings: `<leader>k`
 
 ### REPL
 - Connect: `<localleader>cc`
@@ -60,8 +60,8 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 ## Requirements
 - Neovim
 - git
-- fzf
 - node.js (for copilot.vim)
+- ripgrep for global line completions through fzf.vim (optional)
 - [glow](https://github.com/charmbracelet/glow) for Markdown preview (optional)
 - [Deno](https://ai-mindset.github.io/deno/) (for TypeScript/JavaScript)
 - [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) with IPython and matplotlib
