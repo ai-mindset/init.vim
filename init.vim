@@ -34,7 +34,7 @@ Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expres
 Plug 'Mofiqul/vscode.nvim'
 
 " Fuzzy finding and dependencies
-Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency for Telescope
+Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
 Plug 'nvim-tree/nvim-web-devicons'                            " optional for icons
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }           " optional for the 'fzf' command
 Plug 'junegunn/fzf.vim'                                       " fzf vim bindings
@@ -114,7 +114,6 @@ set smartindent                       " Smart autoindenting when starting a new 
 set cindent                           " Stricter indenting rules for C-like languages
 set indentexpr=                       " Let cindent handle indenting
 set wrap                              " Wrap lines
-set termguicolors
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
@@ -128,8 +127,12 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard+=unnamedplus             " Clipboard Settings
-set background=dark                  " Set dark background
+set clipboard+=unnamedplus            " Clipboard Settings
+set background=dark                   " Set dark background
+" set t_Co=256                          " 256 colours
+set termguicolors                     " True colour support
+
+colorscheme vscode                    " Theme Configuration
 
 " Highlight on hover 
 set updatetime=1000
@@ -140,7 +143,7 @@ autocmd CursorHold,CursorHoldI * match none
 map <silent> <leader><cr> :noh<cr>
 
 " Code folding
-" set foldmethod=indent " choices are: manual|indent|syntax|marker|expr
+" choices are: manual|indent|syntax|marker|expr
 set foldmethod=expr
   \ foldexpr=lsp#ui#vim#folding#foldexpr()
   \ foldtext=lsp#ui#vim#folding#foldtext()
@@ -199,8 +202,44 @@ function! GetRelCwd()
     return cwd
 endfunction
 
-set statusline=\ %{HasPaste()}%{SpellStatus()}%F%m%r%h\ %w\ \ CWD:\ %r%{GetRelCwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-set statusline+=\ %{g:currentmode[mode()]}\  " The current mode
+" Get active virtual environment
+function! VirtualEnv()
+    if exists('$VIRTUAL_ENV')
+        " Get the actual environment name from pyenv or virtualenv
+        let venv_path = $VIRTUAL_ENV
+        let venv_name = venv_path
+        
+        " Handle .venv directory case
+        if fnamemodify(venv_path, ':t') == '.venv'
+            let venv_name = fnamemodify(venv_path, ':h:t')
+        endif
+        
+        return 'venv: (' . venv_name . ') '
+    endif
+    return ''
+endfunction
+
+" Set default statusline background to a dark colour
+hi StatusLine guifg=#FFFFFF guibg=#2B2B2B ctermfg=white ctermbg=235
+hi StatusLineNC guifg=#FFFFFF guibg=#1C1C1C ctermfg=white ctermbg=234
+" Define highlight groups with high contrast
+hi User1 guifg=#FFFFFF guibg=#2E8B57 ctermfg=white ctermbg=green   " for mode (deep sea green)
+hi User2 guifg=#FFFFFF guibg=#B8860B ctermfg=white ctermbg=yellow  " for file info (dark goldenrod)
+hi User3 guifg=#FFFFFF guibg=#104E8B ctermfg=white ctermbg=blue    " for directory (dark blue)
+hi User4 guifg=#FFFFFF guibg=#8B008B ctermfg=white ctermbg=magenta " for git (dark magenta)
+hi User5 guifg=#FFFFFF guibg=#008B8B ctermfg=white ctermbg=cyan    " for venv (dark cyan)
+hi User6 guifg=#FFFFFF guibg=#8B0000 ctermfg=white ctermbg=red     " for position (dark red)
+
+" Statusline with colours
+set statusline=
+set statusline+=\ %1*%{g:currentmode[mode()]}%*\            " The current mode
+set statusline+=\ %2*%{&ff}%*\                              " file format
+set statusline+=\ %2*%{HasPaste()}%*\                       " Paste mode 
+set statusline+=\ %2*%{SpellStatus()}%F%m%r%h\ %w%*\ \      " Spell check and file
+set statusline+=\ %3*CWD:\ %r%{GetRelCwd()}%h%*\ \ \        " Current working directory 
+set statusline+=%4*%{fugitive#statusline()}%*\              " Git status
+set statusline+=%5*%{VirtualEnv()}%*\                       " Virtual environment
+set statusline+=%6*\ C:%c\ L:%l\ %p%%%*\                    " Line, column and %
 
 " piper TTS
 let g:piper_bin = 'piperTTS'
@@ -225,13 +264,6 @@ hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellLocal cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
-
-" Theme Configuration
-if $COLORTERM == 'gnome-terminal'
-    set t_Co=256
-endif
-
-colorscheme vscode
 
 " Conjure Configuration 
 let g:conjure#client#python#stdio#command = 'ipython --matplotlib'
@@ -639,5 +671,4 @@ inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
 " Statusline
 autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
-
 """ Fuzzy finding Configuration 
