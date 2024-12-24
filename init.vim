@@ -21,6 +21,9 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " GitHub Copilot
 
+" Local LLM completion
+Plug 'nomnivore/ollama.nvim'                                  " LLM completion
+
 " Clojure Development
 Plug 'Olical/conjure'                                         " Clojure REPL 
 Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
@@ -57,17 +60,43 @@ call plug#end()
 " GitHub Copilot
 let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
-            \ '*': v:false,
-            \ 'python': v:true,
-            \ 'typescript': v:true,
-            \ 'javascript': v:true,
-            \ 'clojure': v:true,
-            \ 'sh': v:true,
-            \ 'bash': v:true,
-            \ 'zsh': v:true,
-            \ 'vim': v:true,
+            \ "*": v:false,
+            \ "python": v:true,
+            \ "typescript": v:true,
+            \ "javascript": v:true,
+            \ "clojure": v:true,
+            \ "sh": v:true,
+            \ "bash": v:true,
+            \ "zsh": v:true,
+            \ "vim": v:true,
             \ }
-let g:copilot_model = 'gpt-4o'
+let g:copilot_model = "gpt-4o"
+
+" ollama.nvim configuration
+lua << EOF
+opts = {
+  model = "granite3.1-dense:8b",
+  url = "http://127.0.0.1:11434",
+  serve = {
+    on_start = false,
+    command = "ollama",
+    args = { "serve" },
+    stop_command = "pkill",
+    stop_args = { "-SIGTERM", "ollama" },
+  }
+}
+require("ollama").setup(opts)
+
+vim.keymap.set('i', '<C-x><C-o>', function()
+    require('cmp').complete({
+        config = {
+            sources = {
+                { name = 'ollama' }
+            }
+        }
+    })
+end)
+EOF
 
 " Leader Configuration
 let mapleader = " "
