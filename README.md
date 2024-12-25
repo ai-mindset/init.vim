@@ -1,15 +1,14 @@
 # init.vim
-A comprehensive Neovim configuration that transforms Neovim into a full-featured IDE for data science, AI Engineering, and backend development. Supports Python, Clojure, JavaScript/TypeScript (via Deno), shell scripting, containerization, and technical documentation.
+A comprehensive Neovim configuration that turns Neovim into a full-featured IDE for Data Science, AI Engineering, and Backend development. Supports Python, Clojure, JavaScript/TypeScript (via Deno), shell scripting, containerisation, and technical documentation.
 
 ## Development Environments
 - GitHub Copilot AI assistance
-- Ollama local AI assistance 🚧 
+- Ollama local AI assistance 
 
 ### Python (Data Science/AI)
 - Full LSP support via Pyright
 - Automatic linting and formatting with Ruff
 - REPL integration through Conjure
-- IPython support with matplotlib integration
 
 ### Clojure (Backend/Data Processing)
 - Complete Clojure LSP integration
@@ -27,17 +26,9 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - Shell script (Bash/Zsh) language server
 
 ### Documentation
-- Markdown LSP with preview
+- Markdown LSP with preview via [glow](https://github.com/charmbracelet/glow) 
 - Spell checking 
 - Text-to-speech support via Piper
-
-## Features
-- **Language Server Protocol** (LSP) integration
-- **GitHub Copilot**
-- **Fuzzy finding** for files and code
-- **Tree-sitter** syntax highlighting
-- **Git** integration
-- **VSCode-like** theme
 
 ## Key Bindings
 - `<leader>` = `<space>`
@@ -65,7 +56,7 @@ A comprehensive Neovim configuration that transforms Neovim into a full-featured
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for global line completions through fzf.vim (optional)
 - [glow](https://github.com/charmbracelet/glow) for Markdown preview (optional)
 - [Deno](https://ai-mindset.github.io/deno/) (for TypeScript/JavaScript)
-- [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) with [IPython](https://ipython.org/) and [matplotlib](https://matplotlib.org/)
+- [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) 
 - [Clojure](https://github.com/ai-mindset/clj-installer)
 - [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
 - Alba voice [model](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx?download=true) and [config](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json?download=true.json), in `/usr/share/piper-voices/`. You can replace Alba with another [voice model](https://github.com/rhasspy/piper/blob/master/VOICES.md) of your choice
@@ -78,7 +69,7 @@ mv ~/.config/nvim ~/.config/nvim.backup
 
 2. Clone this config:
 ```bash
-git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
+mkdir ~/.config/nvim && git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 ```
 
 3. Start Neovim:
