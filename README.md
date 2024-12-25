@@ -1,82 +1,92 @@
 # init.vim
-A modern Neovim configuration focused on Clojure, TypeScript (Deno), and Python development with LSP support.
+A comprehensive Neovim configuration that turns Neovim into a full-featured IDE for Data Science, AI Engineering, and Backend development. Supports Python, Clojure, JavaScript/TypeScript (via Deno), shell scripting, containerisation, and technical documentation.
 
-## Features
+## Development Environments
+- GitHub Copilot AI assistance
+- Ollama local AI assistance 
 
-- **LSP Support**: Built-in language server support via Mason
-  - Clojure, Deno (TypeScript), Python, and Lua preconfigured
-  - Automatic LSP server installation
-  - Intelligent code completion with nvim-cmp
+### Python (Data Science/AI)
+- Full LSP support via Pyright
+- Automatic linting and formatting with Ruff
+- REPL integration through Conjure
 
-- **Snippet Support**: LuaSnip with VSCode snippet compatibility
-  - Tab completion with fallback
-  - VSCode snippet loading via friendly-snippets
+### Clojure (Backend/Data Processing)
+- Complete Clojure LSP integration
+- REPL-driven development with Conjure
+- Structural editing via `vim-sexp`
+- Automatic formatting with `cljfmt`
+- Linting with `clj-kondo`
 
-- **Git Integration**:
-  - Full Git support via fugitive
-  - Git signs in gutter
-  - Git history browsing via Telescope
+### Deno (TypeScript/JavaScript)
+- Advanced LSP features for modern JavaScript/TypeScript
+- Built-in linting and formatting
 
-- **File Navigation**:
-  - Telescope fuzzy finder
-  - File history
-  - Live grep
-  - Git integration
+### Container & Infrastructure
+- Containerfile/Dockerfile LSP support
+- Shell script (Bash/Zsh) language server
 
-- **Clojure Development**:
-  - Conjure for REPL integration
-  - Structured editing with vim-sexp
-  - Simplified S-expression mappings
+### Documentation
+- Markdown LSP with preview via [glow](https://github.com/charmbracelet/glow) 
+- Spell checking 
+- Text-to-speech support via Piper
 
-- **Quality of Life**:
-  - GitHub Copilot (enabled for Python, TypeScript, Clojure)
-  - Auto-pairs
-  - Comments (gcc)
-  - Text objects (surround)
-  - Spell checking
-  - TTS support via Piper
-  - Status line with mode, spell status, and path info
+## Key Bindings
+- `<leader>` = `<space>`
+- `<localleader>` = `,`
 
-## Key Mappings
+### Development
+- LSP hover: `K`
+- Definition: `gd`
+- References: `gr`
+- Code actions: `<leader>ca`
 
-- Leader key: `,`
-- File finding: `,ff` (files), `,fg` (grep), `,fb` (buffers)
-- Git: `,gc` (commits), `,gb` (branches)
-- Spell checking: `,ss` (toggle), `,sn` (next), `,sp` (previous)
-- TTS: `tw` (word), `tc` (line), `tp` (paragraph), `tf` (file)
-- LSP: `gd` (definition), `K` (hover), `gr` (references)
+### Navigation
+- Find keymappings: `<leader>k`
+
+### REPL
+- Connect: `<localleader>cc`
+- Evaluate: `<localleader>ee`
+- Documentation: `<localleader>hd`
 
 ## Requirements
-
-- Neovim >= 0.8
-- git
-- ripgrep (for Telescope grep)
-- A C compiler (for Treesitter)
-- Deno (for TypeScript/JavaScript)
+- [Neovim](https://neovim.io/)
+- [git](https://git-scm.com/)
+- [node.js](https://nodejs.org/) (for copilot.vim)
+- [ollama](https://ollama.com/) (for [ollama.nvim](https://github.com/nomnivore/ollama.nvim))
+- [ripgrep](https://github.com/BurntSushi/ripgrep) for global line completions through fzf.vim (optional)
+- [glow](https://github.com/charmbracelet/glow) for Markdown preview (optional)
+- [Deno](https://ai-mindset.github.io/deno/) (for TypeScript/JavaScript)
+- [Python](https://ai-mindset.github.io/bring-it-back-to-basics/) 
+- [Clojure](https://github.com/ai-mindset/clj-installer)
 - [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
-- Alba voice [model](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx?download=true) and [config](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json?download=true.json), in `/usr/share/piper-voices/alba.onnx`. You can replace Alba with another [voice model](https://github.com/rhasspy/piper/blob/master/VOICES.md) of your choice
+- Alba voice [model](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx?download=true) and [config](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json?download=true.json), in `/usr/share/piper-voices/`. You can replace Alba with another [voice model](https://github.com/rhasspy/piper/blob/master/VOICES.md) of your choice
 
 ## Installation
-
 1. Backup your existing config:
 ```bash
-mv ~/.config/nvim ~/.config/nvim.backup
+mv ~/.config/nvim ~/.config/nvim.backup # Backup your current setup (if you have one)
+# Cleanup old configuration artefacts
+rm -r ~/.local/share/nvim 
+rm -r ~/.local/state/nvim
+rm -r ~/.cache/nvim 
 ```
 
-2. Clone this config:
+2. Install Vim-plug
 ```bash
-git clone  https://github.com/ai-mindset/init.vim ~/.config/nvim
+curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 ```
 
-3. Start Neovim:
+3. Clone this config:
 ```bash
-nvim
+git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 ```
 
-Vim-plug and plugins will install automatically on first launch.
+4. Start Neovim:
+```bash
+nvim --headless +PlugInstall +qall # Only required on first start, to install plugins
+```
 
 ## Customization
-
 - LSP servers: Modify `ensure_installed` in the Mason setup
 - Copilot: Edit `g:copilot_filetypes` to enable/disable for specific languages
-- Colour scheme: Change `colorscheme onedark` to your preferred theme
+- Colour scheme: Change `colorscheme vscode` to your preferred theme
