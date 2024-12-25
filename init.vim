@@ -219,15 +219,16 @@ function! VirtualEnv()
     return ''
 endfunction
 
-" Set default statusline background to a dark colour
+" Set default statusline background to a dark color
 hi StatusLine guifg=#FFFFFF guibg=#2B2B2B ctermfg=white ctermbg=235
 hi StatusLineNC guifg=#FFFFFF guibg=#1C1C1C ctermfg=white ctermbg=234
-" Define highlight groups with high contrast
-hi User1 guifg=#FFFFFF guibg=#2E8B57 ctermfg=white ctermbg=green   " for mode (deep sea green)
-hi User2 guifg=#FFFFFF guibg=#B8860B ctermfg=white ctermbg=yellow  " for file info (dark goldenrod)
+
+" Define highlight groups with harmonious dark colors
+hi User1 guifg=#FFFFFF guibg=#1B5E20 ctermfg=white ctermbg=green   " for mode (deep forest green)
+hi User2 guifg=#FFFFFF guibg=#5D4037 ctermfg=white ctermbg=yellow  " for file info (deep brown)
 hi User3 guifg=#FFFFFF guibg=#104E8B ctermfg=white ctermbg=blue    " for directory (dark blue)
 hi User4 guifg=#FFFFFF guibg=#8B008B ctermfg=white ctermbg=magenta " for git (dark magenta)
-hi User5 guifg=#FFFFFF guibg=#008B8B ctermfg=white ctermbg=cyan    " for venv (dark cyan)
+hi User5 guifg=#FFFFFF guibg=#00585E ctermfg=white ctermbg=cyan    " for venv (deep teal)
 hi User6 guifg=#FFFFFF guibg=#8B0000 ctermfg=white ctermbg=red     " for position (dark red)
 
 " Statusline with colours

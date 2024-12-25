@@ -64,20 +64,27 @@ A comprehensive Neovim configuration that turns Neovim into a full-featured IDE 
 ## Installation
 1. Backup your existing config:
 ```bash
-mv ~/.config/nvim ~/.config/nvim.backup
+mv ~/.config/nvim ~/.config/nvim.backup # Backup your current setup (if you have one)
+# Cleanup old configuration artefacts
+rm -r ~/.local/share/nvim 
+rm -r ~/.local/state/nvim
+rm -r ~/.cache/nvim 
 ```
 
-2. Clone this config:
+2. Install Vim-plug
 ```bash
-mkdir ~/.config/nvim && git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
+curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 ```
 
-3. Start Neovim:
+3. Clone this config:
 ```bash
-nvim +PlugInstall
+git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 ```
 
-Vim-plug and plugins will install automatically on first launch.
+4. Start Neovim:
+```bash
+nvim --headless +PlugInstall +qall # Only required on first start, to install plugins
+```
 
 ## Customization
 - LSP servers: Modify `ensure_installed` in the Mason setup
