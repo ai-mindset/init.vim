@@ -219,28 +219,62 @@ function! VirtualEnv()
     return ''
 endfunction
 
-" Set default statusline background to a dark color
-hi StatusLine guifg=#FFFFFF guibg=#2B2B2B ctermfg=white ctermbg=235
-hi StatusLineNC guifg=#FFFFFF guibg=#1C1C1C ctermfg=white ctermbg=234
+""" Statusline Configuration
+function! SetStatusLineColors()
+    " Default statusline colors
+    hi StatusLine guifg=#C0C0C0 guibg=#1A1A1A ctermfg=white ctermbg=234 gui=none
+    hi StatusLineNC guifg=#808080 guibg=#141414 ctermfg=gray ctermbg=233 gui=none
 
-" Define highlight groups with harmonious dark colors
-hi User1 guifg=#FFFFFF guibg=#1B5E20 ctermfg=white ctermbg=green   " for mode (deep forest green)
-hi User2 guifg=#FFFFFF guibg=#5D4037 ctermfg=white ctermbg=yellow  " for file info (deep brown)
-hi User3 guifg=#FFFFFF guibg=#104E8B ctermfg=white ctermbg=blue    " for directory (dark blue)
-hi User4 guifg=#FFFFFF guibg=#8B008B ctermfg=white ctermbg=magenta " for git (dark magenta)
-hi User5 guifg=#FFFFFF guibg=#00585E ctermfg=white ctermbg=cyan    " for venv (deep teal)
-hi User6 guifg=#FFFFFF guibg=#8B0000 ctermfg=white ctermbg=red     " for position (dark red)
+    " All statusline sections
+    hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
+    hi User2 guifg=#FFFFFF guibg=#37474F ctermfg=white ctermbg=238 gui=none
+    hi User3 guifg=#FFFFFF guibg=#0D47A1 ctermfg=white ctermbg=26 gui=none
+    hi User4 guifg=#FFFFFF guibg=#4A148C ctermfg=white ctermbg=90 gui=none
+    hi User5 guifg=#FFFFFF guibg=#00695C ctermfg=white ctermbg=29 gui=none
+    hi User6 guifg=#FFFFFF guibg=#283593 ctermfg=white ctermbg=18 gui=none
+endfunction
 
-" Statusline with colours
+function! SetModeColors()
+    if mode() =~# '\v(n|no)'
+        hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
+    elseif mode() =~# '\v(i|R)'
+        hi User1 guifg=#FFFFFF guibg=#5E35B1 ctermfg=white ctermbg=magenta gui=bold
+    elseif mode() =~# '\v(v|V|\<C-v>)'
+        hi User1 guifg=#FFFFFF guibg=#C62828 ctermfg=white ctermbg=red gui=bold
+    endif
+endfunction
+
+augroup StatusLineColors
+    autocmd!
+    " Set initial colors
+    autocmd VimEnter * call SetStatusLineColors()
+    
+    " Maintain colors after save
+    autocmd BufWritePre * let g:colors_before_save = g:currentmode[mode()]
+    autocmd BufWritePost * call SetStatusLineColors()
+    autocmd BufWritePost * call SetModeColors()
+    
+    " Mode changes
+    autocmd InsertEnter * hi User1 guifg=#FFFFFF guibg=#5E35B1 ctermfg=white ctermbg=magenta gui=bold
+    autocmd InsertLeave * hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
+    autocmd ModeChanged *:[vV\x16]* hi User1 guifg=#FFFFFF guibg=#C62828 ctermfg=white ctermbg=red gui=bold
+    autocmd ModeChanged [vV\x16]*:* hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
+augroup END
+
 set statusline=
-set statusline+=\ %1*%{g:currentmode[mode()]}%*\            " The current mode
-set statusline+=\ %2*%{&ff}%*\                              " file format
-set statusline+=\ %2*%{HasPaste()}%*\                       " Paste mode 
-set statusline+=\ %2*%{SpellStatus()}%F%m%r%h\ %w%*\ \      " Spell check and file
-set statusline+=\ %3*CWD:\ %r%{GetRelCwd()}%h%*\ \ \        " Current working directory 
-set statusline+=%4*%{fugitive#statusline()}%*\              " Git status
-set statusline+=%5*%{VirtualEnv()}%*\                       " Virtual environment
-set statusline+=%6*\ C:%c\ L:%l\ %p%%%*\                    " Line, column and %
+set statusline+=\ %1*%{g:currentmode[mode()]}%*                 " Mode
+set statusline+=\ %{&ff}\                                       " File format
+set statusline+=\ %2*%{HasPaste()}\ %{SpellStatus()}%*          " File states
+set statusline+=\ %2*%F%m%r%h\ %w%*                             " Filename and flags
+set statusline+=\ %3*CWD:\ %{GetRelCwd()}%*                     " CWD without label
+set statusline+=%4*%{fugitive#statusline()}%*                   " Git status
+set statusline+=%=                                              " Switch sides
+set statusline+=%5*%{VirtualEnv()}%*                            " Virtual env
+set statusline+=\ C:%c\ L:%l\ %p%%\ \                           " Position info
+
+" Initialize colours when vim starts
+call SetStatusLineColors()
+""" Statusline Configuration
 
 " piper TTS
 let g:piper_bin = 'piperTTS'
