@@ -266,7 +266,7 @@ hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 
 " Conjure Configuration 
-let g:conjure#client#python#stdio#command = "python -iq -m asyncio"
+let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
 let g:conjure#client#sql#stdio = "sqlite3"
 let g:conjure#log#wrap = 1 
 let g:conjure#log#fold#enabled = 1
