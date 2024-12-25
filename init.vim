@@ -214,7 +214,7 @@ function! VirtualEnv()
             let venv_name = fnamemodify(venv_path, ':h:t')
         endif
         
-        return 'venv: (' . venv_name . ') '
+        return 'venv:(' . venv_name . ') '
     endif
     return ''
 endfunction
@@ -266,7 +266,7 @@ set statusline+=\ %1*%{g:currentmode[mode()]}%*                 " Mode
 set statusline+=\ %{&ff}\                                       " File format
 set statusline+=\ %2*%{HasPaste()}\ %{SpellStatus()}%*          " File states
 set statusline+=\ %2*%F%m%r%h\ %w%*                             " Filename and flags
-set statusline+=\ %3*CWD:\ %{GetRelCwd()}%*                     " CWD without label
+set statusline+=\ %3*CWD:%{GetRelCwd()}%*                     " CWD without label
 set statusline+=%4*%{fugitive#statusline()}%*                   " Git status
 set statusline+=%=                                              " Switch sides
 set statusline+=%5*%{VirtualEnv()}%*                            " Virtual env
