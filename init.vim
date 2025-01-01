@@ -62,15 +62,16 @@ let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
             \ "*": v:false,
             \ "python": v:true,
-            \ "typescript": v:true,
-            \ "javascript": v:true,
-            \ "clojure": v:true,
             \ "sh": v:true,
             \ "bash": v:true,
             \ "zsh": v:true,
-            \ "vim": v:true,
             \ }
-let g:copilot_model = "gpt-4o"
+            " \ "clojure": v:true 
+            " \ "typescript": v:true,
+            " \ "javascript": v:true,
+            " }
+let g:copilot_model = "claude3.5-sonnet"
+" let g:copilot_model = "gpt-4o"
 
 " ollama.nvim configuration
 lua << EOF
