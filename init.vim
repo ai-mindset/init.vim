@@ -455,7 +455,7 @@ local on_attach = function(client, bufnr)
   local opts = { noremap=true, silent=true }
   vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+  -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
   vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
   vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
   vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
@@ -606,7 +606,7 @@ require("conform").setup({
   },
 
   -- For format on key mapping (optional, if you want manual formatting)
-  vim.keymap.set({ "n", "v" }, "<leader>f", function()
+  vim.keymap.set({ "n", "v" }, "==", function()
     require("conform").format({
       lsp_fallback = true,
       async = false,
@@ -688,6 +688,8 @@ omap <leader>k <plug>(fzf-maps-o)
 imap <c-x><c-k> <plug>(fzf-complete-word)
 imap <c-x><c-f> <plug>(fzf-complete-path)
 imap <c-x><c-l> <plug>(fzf-complete-line)
+" files
+nnoremap <leader>f :Files<cr>
 "" Mappings
 "" Completion
 " Path completion with custom source command
