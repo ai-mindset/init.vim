@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-Plug 'github/copilot.vim'                                     " GitHub Copilot
+" Plug 'github/copilot.vim'                                     " GitHub Copilot
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -57,7 +57,7 @@ Plug 'm00qek/baleia.nvim'                                     " Colourful log me
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 call plug#end()
 
-" GitHub Copilot
+""" GitHub Copilot -- leaving in, in case I reactivate Copilot
 let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
             \ "*": v:false,
@@ -70,13 +70,13 @@ let g:copilot_filetypes = {
             " \ "typescript": v:true,
             " \ "javascript": v:true,
             " }
-let g:copilot_model = "claude3.5-sonnet"
-" let g:copilot_model = "gpt-4o"
+let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
+""" GitHub Copilot
 
-" ollama.nvim configuration
+""" ollama.nvim configuration
 lua << EOF
 opts = {
-  model = "granite3.1-dense:8b",
+  model = "granite-coder",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -98,12 +98,13 @@ vim.keymap.set('i', '<C-x><C-o>', function()
     })
 end)
 EOF
+""" ollama.nvim configuration
 
 " Leader Configuration
 let mapleader = " "
 let maplocalleader = ","
 
-" Basic Settings
+""" Basic Settings
 set relativenumber
 set expandtab                         " Use spaces instead of tabs
 set tabstop=4                         " Tab = 4 spaces
@@ -134,6 +135,7 @@ set background=dark                   " Set dark background
 set termguicolors                     " True colour support
 
 colorscheme vscode                    " Theme Configuration
+""" Basic Settings
 
 " Highlight on hover 
 set updatetime=1000
@@ -277,31 +279,34 @@ set statusline+=\ C:%c\ L:%l\ %p%%\ \                           " Position info
 call SetStatusLineColors()
 """ Statusline Configuration
 
-" piper TTS
+""" piper TTS
 let g:piper_bin = 'piperTTS'
 let g:piper_voice = '/usr/share/piper-voices/alba.onnx'
-" <space>tw = SpeakWord()
-" <space>tc = SpeakCurrentLine()
-" <space>tp = SpeakCurrentParagraph()
-" <space>tf = SpeakCurrentFile()
-" <space>tv = SpeakVisualSelection()
+                    " <space>tw = SpeakWord()
+                    " <space>tc = SpeakCurrentLine()
+                    " <space>tp = SpeakCurrentParagraph()
+                    " <space>tf = SpeakCurrentFile()
+                    " <space>tv = SpeakVisualSelection()
+""" piper TTS
 
 " Pressing ,ss will toggle and untoggle spell checking
 map <leader>ss :setlocal spell!<cr>
 
-" Shortcuts using <leader>
+""" Shortcuts using <leader>
 map <leader>sn ]s " Next spelling mistake    
 map <leader>sp [s " Previous spelling mistake
 map <leader>sa zg " Add word to dictionary
 map <leader>s? z= " Get suggestions
+""" Shortcuts using <leader>
 
-" Spelling mistakes will be coloured up red.
+""" Spelling mistakes will be coloured up red.
 hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellLocal cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
+""" Spelling mistakes will be coloured up red.
 
-" Conjure Configuration 
+""" Conjure Configuration 
 let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
 let g:conjure#client#sql#stdio = "sqlite3"
 let g:conjure#log#wrap = 1 
@@ -309,13 +314,15 @@ let g:conjure#log#fold#enabled = 1
 let g:conjure#preview#sample_limit = 1.0
 let g:conjure#log#hud#height = 0.5
 let g:conjure#log#hud#border = 0
+""" Conjure Configuration 
 
-" Conjure with Baleia Configuration
+""" Conjure with Baleia Configuration
 let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
 let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
 autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
+""" Conjure with Baleia Configuration
 
-" Glow configurations
+""" Glow configurations
 lua << EOF
 require('glow').setup({
   glow_path = "/usr/bin/glow", -- will be filled automatically with your glow bin in $PATH, if any
@@ -329,6 +336,7 @@ require('glow').setup({
   height_ratio = 0.7,
 })
 EOF
+""" Glow configurations
 
 " Autopairs Configuration
 lua << EOF
@@ -340,7 +348,7 @@ lua << EOF
 require("ibl").setup()
 EOF
 
-" Mason Configuration
+""" Mason Configuration
 lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
@@ -352,12 +360,14 @@ require("mason-lspconfig").setup({
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
+    "biome",                 -- JSON
   },
   automatic_installation = true,
 })
 EOF
+""" Mason Configuration
 
-" Completion setup
+""" Completion setup
 lua << EOF
 -- Completion Setup
 local cmp = require('cmp')
@@ -389,8 +399,9 @@ cmp.setup({
   })
 })
 EOF
+""" Completion setup
 
-" LSP Configuration
+""" LSP Configuration
 lua << EOF
 vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
 function _G.dump_lsp_client()
@@ -539,8 +550,9 @@ lspconfig.bashls.setup({
   root_dir = lspconfig.util.root_pattern(".git"),
 })
 EOF
+""" LSP Configuration
 
-" Configure diagnostic display
+""" Linting, formatting configuration 
 lua << EOF
 -- Configure diagnostic display
 vim.diagnostic.config({
@@ -596,6 +608,7 @@ require("conform").setup({
     javascript = { "deno_fmt" },
     typescript = { "deno_fmt" },
     lua = { "stylua" },
+    json = { "biome" },
   },
 
   -- Format on save
@@ -615,8 +628,9 @@ require("conform").setup({
   end, { desc = "Format file or range" })
 })
 EOF
+""" Linting, formatting configuration 
 
-" nvim-treesitter Configuration
+""" nvim-treesitter Configuration
 lua << EOF
 require'nvim-treesitter.configs'.setup {
     ensure_installed = {
@@ -668,6 +682,7 @@ require'nvim-treesitter.configs'.setup {
   },
 }
 EOF
+""" nvim-treesitter Configuration
 
 """ Fuzzy finding Configuration 
 let g:fzf_vim = {}
