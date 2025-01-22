@@ -76,7 +76,7 @@ let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 opts = {
-  model = "granite-coder",
+  model = "codestral:22b-v0.1-q4_K_S",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -281,7 +281,7 @@ call SetStatusLineColors()
 
 """ piper TTS
 let g:piper_bin = 'piperTTS'
-let g:piper_voice = '/usr/share/piper-voices/alba.onnx'
+let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
                     " <space>tw = SpeakWord()
                     " <space>tc = SpeakCurrentLine()
                     " <space>tp = SpeakCurrentParagraph()
@@ -308,7 +308,17 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 
 """ Conjure Configuration 
 let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
+" JS " FIXME
+let g:conjure#client#javascript#stdio#command = "deno"
+let g:conjure#client#javascript#stdio#prompt_pattern = "> $"
+let g:conjure#client#javascript#stdio#value_prefix_pattern = v:false
+" TS " FIXME
+let g:conjure#client#typescript#stdio#command = "deno"
+let g:conjure#client#typescript#stdio#prompt_pattern = "> $"
+let g:conjure#client#typescript#stdio#value_prefix_pattern = v:false
+" SQLite
 let g:conjure#client#sql#stdio = "sqlite3"
+" HUD
 let g:conjure#log#wrap = 1 
 let g:conjure#log#fold#enabled = 1
 let g:conjure#preview#sample_limit = 1.0
@@ -361,6 +371,7 @@ require("mason-lspconfig").setup({
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
     "biome",                 -- JSON
+    "yamlls",               -- YAML
   },
   automatic_installation = true,
 })
@@ -648,7 +659,10 @@ require'nvim-treesitter.configs'.setup {
 
         -- For documentation/markdown files
         "markdown",
-        "markdown_inline"
+        "markdown_inline",
+        
+        -- For Yaml files
+        "yaml"
         },
 
   sync_install = false,
