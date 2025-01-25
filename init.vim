@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-" Plug 'github/copilot.vim'                                     " GitHub Copilot
+Plug 'github/copilot.vim'                                     " GitHub Copilot
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -29,6 +29,10 @@ Plug 'Olical/conjure'                                         " Clojure REPL
 Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
 Plug 'guns/vim-sexp'                                          " Clojure S-Expression 
 Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expression Mappings 
+
+" Go Development 
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
+
 
 " Theme
 Plug 'Mofiqul/vscode.nvim'
@@ -308,11 +312,11 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 
 """ Conjure Configuration 
 let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
-" JS " FIXME
+" JS " FIXME: Conjure client needs to be extended to work with Deno
 let g:conjure#client#javascript#stdio#command = "deno"
 let g:conjure#client#javascript#stdio#prompt_pattern = "> $"
 let g:conjure#client#javascript#stdio#value_prefix_pattern = v:false
-" TS " FIXME
+" TS " FIXME: Conjure client needs to be extended to work with Deno
 let g:conjure#client#typescript#stdio#command = "deno"
 let g:conjure#client#typescript#stdio#prompt_pattern = "> $"
 let g:conjure#client#typescript#stdio#value_prefix_pattern = v:false
