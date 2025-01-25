@@ -69,11 +69,11 @@ let g:copilot_filetypes = {
             \ "sh": v:true,
             \ "bash": v:true,
             \ "zsh": v:true,
+            \ "go": v:true,
+            \ "clojure": v:true, 
+            \ "typescript": v:true,
+            \ "javascript": v:true
             \ }
-            " \ "clojure": v:true 
-            " \ "typescript": v:true,
-            " \ "javascript": v:true,
-            " }
 let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 """ GitHub Copilot
 
