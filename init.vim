@@ -92,11 +92,12 @@ opts = {
 }
 require("ollama").setup(opts)
 
-vim.keymap.set('i', '<C-x><C-o>', function()
-    require('cmp').complete({
+vim.keymap.set("i", "<C-x><C-o>", function()
+    require("cmp").complete({
         config = {
             sources = {
-                { name = 'ollama' }
+                { name = "ollama" },
+                { name = "path"},
             }
         }
     })
@@ -312,14 +313,6 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 
 """ Conjure Configuration 
 let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
-" JS " FIXME: Conjure client needs to be extended to work with Deno
-let g:conjure#client#javascript#stdio#command = "deno"
-let g:conjure#client#javascript#stdio#prompt_pattern = "> $"
-let g:conjure#client#javascript#stdio#value_prefix_pattern = v:false
-" TS " FIXME: Conjure client needs to be extended to work with Deno
-let g:conjure#client#typescript#stdio#command = "deno"
-let g:conjure#client#typescript#stdio#prompt_pattern = "> $"
-let g:conjure#client#typescript#stdio#value_prefix_pattern = v:false
 " SQLite
 let g:conjure#client#sql#stdio = "sqlite3"
 " HUD
@@ -385,7 +378,7 @@ EOF
 """ Completion setup
 lua << EOF
 -- Completion Setup
-local cmp = require('cmp')
+local cmp = require("cmp")
 cmp.setup({
    snippet = {
      -- REQUIRED - you must specify a snippet engine
@@ -402,15 +395,16 @@ cmp.setup({
       -- documentation = cmp.config.window.bordered(),
     },
     mapping = cmp.mapping.preset.insert({
-      ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-      ['<C-f>'] = cmp.mapping.scroll_docs(4),
-      ['<C-Space>'] = cmp.mapping.complete(),
-      ['<C-e>'] = cmp.mapping.abort(),
-      ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+      ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+      ["<C-f>"] = cmp.mapping.scroll_docs(4),
+      ["<C-Space>"] = cmp.mapping.complete(),
+      ["<C-e>"] = cmp.mapping.abort(),
+      ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
     }),
   sources = cmp.config.sources({
-    { name = 'nvim_lsp' },
-    { name = 'buffer' },
+    { name = "nvim_lsp" },
+    { name = "buffer" },
+    { name = "path"},
   })
 })
 EOF
