@@ -1,5 +1,5 @@
 # init.vim
-A comprehensive Neovim configuration that turns Neovim into a full-featured IDE for Data Science, AI Engineering, and Backend development. Supports Python, Clojure, JavaScript/TypeScript (via Deno), shell scripting, containerisation, and technical documentation.
+A comprehensive Neovim configuration that turns Neovim into a full-featured IDE for Data Science, AI Engineering, and Backend development. Supports Python, Go, Clojure, JavaScript/TypeScript (via Deno), shell scripting, containerisation, and technical documentation.
 
 ## Development Environments
 - GitHub Copilot AI assistance
@@ -9,6 +9,13 @@ A comprehensive Neovim configuration that turns Neovim into a full-featured IDE 
 - Full LSP support via Pyright
 - Automatic linting and formatting with Ruff
 - REPL integration through Conjure
+
+### Go (Backend/Data Science/AI)
+- Full LSP support via `gopls`
+- Excellent documentation on hover
+- Automatic formatting with `go fmt`
+- `go vet` catches errors before compilation
+- Quickly execute current file with `:GoRun`
 
 ### Clojure (Backend/Data Processing)
 - Complete Clojure LSP integration
