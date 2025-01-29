@@ -612,7 +612,7 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
-    python = { "ruff_format" },
+    python = { "ruff_organize_imports", "ruff_format" },
     clojure = { "cljfmt" },
     javascript = { "deno_fmt" },
     typescript = { "deno_fmt" },
@@ -620,7 +620,30 @@ require("conform").setup({
     json = { "biome" },
   },
 
+  -- Organise Python imports
+    formatters = {
+        ruff_organize_imports = {
+          command = 'ruff',
+          args = {
+            'check',
+            '--force-exclude',
+            '--select=I001',
+            '--fix',
+            '--exit-zero',
+            '--stdin-filename',
+            '$FILENAME',
+            '-',
+          },
+          stdin = true,
+          cwd = require('conform.util').root_file {
+            'pyproject.toml',
+            'ruff.toml',
+            '.ruff.toml',
+          },
+        },
+      },
   -- Format on save
+
   format_on_save = {
     -- These options will be passed to conform.format()
     timeout_ms = 500,
