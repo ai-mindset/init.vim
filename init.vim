@@ -612,7 +612,7 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
-    python = { "ruff_organize_imports", "ruff_format" },
+    python = { "ruff_organise_imports", "ruff_format" },
     clojure = { "cljfmt" },
     javascript = { "deno_fmt" },
     typescript = { "deno_fmt" },
@@ -622,7 +622,7 @@ require("conform").setup({
 
   -- Organise Python imports
     formatters = {
-        ruff_organize_imports = {
+        ruff_organise_imports = {
           command = 'ruff',
           args = {
             'check',
