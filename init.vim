@@ -664,7 +664,7 @@ EOF
 
 """ nvim-treesitter Configuration
 lua << EOF
-require'nvim-treesitter.configs'.setup {
+require("nvim-treesitter.configs").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -716,6 +716,13 @@ require'nvim-treesitter.configs'.setup {
     },
   },
 }
+
+-- Code folding
+local vim = vim
+local opt = vim.opt
+
+opt.foldmethod = "expr"
+opt.foldexpr = "nvim_treesitter#foldexpr()"
 EOF
 """ nvim-treesitter Configuration
 
