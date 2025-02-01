@@ -58,7 +58,8 @@ Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
-Plug 'preservim/tagbar'                                       " displays tags in a window, ordered by scope
+Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
+Plug 'ErichDonGubler/lsp_lines.nvim'                          " Renders diagnostics using virtual lines
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
@@ -80,7 +81,7 @@ let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 opts = {
-  model = "deepseek-coder-v2:16b",
+  model = "qwen2.5-coder",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -439,12 +440,15 @@ function _G.dump_lsp_client()
 end
 
 vim.diagnostic.config({
-    virtual_text = true,
+    virtual_text = false,
     signs = true,
     underline = true,
     update_in_insert = false,
     severity_sort = false,
 })
+
+-- Render diagnostics
+require("lsp_lines").setup()
 
 -- Signs for better visibility
 local signs = { Error = "✘", Warn = "▲", Hint = "⚑", Info = "🛈" }
