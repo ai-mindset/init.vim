@@ -33,7 +33,6 @@ Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expres
 " Go Development 
 Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
 
-
 " Theme
 Plug 'Mofiqul/vscode.nvim'
 
@@ -59,6 +58,7 @@ Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
+Plug 'preservim/tagbar'                                       " displays tags in a window, ordered by scope
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
@@ -80,7 +80,7 @@ let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 opts = {
-  model = "codestral:22b-v0.1-q4_K_S",
+  model = "deepseek-coder-v2:16b",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -344,6 +344,23 @@ require('glow').setup({
 })
 EOF
 """ Glow configurations
+
+""" tagbar
+nmap <F8> :TagbarToggle<CR>
+" https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
+let g:tagbar_left = 1
+let g:tagbar_autoclose = 0
+let g:tagbar_autofocus = 0 " If you set this option the cursor will move to the Tagbar window when it is opened
+let g:tagbar_compact = 1 " 0: Show short help and blank lines between top-level scopes
+                         " 1: Don't show the short help or the blank lines.
+                         " 2: Don't show the short help but show the blank lines.
+let g:tagbar_show_data_type = 1
+let g:tagbar_show_linenumbers = 1
+let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
+" let g:tagbar_iconchars = ['▸', '▾']
+" let g:tagbar_iconchars = ['▷', '◢']
+autocmd BufEnter * nested :call tagbar#autoopen(0)
+""" tagbar
 
 " Autopairs Configuration
 lua << EOF
