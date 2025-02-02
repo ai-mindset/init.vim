@@ -115,7 +115,6 @@ set relativenumber
 set expandtab                         " Use spaces instead of tabs
 set tabstop=4                         " Tab = 4 spaces
 set shiftwidth=4                      " Tab = 4 spaces
-set smartindent
 set softtabstop=2                     " Number of spaces for a tab in insert mode
 set autoindent                        " Auto indent
 set smartindent                       " Smart autoindenting when starting a new line
@@ -360,7 +359,7 @@ let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▸', '▾']
 " let g:tagbar_iconchars = ['▷', '◢']
-autocmd BufEnter * nested :call tagbar#autoopen(0)
+" autocmd BufEnter * nested :call tagbar#autoopen(0) " Auto-open tagbar
 """ tagbar
 
 " Autopairs Configuration
