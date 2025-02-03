@@ -35,6 +35,7 @@ Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
 
 " Theme
 Plug 'Mofiqul/vscode.nvim'
+Plug 'EdenEast/nightfox.nvim'
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
@@ -59,7 +60,6 @@ Plug 'machakann/vim-highlightedyank'                          " Highlight yanked
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
-Plug 'ErichDonGubler/lsp_lines.nvim'                          " Renders diagnostics using virtual lines
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
@@ -139,7 +139,21 @@ set background=dark                   " Set dark background
 " set t_Co=256                          " 256 colours
 set termguicolors                     " True colour support
 
-colorscheme vscode                    " Theme Configuration
+colorscheme carbonfox " vscode                    " Theme Configuration
+"" nightfox.nvim
+"lua << EOF
+"-- require('nightfox').setup({
+"--   options = {
+"--     styles = {
+"--       comments = "italic",
+"--       keywords = "bold",
+"--       types = "italic,bold",
+"--     }
+"--   }
+"-- })
+"EOF 
+"" nightfox.nvim
+
 """ Basic Settings
 
 " Highlight on hover 
@@ -446,8 +460,9 @@ vim.diagnostic.config({
     severity_sort = false,
 })
 
--- Render diagnostics
-require("lsp_lines").setup()
+-- Show line diagnostics automatically in hover window
+vim.o.updatetime = 250
+vim.cmd [[autocmd CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]
 
 -- Signs for better visibility
 local signs = { Error = "✘", Warn = "▲", Hint = "⚑", Info = "🛈" }
