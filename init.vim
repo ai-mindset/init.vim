@@ -35,7 +35,7 @@ Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
 
 " Theme
 Plug 'Mofiqul/vscode.nvim'
-Plug 'EdenEast/nightfox.nvim'
+Plug 'projekt0n/github-nvim-theme'
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
@@ -136,39 +136,29 @@ set spell                             " Enable spell checking
 set spelllang=en_gb
 set clipboard+=unnamedplus            " Clipboard Settings
 set background=dark                   " Set dark background
-" set t_Co=256                          " 256 colours
+set t_Co=256                          " 256 colours
 set termguicolors                     " True colour support
 
-colorscheme carbonfox " vscode                    " Theme Configuration
-"" nightfox.nvim
-"lua << EOF
-"-- require('nightfox').setup({
-"--   options = {
-"--     styles = {
-"--       comments = "italic",
-"--       keywords = "bold",
-"--       types = "italic,bold",
-"--     }
-"--   }
-"-- })
-"EOF 
-"" nightfox.nvim
+colorscheme github_dark_colorblind " vscode                    " Theme Configuration
+
 
 """ Basic Settings
 
-" Highlight on hover 
+"" Highlight on hover 
 set updatetime=1000
 autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
 autocmd CursorHold,CursorHoldI * match none
+"" Highlight on hover 
 
 " Disable highlight when <leader><cr> is pressed
 map <silent> <leader><cr> :noh<cr>
 
-" Code folding
+"" Code folding
 " choices are: manual|indent|syntax|marker|expr
 set foldmethod=expr
   \ foldexpr=lsp#ui#vim#folding#foldexpr()
   \ foldtext=lsp#ui#vim#folding#foldtext()
+"" Code folding
 
 " Replace all instances selected in Visual mode, using Ctrl+r
 vnoremap <C-r> "hy:%s/<C-r>h//gc<left><left><left>
