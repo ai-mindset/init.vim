@@ -63,9 +63,15 @@ Plug 'preservim/tagbar'                                       " Displays tags in
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
+let g:copilot_enabled = v:false
 let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
             \ "*": v:false,
+            \ "python": v:true,
+            \ "go": v:true,
+            \ "javascript": v:true,
+            \ "typescript": v:true,
+            \ "clojure": v:true,
             \ }
 let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 """ GitHub Copilot
