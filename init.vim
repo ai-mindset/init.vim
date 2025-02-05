@@ -153,7 +153,7 @@ map <silent> <leader><cr> :noh<cr>
 
 "" Code folding
 " choices are: manual|indent|syntax|marker|expr
-set foldmethod=expr
+set foldmethod=syntax
   \ foldexpr=lsp#ui#vim#folding#foldexpr()
   \ foldtext=lsp#ui#vim#folding#foldtext()
 "" Code folding
