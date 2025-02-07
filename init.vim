@@ -446,11 +446,11 @@ vim.diagnostic.config({
     underline = true,
     update_in_insert = false,
     severity_sort = false,
+    globals = {"error", "warn"},
 })
 
--- Show line diagnostics automatically in hover window
-vim.o.updatetime = 250
-vim.cmd [[autocmd CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]
+-- Show diagnostics when pressing 'gh'
+vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
 
 -- Signs for better visibility
 local signs = { Error = "✘", Warn = "▲", Hint = "⚑", Info = "🛈" }
