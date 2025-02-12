@@ -648,6 +648,9 @@ lspconfig.bashls.setup({
   filetypes = { "sh", "bash", "zsh" },
   root_dir = lspconfig.util.root_pattern(".git"),
 })
+
+lspconfig.gopls.setup{}
+vim.keymap.set('n', 'K', vim.lsp.buf.hover, {buffer=0})
 EOF
 """ LSP Configuration
 
