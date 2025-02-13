@@ -182,7 +182,7 @@ set background=dark                   " Set dark background
 set t_Co=256                          " 256 colours
 set termguicolors                     " True colour support
 
-colorscheme github_dark_colorblind " vscode                    " Theme Configuration
+colorscheme vscode " github_dark      " Theme Configuration
 
 
 """ Basic Settings
