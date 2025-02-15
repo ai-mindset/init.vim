@@ -167,7 +167,7 @@ set wrap                              " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=100                   " Column indicating 100 characters
+set colorcolumn=90                   " Column indicating 100 characters
 set cursorcolumn                      " Indentation guide
 set cursorline
 set ruler                             " Always show current position
