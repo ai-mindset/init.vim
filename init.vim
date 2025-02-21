@@ -434,6 +434,7 @@ require("mason-lspconfig").setup({
     "lua_ls",                -- Lua
     "clojure_lsp",           -- Clojure
     "pyright",               -- Python
+    "zls",                   -- Zig
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -612,6 +613,17 @@ lspconfig.pyright.setup({
     flags = {
         debounce_text_changes = 150,
     }
+})
+
+lspconfig.zls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  root_dir = lspconfig.util.root_pattern("build.zig.zon"),
+  init_options = {
+    enable = true,
+    lint = true,
+    unstable = true,
+  }
 })
 
 lspconfig.denols.setup({
