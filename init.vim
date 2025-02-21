@@ -33,9 +33,12 @@ Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expres
 " Go Development 
 Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
 
+" Zig development
+Plug 'ziglang/zig.vim'                                        " Zig development
+
 " Vim <-> IPython
-Plug 'jpalardy/vim-slime', { 'for': 'python' }
-Plug 'hanschen/vim-ipython-cell', { 'for': 'python' }
+Plug 'jpalardy/vim-slime', { 'for': 'python' }                " Send to REPL 
+Plug 'hanschen/vim-ipython-cell', { 'for': 'python' }         " Vim <-> IPython
 
 " Theme
 Plug 'Mofiqul/vscode.nvim'
@@ -186,7 +189,7 @@ set background=dark                   " Set dark background
 set t_Co=256                          " 256 colours
 set termguicolors                     " True colour support
 
-colorscheme github_dark_high_contrast " Theme Configuration
+colorscheme github_dark_tritanopia
 
 
 """ Basic Settings
