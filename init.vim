@@ -547,37 +547,49 @@ local lspconfig = require('lspconfig')
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
-  print("LSP attached:", client.name)  -- Debug print
-  local opts = { noremap=true, silent=true }
+  -- Debug print
+  print("LSP attached:", client.name)
+  
+  -- Common options for most keymaps
+  local opts = { noremap = true, silent = true }
+  
+  -- Navigation keymaps
   vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  -- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { noremap = true, silent = true, desc = "LSP: Rename symbol" })
   vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-  vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, opts)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-  -- Replace all
+  
+  -- Information keymaps
+  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+  
+  -- Editing keymaps
+  vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
+  
+  -- Rename keymaps (remove duplicate)
+  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
+  
+  -- Advanced rename with editor mode
   vim.keymap.set("n", "<leader>r", function()
     local cmdId
     cmdId = vim.api.nvim_create_autocmd({ "CmdlineEnter" }, {
-        callback = function()
-          local key = vim.api.nvim_replace_termcodes("<C-f>", true, false, true)
-          vim.api.nvim_feedkeys(key, "c", false)
-          vim.api.nvim_feedkeys("0", "n", false)
-          -- autocmd was triggered and so we can remove the ID and return true to delete the autocmd
-          cmdId = nil
-          return true
-        end,
-      })
+      callback = function()
+        local key = vim.api.nvim_replace_termcodes("<C-f>", true, false, true)
+        vim.api.nvim_feedkeys(key, "c", false)
+        vim.api.nvim_feedkeys("0", "n", false)
+        -- autocmd was triggered and so we can remove the ID and return true to delete the autocmd
+        cmdId = nil
+        return true
+      end,
+    })
     vim.lsp.buf.rename()
-    -- if LPS couldn't trigger rename on the symbol, clear the autocmd
+    -- if LSP couldn't trigger rename on the symbol, clear the autocmd
     vim.defer_fn(function()
-        -- the cmdId is not nil only if the LSP failed to rename
-        if cmdId then
-          vim.api.nvim_del_autocmd(cmdId)
-        end
-      end, 500)
+      -- the cmdId is not nil only if the LSP failed to rename
+      if cmdId then
+        vim.api.nvim_del_autocmd(cmdId)
+      end
+    end, 500)
   end)
 end
 
@@ -591,28 +603,28 @@ lspconfig.clojure_lsp.setup({
 })
 
 lspconfig.pyright.setup({
-    on_attach = function(client, bufnr)
-        print("Pyright attached to buffer:", bufnr)  -- Debug print
-        
-        -- Enable hover explicitly
-        client.server_capabilities.hoverProvider = true
-        
-        -- Call your existing on_attach
-        on_attach(client, bufnr)
-    end,
-    capabilities = capabilities,
-    settings = {
-        python = {
-            analysis = {
-                autoSearchPaths = true,
-                diagnosticMode = "workspace",
-                useLibraryCodeForTypes = true
-            }
-        }
-    },
-    flags = {
-        debounce_text_changes = 150,
+  on_attach = function(client, bufnr)
+    print("Pyright attached to buffer:", bufnr)  -- Debug print
+    
+    -- Enable hover explicitly
+    client.server_capabilities.hoverProvider = true
+    
+    -- Call your existing on_attach
+    on_attach(client, bufnr)
+  end,
+  capabilities = capabilities,
+  settings = {
+    python = {
+      analysis = {
+        autoSearchPaths = true,
+        diagnosticMode = "workspace",
+        useLibraryCodeForTypes = true
+      }
     }
+  },
+  flags = {
+    debounce_text_changes = 150,
+  }
 })
 
 lspconfig.zls.setup({
@@ -668,8 +680,10 @@ lspconfig.bashls.setup({
   root_dir = lspconfig.util.root_pattern(".git"),
 })
 
-lspconfig.gopls.setup{}
-vim.keymap.set('n', 'K', vim.lsp.buf.hover, {buffer=0})
+lspconfig.gopls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+})
 EOF
 """ LSP Configuration
 
