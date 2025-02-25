@@ -204,10 +204,52 @@ autocmd CursorHold,CursorHoldI * match none
 map <silent> <leader><cr> :noh<cr>
 
 "" Code folding
-" choices are: manual|indent|syntax|marker|expr
+" Use syntax folding for most filetypes
 set foldmethod=syntax
-  \ foldexpr=lsp#ui#vim#folding#foldexpr()
-  \ foldtext=lsp#ui#vim#folding#foldtext()
+
+" Default settings for folding
+set foldnestmax=1
+set foldlevelstart=1
+set foldtext=lsp#ui#vim#folding#foldtext()
+
+" Python-specific folding settings
+augroup PythonFolding
+  autocmd!
+  " Use indent folding for Python files
+  autocmd FileType python setlocal foldmethod=indent
+  " Set indent level for folding
+  autocmd FileType python setlocal shiftwidth=4
+  " Fold everything at indent level 1 and higher
+  autocmd FileType python setlocal foldlevel=0
+  " Never fold less than 2 lines (prevents single line folds)
+  autocmd FileType python setlocal foldminlines=2
+  " Custom fold expression that keeps function signature visible
+  autocmd FileType python setlocal foldexpr=GetPythonFold(v:lnum)
+augroup END
+
+" Custom Python folding function
+function! GetPythonFold(lnum)
+  let l:line = getline(a:lnum)
+  
+  " If this is a function definition line or continuation of it
+  if l:line =~ '^\s*def\s\+' || (a:lnum > 1 && getline(a:lnum-1) =~ '^\s*def\s\+.*\\$\|^.*($')
+    return '0'
+  endif
+  
+  " If this is the line with closing parenthesis and colon
+  if l:line =~ '^\s*\S.*)\s*->\s*\S\+\s*:\s*$' || l:line =~ '^\s*\S.*)\s*:\s*$'
+    return '0'
+  endif
+  
+  " Use indent-based folding for everything else
+  let l:indent = indent(a:lnum) / &shiftwidth
+  if l:indent == 0
+    return '0'
+  else
+    " Everything at indent level 1 or higher gets folded
+    return '>' . l:indent
+  endif
+endfunction
 "" Code folding
 
 " Replace all instances selected in Visual mode, using Ctrl+r
