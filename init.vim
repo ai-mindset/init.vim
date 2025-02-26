@@ -87,7 +87,7 @@ let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 opts = {
-  model = "qwen2.5-coder",
+  model = "qwen2.5-coder:14b-instruct-q4_K_M",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
