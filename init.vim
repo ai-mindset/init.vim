@@ -644,31 +644,59 @@ lspconfig.clojure_lsp.setup({
   root_dir = lspconfig.util.root_pattern("deps.edn", "project.clj", "project.clj.edn", ".git"),
 })
 
-lspconfig.pyright.setup({
+-- lspconfig.pyright.setup({
+--   on_attach = function(client, bufnr)
+--     print("Pyright attached to buffer:", bufnr)  -- Debug print
+--   
+--     -- Enable hover explicitly
+--     client.server_capabilities.hoverProvider = true
+--   
+--     -- Call your existing on_attach
+--     on_attach(client, bufnr)
+--   end,
+--   capabilities = capabilities,
+--   settings = {
+--     python = {
+--       analysis = {
+--         autoSearchPaths = true,
+--         diagnosticMode = "workspace",
+--         useLibraryCodeForTypes = true
+--       }
+--     }
+--   },
+--   flags = {
+--     debounce_text_changes = 150,
+--   }
+-- })
+
+-- Jedi setup for all Python language features
+lspconfig.jedi_language_server.setup({
   on_attach = function(client, bufnr)
-    print("Pyright attached to buffer:", bufnr)  -- Debug print
-    
-    -- Enable hover explicitly
-    client.server_capabilities.hoverProvider = true
-    
     -- Call your existing on_attach
     on_attach(client, bufnr)
   end,
   capabilities = capabilities,
-  settings = {
-    python = {
-      analysis = {
-        autoSearchPaths = true,
-        diagnosticMode = "workspace",
-        useLibraryCodeForTypes = true
-      }
-    }
-  },
-  flags = {
-    debounce_text_changes = 150,
+  init_options = {
+    diagnostics = {
+      enable = true,  -- Enable Jedi diagnostics
+      didOpen = true,
+      didChange = true,
+      didSave = true,
+    },
+    completion = {
+      disableSnippets = false,
+      resolveEagerly = true,
+    },
+    hover = {
+      enable = true,
+    },
+    jediSettings = {
+      autoImportModules = {},  -- Add modules you want auto-imported
+      caseInsensitiveCompletion = true,
+      debug = false,
+    },
   }
 })
-
 lspconfig.zls.setup({
   on_attach = on_attach,
   capabilities = capabilities,
