@@ -202,182 +202,118 @@ autocmd CursorHold,CursorHoldI * match none
 
 " Disable highlight when <leader><cr> is pressed
 map <silent> <leader><cr> :noh<cr>
-
-"" Code folding
-" Use syntax folding for most filetypes
-set foldmethod=syntax
-
-" Default settings for folding
-set foldnestmax=1
-set foldlevelstart=1
-set foldtext=lsp#ui#vim#folding#foldtext()
-
-" Python-specific folding settings
-augroup PythonFolding
-  autocmd!
-  " Use indent folding for Python files
-  autocmd FileType python setlocal foldmethod=indent
-  " Set indent level for folding
-  autocmd FileType python setlocal shiftwidth=4
-  " Fold everything at indent level 1 and higher
-  autocmd FileType python setlocal foldlevel=0
-  " Never fold less than 2 lines (prevents single line folds)
-  autocmd FileType python setlocal foldminlines=2
-  " Custom fold expression that keeps function signature visible
-  autocmd FileType python setlocal foldexpr=GetPythonFold(v:lnum)
-augroup END
-
-" Custom Python folding function
-function! GetPythonFold(lnum)
-  let l:line = getline(a:lnum)
-  
-  " If this is a function definition line or continuation of it
-  if l:line =~ '^\s*def\s\+' || (a:lnum > 1 && getline(a:lnum-1) =~ '^\s*def\s\+.*\\$\|^.*($')
-    return '0'
-  endif
-  
-  " If this is the line with closing parenthesis and colon
-  if l:line =~ '^\s*\S.*)\s*->\s*\S\+\s*:\s*$' || l:line =~ '^\s*\S.*)\s*:\s*$'
-    return '0'
-  endif
-  
-  " Use indent-based folding for everything else
-  let l:indent = indent(a:lnum) / &shiftwidth
-  if l:indent == 0
-    return '0'
-  else
-    " Everything at indent level 1 or higher gets folded
-    return '>' . l:indent
-  endif
-endfunction
-"" Code folding
-
-" Replace all instances selected in Visual mode, using Ctrl+r
-vnoremap <C-r> "hy:%s/<C-r>h//gc<left><left><left>
-
-set laststatus=2                      " Always show the status line
-" Current mode
-let g:currentmode={
-    \ 'n'  : 'NORMAL',
-    \ 'no' : 'NORMAL,OP',
-    \ 'v'  : 'VISUAL',
-    \ 'V'  : 'V-LINE',
-    \ '^V' : 'V-BLOCK',
-    \ 's'  : 'SELECT',
-    \ 'S'  : 'S-LINE',
-    \ '^S' : 'S-BLOCK',
-    \ 'i'  : 'INSERT',
-    \ 'R'  : 'REPLACE',
-    \ 'Rv' : 'V-REPLACE',
-    \ 'c'  : 'COMMAND',
-    \ 'cv' : 'VIM EX',
-    \ 'ce' : 'EX',
-    \ 'r'  : 'PROMPT',
-    \ 'rm' : 'MORE',
-    \ 'r?' : 'CONFIRM',
-    \ '!'  : 'SHELL',
-    \ 't'  : 'TERMINAL'
-    \}
-
+"
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
-" Format the status line
-function! HasPaste()
-    if &paste
-        return 'PASTE MODE  '
-    endif
-    return ''
+
+""" Statusline configuration
+set laststatus=3                     " Global statusline (Neovim only)
+set noshowmode                       " Don't show mode in command line
+
+" Mode dictionary with simpler names
+let g:currentmode={
+    \ 'n'  : 'NORMAL',
+    \ 'no' : 'N·OP',
+    \ 'v'  : 'VISUAL',
+    \ 'V'  : 'V·LINE',
+    \ "\<C-V>" : 'V·BLOCK',  " Fixed control-V representation
+    \ 's'  : 'SELECT',
+    \ 'S'  : 'S·LINE',
+    \ "\<C-S>" : 'S·BLOCK',  " Fixed control-S representation
+    \ 'i'  : 'INSERT',
+    \ 'R'  : 'REPLACE',
+    \ 'Rv' : 'V·REPLACE',
+    \ 'c'  : 'COMMAND',
+    \ 't'  : 'TERMINAL'
+    \}
+
+" More reliable mode function that doesn't depend on g:currentmode dictionary
+function! CurrentMode()
+    let l:mode = mode()
+    return get(g:currentmode, l:mode, l:mode)
 endfunction
 
-" Get spell status
-function! SpellStatus()
-    if &spell
-        return 'SPELL '
-    endif
-    return ''
+" Simplified helper functions
+function! StatusPaste()
+    return &paste ? 'PASTE ' : ''
 endfunction
 
-" Get relative CWD
-function! GetRelCwd()
-    let cwd = getcwd()
-    let home = $HOME
-    let cwd = substitute(cwd, home, '~', 'g')
-    return cwd
+function! StatusSpell()
+    return &spell ? 'SPELL ' : ''
 endfunction
 
-" Get active virtual environment
-function! VirtualEnv()
+function! StatusVenv()
     if exists('$VIRTUAL_ENV')
-        " Get the actual environment name from pyenv or virtualenv
-        let venv_path = $VIRTUAL_ENV
-        let venv_name = venv_path
-        
-        " Handle .venv directory case
-        if fnamemodify(venv_path, ':t') == '.venv'
-            let venv_name = fnamemodify(venv_path, ':h:t')
-        endif
-        
-        return 'venv:(' . venv_name . ') '
+        let l:venv = fnamemodify($VIRTUAL_ENV, ':t')
+        return l:venv ==# '.venv' ? fnamemodify($VIRTUAL_ENV, ':h:t') : l:venv
     endif
     return ''
 endfunction
 
-""" Statusline Configuration
-function! SetStatusLineColors()
-    " Default statusline colors
-    hi StatusLine guifg=#C0C0C0 guibg=#1A1A1A ctermfg=white ctermbg=234 gui=none
-    hi StatusLineNC guifg=#808080 guibg=#141414 ctermfg=gray ctermbg=233 gui=none
-
-    " All statusline sections
-    hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
-    hi User2 guifg=#FFFFFF guibg=#37474F ctermfg=white ctermbg=238 gui=none
-    hi User3 guifg=#FFFFFF guibg=#0D47A1 ctermfg=white ctermbg=26 gui=none
-    hi User4 guifg=#FFFFFF guibg=#4A148C ctermfg=white ctermbg=90 gui=none
-    hi User5 guifg=#FFFFFF guibg=#00695C ctermfg=white ctermbg=29 gui=none
-    hi User6 guifg=#FFFFFF guibg=#283593 ctermfg=white ctermbg=18 gui=none
+" Statusline colours - simplified to use a single setup function
+function! SetupStatusline()
+    " Define highlight groups with accessible, harmonious colours
+    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold  " Blue
+    hi StModeInsert   guifg=#F8F8F2 guibg=#AF5F00 ctermfg=255 ctermbg=130 gui=bold  " Amber
+    hi StModeVisual   guifg=#F8F8F2 guibg=#D70000 ctermfg=255 ctermbg=160 gui=bold  " Red
+    hi StModeReplace  guifg=#F8F8F2 guibg=#8700AF ctermfg=255 ctermbg=91  gui=bold  " Purple
+    hi StModeCommand  guifg=#F8F8F2 guibg=#005F5F ctermfg=255 ctermbg=23  gui=bold  " Teal
+    
+    hi StInfo         guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
+    hi StPath         guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=none  " Blue
+    hi StGit          guifg=#F8F8F2 guibg=#5F8700 ctermfg=255 ctermbg=64  gui=none  " Green
+    hi StVenv         guifg=#F8F8F2 guibg=#5F5F87 ctermfg=255 ctermbg=60  gui=none  " Slate
+    hi StPosition     guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
+    
+    " Update statusline with dynamically coloured mode segment
+    let &statusline = ''
+    let &statusline .= '%{%StatuslineMode()%}'                     " Mode with dynamic colours
+    let &statusline .= '%#StInfo# %{&ff} %{StatusPaste()}%{StatusSpell()} '  " Format and states
+    let &statusline .= '%f%m%r%h%w '                              " Filename and flags (simplified)
+    let &statusline .= '%#StPath# %{getcwd()->fnamemodify(":~")} '  " CWD simplified
+    let &statusline .= '%#StGit#%{exists("*FugitiveHead")?(" ".FugitiveHead()):""}%*' " Git status (more reliable)
+    let &statusline .= '%='                                        " Switch sides
+    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" ".StatusVenv()." "):""}'  " Virtual env if exists
+    let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% ' " Position info (clearer labels)
 endfunction
 
-function! SetModeColors()
-    if mode() =~# '\v(n|no)'
-        hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
-    elseif mode() =~# '\v(i|R)'
-        hi User1 guifg=#FFFFFF guibg=#5E35B1 ctermfg=white ctermbg=magenta gui=bold
-    elseif mode() =~# '\v(v|V|\<C-v>)'
-        hi User1 guifg=#FFFFFF guibg=#C62828 ctermfg=white ctermbg=red gui=bold
+" Dynamic mode colours function - more reliable
+function! StatuslineMode()
+    let l:mode = mode()
+    
+    if l:mode =~# '\v(n|no)'
+        exe 'hi! link StatusLine StModeNormal'
+        return '  NORMAL '
+    elseif l:mode =~# '\v(i)'
+        exe 'hi! link StatusLine StModeInsert'
+        return '  INSERT '
+    elseif l:mode =~# '\v(v|V|\<C-v>)'
+        exe 'hi! link StatusLine StModeVisual'
+        return '  VISUAL '
+    elseif l:mode =~# '\v(R)'
+        exe 'hi! link StatusLine StModeReplace'
+        return '  REPLACE '
+    elseif l:mode =~# '\v(c)'
+        exe 'hi! link StatusLine StModeCommand'
+        return '  COMMAND '
+    else
+        exe 'hi! link StatusLine StModeNormal'
+        return '  ' . get(g:currentmode, l:mode, l:mode) . ' '
     endif
 endfunction
 
-augroup StatusLineColors
+" Initialize the statusline when vim starts and ensure it updates properly
+augroup StatusLineSetup
     autocmd!
-    " Set initial colors
-    autocmd VimEnter * call SetStatusLineColors()
+    autocmd VimEnter,ColorScheme * call SetupStatusline()
     
-    " Maintain colors after save
-    autocmd BufWritePre * let g:colors_before_save = g:currentmode[mode()]
-    autocmd BufWritePost * call SetStatusLineColors()
-    autocmd BufWritePost * call SetModeColors()
-    
-    " Mode changes
-    autocmd InsertEnter * hi User1 guifg=#FFFFFF guibg=#5E35B1 ctermfg=white ctermbg=magenta gui=bold
-    autocmd InsertLeave * hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
-    autocmd ModeChanged *:[vV\x16]* hi User1 guifg=#FFFFFF guibg=#C62828 ctermfg=white ctermbg=red gui=bold
-    autocmd ModeChanged [vV\x16]*:* hi User1 guifg=#FFFFFF guibg=#2E7D32 ctermfg=white ctermbg=green gui=none
+    " Refresh statusline on various events that might cause it to become stale
+    autocmd BufEnter,WinEnter,BufWritePost * redrawstatus
 augroup END
 
-set statusline=
-set statusline+=\ %1*%{g:currentmode[mode()]}%*                 " Mode
-set statusline+=\ %{&ff}\                                       " File format
-set statusline+=\ %2*%{HasPaste()}\ %{SpellStatus()}%*          " File states
-set statusline+=\ %2*%F%m%r%h\ %w%*                             " Filename and flags
-set statusline+=\ %3*CWD:%{GetRelCwd()}%*                     " CWD without label
-set statusline+=%4*%{fugitive#statusline()}%*                   " Git status
-set statusline+=%=                                              " Switch sides
-set statusline+=%5*%{VirtualEnv()}%*                            " Virtual env
-set statusline+=\ C:%c\ L:%l\ %p%%\ \                           " Position info
-
-" Initialize colours when vim starts
-call SetStatusLineColors()
+" Call setup immediately
+call SetupStatusline()
 """ Statusline Configuration
 
 """ piper TTS
@@ -870,7 +806,6 @@ require("nvim-treesitter.configs").setup {
         -- Languages you use
         "python",
         "clojure",
-        "lua",
         "typescript", -- for Deno/TypeScript
         "javascript", -- for Deno/JavaScript
 
@@ -896,6 +831,9 @@ require("nvim-treesitter.configs").setup {
     end,
     additional_vim_regex_highlighting = false,
   },
+  fold = {
+      enable = true 
+  }, 
 
   -- Optional but recommended
   indent = {
@@ -914,11 +852,16 @@ require("nvim-treesitter.configs").setup {
 }
 
 -- Code folding
-local vim = vim
-local opt = vim.opt
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 
-opt.foldmethod = "expr"
-opt.foldexpr = "nvim_treesitter#foldexpr()"
+-- Start with all folds open
+vim.opt.foldenable = true
+vim.opt.foldlevel = 99
+
+-- Customize fold appearance (optional)
+vim.opt.fillchars = "fold: "
+vim.opt.foldtext = [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').' ... '.trim(getline(v:foldend))]]
 EOF
 """ nvim-treesitter Configuration
 
