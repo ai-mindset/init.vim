@@ -268,13 +268,13 @@ function! SetupStatusline()
     
     " Update statusline with dynamically coloured mode segment
     let &statusline = ''
-    let &statusline .= '%{%StatuslineMode()%}'                     " Mode with dynamic colours
-    let &statusline .= '%#StInfo# %{&ff} %{StatusPaste()}%{StatusSpell()} '  " Format and states
-    let &statusline .= '%f%m%r%h%w '                              " Filename and flags (simplified)
-    let &statusline .= '%#StPath# %{getcwd()->fnamemodify(":~")} '  " CWD simplified
-    let &statusline .= '%#StGit#%{exists("*FugitiveHead")?(" ".FugitiveHead()):""}%*' " Git status (more reliable)
+    let &statusline .= 'mode:%{%StatuslineMode()%}'                     " Mode with dynamic colours
+    let &statusline .= '%#StInfo# fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()} '  " Format and states
+    let &statusline .= 'file:%f%m%r%h%w '                              " Filename and flags (simplified)
+    let &statusline .= '%#StPath# cwd:%{getcwd()->fnamemodify(":~")} ' " CWD simplified
+    let &statusline .= '%#StGit#%{exists("*FugitiveHead")?(" branch:".FugitiveHead()):""}%*' " Git status (more reliable)
     let &statusline .= '%='                                        " Switch sides
-    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" ".StatusVenv()." "):""}'  " Virtual env if exists
+    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'  " Virtual env if exists
     let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% ' " Position info (clearer labels)
 endfunction
 
