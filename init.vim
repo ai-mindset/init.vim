@@ -59,6 +59,7 @@ Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugi
 
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
+Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents  
 Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
 Plug 'lewis6991/gitsigns.nvim'                                " Git signs
@@ -212,21 +213,21 @@ set laststatus=3                     " Global statusline (Neovim only)
 set noshowmode                       " Don't show mode in command line
 
 " Mode dictionary with simpler names
-let g:currentmode={
+let g:currentmode = {
     \ 'n'  : 'NORMAL',
     \ 'no' : 'N·OP',
     \ 'v'  : 'VISUAL',
     \ 'V'  : 'V·LINE',
-    \ "\<C-V>" : 'V·BLOCK',  " Fixed control-V representation
+    \ '<C-V>': 'V·BLOCK',  " Fixed control-V representation
     \ 's'  : 'SELECT',
     \ 'S'  : 'S·LINE',
-    \ "\<C-S>" : 'S·BLOCK',  " Fixed control-S representation
+    \ '<C-S>': 'S·BLOCK',  " Fixed control-S representation
     \ 'i'  : 'INSERT',
     \ 'R'  : 'REPLACE',
     \ 'Rv' : 'V·REPLACE',
     \ 'c'  : 'COMMAND',
     \ 't'  : 'TERMINAL'
-    \}
+\}
 
 " More reliable mode function that doesn't depend on g:currentmode dictionary
 function! CurrentMode()
@@ -864,6 +865,11 @@ vim.opt.fillchars = "fold: "
 vim.opt.foldtext = [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').' ... '.trim(getline(v:foldend))]]
 EOF
 """ nvim-treesitter Configuration
+
+""" context Configuration
+let g:context_enabled = 1
+""" context Configuration
+
 
 """ Fuzzy finding Configuration 
 let g:fzf_vim = {}
