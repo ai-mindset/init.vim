@@ -87,7 +87,7 @@ let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
 
 """ ollama.nvim configuration
 lua << EOF
-opts = {
+local opts = {
   model = "qwen2.5-coder:14b-instruct-q4_K_M",
   url = "http://127.0.0.1:11434",
   serve = {
@@ -115,7 +115,7 @@ EOF
 
 """ journal.nvim
 lua << EOF
-require("journal").setup({
+local opts = {
     filetype = 'md',                    -- Filetype to use for new journal entries
     root = '~/journal',                 -- Root directory for journal entries
     date_format = '%d/%m/%Y',           -- Date format for `:Journal <date-modifier>`
@@ -153,7 +153,8 @@ require("journal").setup({
             },
         },
     }
-})
+}
+require("journal").setup(opts)
 EOF
 """ journal.nvim
 
@@ -397,7 +398,7 @@ autocmd BufEnter * nested :call tagbar#autoopen(0) " Auto-open tagbar
 
 " Autopairs Configuration
 lua << EOF
-require("nvim-autopairs").setup {}
+require("nvim-autopairs").setup({})
 EOF
 
 " Indent Blankline Configuration
@@ -548,6 +549,7 @@ local on_attach = function(client, bufnr)
   
   -- Rename keymaps (remove duplicate)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
+end
   
 -- Language specific Setup
 lspconfig.clojure_lsp.setup({
@@ -752,6 +754,7 @@ require("conform").setup({
     timeout_ms = 500,
     lsp_fallback = true,
   },
+})
 
   -- For format on key mapping (optional, if you want manual formatting)
   vim.keymap.set({ "n", "v" }, "==", function()
@@ -761,7 +764,6 @@ require("conform").setup({
       timeout_ms = 500,
     })
   end, { desc = "Format file or range" })
-})
 EOF
 """ Linting, formatting configuration 
 
