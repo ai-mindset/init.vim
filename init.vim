@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-Plug 'github/copilot.vim'                                     " GitHub Copilot
+"Plug 'github/copilot.vim'                                     " GitHub Copilot
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -472,6 +472,14 @@ function _G.dump_lsp_client()
     end
 end
 
+-- Add better UI for diagnostics
+local signs = { Error = "x", Warn = "!", Hint = ">", Info = "i" }
+
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
+
 vim.diagnostic.config({
     virtual_text = false,
     signs = true,
@@ -483,13 +491,6 @@ vim.diagnostic.config({
 
 -- Show diagnostics when pressing 'gh'
 vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
-
--- Signs for better visibility
-local signs = { Error = "✘", Warn = "▲", Hint = "⚑", Info = "🛈" }
-for type, icon in pairs(signs) do
-    local hl = "DiagnosticSign" .. type
-    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
 
 -- Proper file type detection
 vim.cmd([[
@@ -548,30 +549,6 @@ local on_attach = function(client, bufnr)
   -- Rename keymaps (remove duplicate)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
   
-  -- Advanced rename with editor mode
-  vim.keymap.set("n", "<leader>r", function()
-    local cmdId
-    cmdId = vim.api.nvim_create_autocmd({ "CmdlineEnter" }, {
-      callback = function()
-        local key = vim.api.nvim_replace_termcodes("<C-f>", true, false, true)
-        vim.api.nvim_feedkeys(key, "c", false)
-        vim.api.nvim_feedkeys("0", "n", false)
-        -- autocmd was triggered and so we can remove the ID and return true to delete the autocmd
-        cmdId = nil
-        return true
-      end,
-    })
-    vim.lsp.buf.rename()
-    -- if LSP couldn't trigger rename on the symbol, clear the autocmd
-    vim.defer_fn(function()
-      -- the cmdId is not nil only if the LSP failed to rename
-      if cmdId then
-        vim.api.nvim_del_autocmd(cmdId)
-      end
-    end, 500)
-  end)
-end
-
 -- Language specific Setup
 lspconfig.clojure_lsp.setup({
   on_attach = on_attach,
@@ -694,7 +671,7 @@ lspconfig.gopls.setup({
 EOF
 """ LSP Configuration
 
-""" Linting, formatting configuration 
+""" Diagnostics configuration 
 lua << EOF
 -- Configure diagnostic display
 vim.diagnostic.config({
@@ -712,21 +689,14 @@ vim.diagnostic.config({
   },
 })
 
--- Add better UI for diagnostics
-local signs = { Error = "x", Warn = "!", Hint = ">", Info = "i" }
-
-for type, icon in pairs(signs) do
-  local hl = "DiagnosticSign" .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
-
 -- Mapping to manually trigger signature help
 vim.keymap.set('n', '<leader>s', function()
   vim.lsp.buf.signature_help()
 end, { noremap = true, silent = true })
 EOF
+""" Diagnostics configuration 
 
-" Linting and Formatting Configuration
+""" Linting and Formatting Configuration
 lua << EOF
 -- Linting Configuration
 require('lint').linters_by_ft = {
@@ -856,8 +826,8 @@ require("nvim-treesitter.configs").setup {
 vim.opt.foldmethod = "expr"
 vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 
--- Start with all folds open
-vim.opt.foldenable = true
+-- Start with all folds closed 
+vim.opt.foldenable = false 
 vim.opt.foldlevel = 99
 
 -- Customize fold appearance (optional)
