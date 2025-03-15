@@ -67,6 +67,7 @@ Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 call plug#end()
@@ -219,10 +220,10 @@ let g:currentmode = {
     \ 'no' : 'N·OP',
     \ 'v'  : 'VISUAL',
     \ 'V'  : 'V·LINE',
-    \ '<C-V>': 'V·BLOCK',  " Fixed control-V representation
+    \ "\<C-V>" : 'V·BLOCK',  
     \ 's'  : 'SELECT',
     \ 'S'  : 'S·LINE',
-    \ '<C-S>': 'S·BLOCK',  " Fixed control-S representation
+    \ "\<C-S>" : 'S·BLOCK',  
     \ 'i'  : 'INSERT',
     \ 'R'  : 'REPLACE',
     \ 'Rv' : 'V·REPLACE',
@@ -245,16 +246,59 @@ function! StatusSpell()
     return &spell ? 'SPELL ' : ''
 endfunction
 
+" Cache virtual env name when it doesn't change often
+let s:last_venv = ''
+let s:venv_name = ''
+
 function! StatusVenv()
     if exists('$VIRTUAL_ENV')
-        let l:venv = fnamemodify($VIRTUAL_ENV, ':t')
-        return l:venv ==# '.venv' ? fnamemodify($VIRTUAL_ENV, ':h:t') : l:venv
+        let l:current_venv = $VIRTUAL_ENV
+        if s:last_venv != l:current_venv
+            let s:last_venv = l:current_venv
+            let l:venv = fnamemodify(l:current_venv, ':t')
+            let s:venv_name = l:venv ==# '.venv' ? fnamemodify(l:current_venv, ':h:t') : l:venv
+        endif
+        return s:venv_name
     endif
+    let s:last_venv = ''
     return ''
+endfunction
+
+" Display path in ~/project/file.ext format
+function! PWDPath()
+    let l:full_path = expand('%:p')
+    let l:home = $HOME
+    
+    " Replace home directory with tilde
+    if l:full_path =~# '^' . l:home
+        return '~' . l:full_path[len(l:home):]
+    endif
+    
+    " If not under home, return the full path
+    return l:full_path
+endfunction
+
+" More informative git status with branch and changes
+function! GitInfo()
+    if !exists('*FugitiveHead') || FugitiveHead() == ''
+        return ''
+    endif
+    
+    let l:branch = FugitiveHead()
+    " Optional: Add status indicators if you have fugitive
+    return ' branch:' . l:branch . ' '
 endfunction
 
 " Statusline colours - simplified to use a single setup function
 function! SetupStatusline()
+    " Define base colors
+    let l:fg = '#F8F8F2'
+    let l:bg_normal = '#005F87'
+    let l:bg_insert = '#AF5F00'
+
+    " Apply highlights using variables
+    exe 'hi StModeNormal guifg=' . l:fg . ' guibg=' . l:bg_normal . ' gui=bold'
+
     " Define highlight groups with accessible, harmonious colours
     hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold  " Blue
     hi StModeInsert   guifg=#F8F8F2 guibg=#AF5F00 ctermfg=255 ctermbg=130 gui=bold  " Amber
@@ -270,35 +314,35 @@ function! SetupStatusline()
     
     " Update statusline with dynamically coloured mode segment
     let &statusline = ''
-    let &statusline .= 'mode:%{%StatuslineMode()%}'                     " Mode with dynamic colours
-    let &statusline .= '%#StInfo# fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()} '  " Format and states
-    let &statusline .= 'file:%f%m%r%h%w '                              " Filename and flags (simplified)
-    let &statusline .= '%#StPath# cwd:%{getcwd()->fnamemodify(":~")} ' " CWD simplified
-    let &statusline .= '%#StGit#%{exists("*FugitiveHead")?(" branch:".FugitiveHead()):""}%*' " Git status (more reliable)
-    let &statusline .= '%='                                        " Switch sides
-    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'  " Virtual env if exists
-    let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% ' " Position info (clearer labels)
+    let &statusline .= 'mode:%{%StatuslineMode()%}'                                           " Mode with dynamic colours
+    let &statusline .= '%#StInfo# fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()} '         " Format and states
+    let &statusline .= '%#StPath# path:%{PWDPath()} ' " File path relative to home
+    let &statusline .= '%#StGit#%{GitInfo()}%*'                                               " Git status
+    let &statusline .= '%='                                                                   " Switch sides
+    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'         " Virtual env if exists
+    let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% '                                     " Position info (clearer labels)
 endfunction
 
 " Dynamic mode colours function - more reliable
 function! StatuslineMode()
     let l:mode = mode()
     
+    " Set highlight based on mode
     if l:mode =~# '\v(n|no)'
         exe 'hi! link StatusLine StModeNormal'
-        return '  NORMAL '
+        return 'NORMAL '
     elseif l:mode =~# '\v(i)'
         exe 'hi! link StatusLine StModeInsert'
-        return '  INSERT '
+        return 'INSERT '
     elseif l:mode =~# '\v(v|V|\<C-v>)'
         exe 'hi! link StatusLine StModeVisual'
-        return '  VISUAL '
+        return 'VISUAL '
     elseif l:mode =~# '\v(R)'
         exe 'hi! link StatusLine StModeReplace'
-        return '  REPLACE '
+        return 'REPLACE '
     elseif l:mode =~# '\v(c)'
         exe 'hi! link StatusLine StModeCommand'
-        return '  COMMAND '
+        return 'COMMAND '
     else
         exe 'hi! link StatusLine StModeNormal'
         return '  ' . get(g:currentmode, l:mode, l:mode) . ' '
@@ -310,8 +354,9 @@ augroup StatusLineSetup
     autocmd!
     autocmd VimEnter,ColorScheme * call SetupStatusline()
     
-    " Refresh statusline on various events that might cause it to become stale
-    autocmd BufEnter,WinEnter,BufWritePost * redrawstatus
+    " Only redraw on more specific events
+    autocmd BufEnter,WinEnter,FileType,BufWritePost,TextChanged,InsertLeave * 
+          \ if &laststatus > 0 | redrawstatus | endif
 augroup END
 
 " Call setup immediately
@@ -411,7 +456,7 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "lua_ls",                -- Lua
+    "elixirls",              -- Elixir
     "clojure_lsp",           -- Clojure
     "pyright",               -- Python
     "zls",                   -- Zig
@@ -718,10 +763,10 @@ require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
+    elixir = { "trivy" },
     clojure = { "cljfmt" },
     javascript = { "deno_fmt" },
     typescript = { "deno_fmt" },
-    lua = { "stylua" },
     json = { "biome" },
   },
 
