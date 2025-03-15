@@ -192,7 +192,7 @@ set background=dark                   " Set dark background
 set t_Co=256                          " 256 colours
 set termguicolors                     " True colour support
 
-colorscheme github_dark_tritanopia
+colorscheme github_dark_high_contrast
 
 
 """ Basic Settings
