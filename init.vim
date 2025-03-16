@@ -40,6 +40,9 @@ Plug 'ziglang/zig.vim'                                        " Zig development
 Plug 'jpalardy/vim-slime', { 'for': 'python' }                " Send to REPL 
 Plug 'hanschen/vim-ipython-cell', { 'for': 'python' }         " Vim <-> IPython
 
+" CSV viewer
+Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
+
 " Theme
 Plug 'Mofiqul/vscode.nvim'
 Plug 'projekt0n/github-nvim-theme'
@@ -1002,6 +1005,83 @@ nmap <F10> :IPythonCellInsertBelow<CR>a
 imap <F9> <C-o>:IPythonCellInsertAbove<CR>
 imap <F10> <C-o>:IPythonCellInsertBelow<CR>
 """ vim-ipython-cell
+
+" CSV viewer  
+lua << EOF
+lua require('csvview').setup()
+EOF
+
+""" Align sentences
+lua << EOF
+function _G.align_sentences(start_line, end_line)
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+  local all_parts = {}
+  local max_lengths = {}
+  
+  -- Step 1: Split each line and analyze lengths
+  for _, line in ipairs(lines) do
+    local parts = {}
+    local pos = 1
+    local part_start = 1
+    
+    -- Split by period followed by whitespace
+    while true do
+      local period_pos = line:find('%.[%s]+', pos)
+      if not period_pos then break end
+      
+      local part = line:sub(part_start, period_pos)
+      table.insert(parts, part)
+      
+      pos = period_pos + 2
+      part_start = pos
+    end
+    
+    -- Add the final part if it exists
+    if part_start <= #line then
+      table.insert(parts, line:sub(part_start))
+    end
+    
+    table.insert(all_parts, parts)
+    
+    -- Track maximum length for each column
+    for i, part in ipairs(parts) do
+      max_lengths[i] = math.max(max_lengths[i] or 0, vim.fn.strwidth(part) + 1)
+    end
+  end
+  
+  -- Step 2: Format each line with proper padding
+  local result_lines = {}
+  for _, parts in ipairs(all_parts) do
+    local formatted = ""
+    
+    for i, part in ipairs(parts) do
+      -- Add period if it doesn't end with one
+      if not part:match('%.%s*$') then
+        part = part .. '.'
+      end
+      
+      -- Add appropriate padding except for the last column
+      if i < #parts then
+        local padding = max_lengths[i] - vim.fn.strwidth(part)
+        formatted = formatted .. part .. string.rep(' ', padding + 1)
+      else
+        formatted = formatted .. part
+      end
+    end
+    
+    table.insert(result_lines, formatted)
+  end
+  
+  -- Step 3: Replace the original lines
+  vim.api.nvim_buf_set_lines(0, start_line - 1, end_line, false, result_lines)
+end
+
+-- Create a command to call the Lua function
+vim.cmd([[
+  command! -range AlignSentences lua _G.align_sentences(<line1>, <line2>)
+]])
+EOF
+""" Align sentences 
 
 """ which-key configuration
 lua << EOF
