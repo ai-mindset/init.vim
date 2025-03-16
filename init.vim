@@ -70,6 +70,7 @@ Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
+Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
@@ -1001,3 +1002,175 @@ nmap <F10> :IPythonCellInsertBelow<CR>a
 imap <F9> <C-o>:IPythonCellInsertAbove<CR>
 imap <F10> <C-o>:IPythonCellInsertBelow<CR>
 """ vim-ipython-cell
+
+""" which-key configuration
+lua << EOF
+-- Complete Which-Key Configuration
+local wk = require("which-key")
+
+-- Basic setup (keeping your existing configuration)
+wk.setup({
+  plugins = {
+    marks = true,
+    registers = true,
+    spelling = {
+      enabled = false,
+    },
+    presets = {
+      operators = true,
+      motions = true,
+      text_objects = true,
+      windows = true,
+      nav = true,
+      z = true,
+      g = true,
+    },
+  },
+  key_labels = {
+    ["<space>"] = "SPC",
+    ["<cr>"] = "RET",
+    ["<tab>"] = "TAB",
+  },
+  window = {
+    border = "single",
+    padding = { 2, 2, 2, 2 },
+  },
+  layout = {
+    height = { min = 4, max = 25 },
+    width = { min = 20, max = 50 },
+    spacing = 3,
+    align = "center",
+  },
+  triggers_nowait = {
+    -- Immediate trigger popups
+    "<C-x>",
+  },
+})
+
+-- Normal mode leader mappings
+wk.register({
+  -- Existing spell mappings
+  s = {
+    name = "Spelling",
+    s = { "<cmd>setlocal spell!<cr>", "Toggle spell checking" },
+    n = { "]s", "Next misspelled word" },
+    p = { "[s", "Previous misspelled word" },
+    a = { "zg", "Add word to dictionary" },
+    ["?"] = { "z=", "Suggest corrections" },
+  },
+  
+  -- Piper TTS mappings
+  t = {
+    name = "Text-to-Speech",
+    w = { "<cmd>call SpeakWord()<CR>", "Speak Word" },
+    c = { "<cmd>call SpeakCurrentLine()<CR>", "Speak Current Line" },
+    p = { "<cmd>call SpeakCurrentParagraph()<CR>", "Speak Paragraph" },
+    f = { "<cmd>call SpeakCurrentFile()<CR>", "Speak File" },
+    v = { "<cmd>call SpeakVisualSelection()<CR>", "Speak Selection" },
+  },
+
+  -- Formatting mapping
+  ["=="] = { "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", "Format file or selection" },
+
+  -- FZF mappings
+  f = { "<cmd>Files<CR>", "Find Files" },
+  k = { "<Plug>(fzf-maps-n)", "Show key mappings" },
+
+  -- Buffer operations
+  ["<cr>"] = { "<cmd>noh<cr>", "Clear search highlight" },
+  p = {
+    name = "Paste",
+    p = { "<cmd>setlocal paste!<cr>", "Toggle paste mode" }
+  },
+  
+  -- LSP actions
+  c = {
+    name = "Code",
+    a = { "<cmd>lua vim.lsp.buf.code_action()<CR>", "Code Action" },
+  },
+  r = {
+    name = "Rename/Run",
+    n = { "<cmd>lua vim.lsp.buf.rename()<CR>", "Rename Symbol" },
+  },
+  
+  -- IPython cell mappings
+  s = { "<cmd>SlimeSend1 ipython --matplotlib<CR>", "Start IPython" },
+  r = { "<cmd>IPythonCellRun<CR>", "Run Script" },
+  R = { "<cmd>IPythonCellRunTime<CR>", "Run Script (timed)" },
+  c = { "<cmd>IPythonCellExecuteCell<CR>", "Execute Cell" },
+  C = { "<cmd>IPythonCellExecuteCellJump<CR>", "Execute Cell & Jump" },
+  l = { "<cmd>IPythonCellClear<CR>", "Clear IPython Screen" },
+  x = { "<cmd>IPythonCellClose<CR>", "Close Matplotlib Windows" },
+  h = { "<Plug>SlimeLineSend", "Send Line to IPython" },
+  p = { "<cmd>IPythonCellPrevCommand<CR>", "Run Previous Command" },
+  Q = { "<cmd>IPythonCellRestart<CR>", "Restart IPython" },
+  d = { "<cmd>SlimeSend1 %debug<CR>", "Start Debug Mode" },
+  q = { "<cmd>SlimeSend1 exit<CR>", "Exit Debug/IPython" },
+}, { prefix = "<leader>" })
+
+-- Space leader mappings (separate from main leader)
+wk.register({
+  t = {
+    name = "Text-to-Speech",
+    w = { "<cmd>call SpeakWord()<CR>", "Speak Word" },
+    c = { "<cmd>call SpeakCurrentLine()<CR>", "Speak Current Line" },
+    p = { "<cmd>call SpeakCurrentParagraph()<CR>", "Speak Paragraph" },
+    f = { "<cmd>call SpeakCurrentFile()<CR>", "Speak File" },
+    v = { "<cmd>call SpeakVisualSelection()<CR>", "Speak Selection" },
+  },
+}, { prefix = "<space>" })
+
+-- g mappings (goto)
+wk.register({
+  D = { "<cmd>lua vim.lsp.buf.declaration()<CR>", "Go to Declaration" },
+  d = { "<cmd>lua vim.lsp.buf.definition()<CR>", "Go to Definition" },
+  i = { "<cmd>lua vim.lsp.buf.implementation()<CR>", "Go to Implementation" },
+  r = { "<cmd>lua vim.lsp.buf.references()<CR>", "Find References" },
+  h = { "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", "Show Diagnostics" },
+  n = { "gnn", "Initialize Treesitter Selection" },
+}, { prefix = "g" })
+
+-- [ and ] mappings
+wk.register({
+  c = { "<cmd>IPythonCellPrevCell<CR>", "Previous Cell" },
+}, { prefix = "[" })
+
+wk.register({
+  c = { "<cmd>IPythonCellNextCell<CR>", "Next Cell" },
+}, { prefix = "]" })
+
+-- Function key mappings
+wk.register({
+  ["<F8>"] = { "<cmd>TagbarToggle<CR>", "Toggle Tagbar" },
+  ["<F9>"] = { "<cmd>IPythonCellInsertAbove<CR>a", "Insert Cell Above" },
+  ["<F10>"] = { "<cmd>IPythonCellInsertBelow<CR>a", "Insert Cell Below" },
+})
+
+-- Insert mode mappings
+wk.register({
+  ["<C-k>"] = { "<cmd>lua vim.lsp.buf.signature_help()<CR>", "Show Signature Help" },
+  ["<C-x>"] = {
+    name = "Completions",
+    ["<C-k>"] = { "<Plug>(fzf-complete-word)", "Complete Word" },
+    ["<C-f>"] = { "<Plug>(fzf-complete-path)", "Complete Path" },
+    ["<C-l>"] = { "<Plug>(fzf-complete-line)", "Complete Line" },
+    ["<C-o>"] = { "Ollama AI completion" },
+  },
+  ["<F9>"] = { "<C-o>:IPythonCellInsertAbove<CR>", "Insert Cell Above" },
+  ["<F10>"] = { "<C-o>:IPythonCellInsertBelow<CR>", "Insert Cell Below" },
+}, { mode = "i" })
+
+-- Visual mode mappings
+wk.register({
+  ["<leader>"] = {
+    h = { "<Plug>SlimeRegionSend", "Send Selection to IPython" },
+  },
+  k = { "<plug>(fzf-maps-x)", "Show key mappings" },
+}, { mode = "v" })
+
+-- Operator pending mode mappings
+wk.register({
+  k = { "<plug>(fzf-maps-o)", "Show key mappings" },
+}, { mode = "o" })
+EOF
+""" which-key configuration
