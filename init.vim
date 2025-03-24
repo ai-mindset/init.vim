@@ -53,19 +53,21 @@ Plug 'nvim-tree/nvim-web-devicons'                            " optional for ico
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }           " optional for the 'fzf' command
 Plug 'junegunn/fzf.vim'                                       " fzf vim bindings
 
-" Tim Pope's Essential Plugins
-Plug 'tpope/vim-fugitive'                                     " Git integration
+" Essential Plugins
 Plug 'tpope/vim-surround'                                     " Plugin for surrounding text
 Plug 'tpope/vim-commentary'                                   " Commenting plugin 
 Plug 'tpope/vim-repeat'                                       " Repeat plugin
 Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugin
+
+" Git
+Plug 'tpope/vim-fugitive'                                     " Git integration
+Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
 Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents  
 Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
-Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
@@ -1006,10 +1008,11 @@ imap <F9> <C-o>:IPythonCellInsertAbove<CR>
 imap <F10> <C-o>:IPythonCellInsertBelow<CR>
 """ vim-ipython-cell
 
-" CSV viewer  
+""" CSV viewer  
 lua << EOF
-lua require('csvview').setup()
+require('csvview').setup()
 EOF
+""" CSV viewer  
 
 """ Align sentences
 lua << EOF
@@ -1083,9 +1086,75 @@ vim.cmd([[
 EOF
 """ Align sentences 
 
+""" Git 
+lua << EOF
+require('gitsigns').setup({
+  current_line_blame = true,
+  signs = {
+    add = { text = '│' },
+    change = { text = '│' },
+    delete = { text = '_' },
+    topdelete = { text = '‾' },
+    changedelete = { text = '~' },
+    untracked = { text = '┆' },
+  },
+  on_attach = function(bufnr)
+    local gs = package.loaded.gitsigns
+    
+    -- Navigation between hunks
+    vim.keymap.set('n', ']c', function()
+      if vim.wo.diff then return ']c' end
+      vim.schedule(function() gs.next_hunk() end)
+      return '<Ignore>'
+    end, {expr=true, buffer=bufnr})
+    
+    vim.keymap.set('n', '[c', function()
+      if vim.wo.diff then return '[c' end
+      vim.schedule(function() gs.prev_hunk() end)
+      return '<Ignore>'
+    end, {expr=true, buffer=bufnr})
+    
+    -- Actions
+    vim.keymap.set('n', '<leader>hs', gs.stage_hunk)
+    vim.keymap.set('n', '<leader>hr', gs.reset_hunk)
+    vim.keymap.set('n', '<leader>hp', gs.preview_hunk)
+  end
+})
+
+require('diffview').setup({
+  enhanced_diff_hl = true,
+  use_icons = true,
+  view = {
+    default = {
+      layout = "diff2_horizontal",
+    },
+    merge_tool = {
+      layout = "diff3_horizontal",
+      disable_diagnostics = true,
+    },
+  },
+  keymaps = {
+    view = {
+      ["<tab>"] = function() vim.cmd("DiffviewToggleFiles") end,
+      ["co"] = "<Cmd>DiffviewOpen<CR>",            -- Open diffview
+      ["cc"] = "<Cmd>DiffviewClose<CR>",           -- Close diffview
+    },
+    file_panel = {
+      ["co"] = "open",                             -- Open
+      ["cc"] = "close",                            -- Close
+    },
+    file_history_panel = {
+      ["co"] = "open",                             -- Open
+      ["cc"] = "close",                            -- Close
+    },
+  },
+})
+EOF
+""" Git 
+
 """ which-key configuration
 lua << EOF
--- Which-Key Configuration with new spec format
+-- Which-Key Configuration
 local wk = require("which-key")
 
 -- Basic setup
@@ -1132,92 +1201,170 @@ wk.setup({
   }
 })
 
--- Register ALL mappings using the new spec format
+-- Define conflict resolution functions in global scope
+_G.conflict = {}
+
+-- Open conflicts in diffview
+_G.conflict.open_conflicts = function()
+  if vim.fn.search('<<<<<<< ', 'n') > 0 then
+    vim.cmd('DiffviewOpen --merge')
+  else
+    vim.notify('No merge conflicts found', vim.log.levels.INFO)
+  end
+end
+
+-- Accept current changes (ours)
+_G.conflict.accept_current = function()
+  if vim.fn.search('<<<<<<< ', 'n') > 0 then
+    vim.cmd('diffget //2')
+    vim.cmd('diffupdate')
+  end
+end
+
+-- Accept incoming changes (theirs)
+_G.conflict.accept_incoming = function()
+  if vim.fn.search('<<<<<<< ', 'n') > 0 then
+    vim.cmd('diffget //3')
+    vim.cmd('diffupdate')
+  end
+end
+
+-- Accept both changes
+_G.conflict.accept_both = function()
+  if vim.fn.search('<<<<<<< ', 'n') > 0 then
+    local line = vim.fn.line('.')
+    local start = vim.fn.search('<<<<<<< ', 'bcn')
+    local middle = vim.fn.search('=======', 'cn')
+    local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+    
+    if start > 0 and middle > 0 and end_marker > 0 then
+      -- Get both parts
+      local ours = vim.fn.getline(start + 1, middle - 1)
+      local theirs = vim.fn.getline(middle + 1, end_marker - 1)
+      
+      -- Delete the conflict markers and insert both changes
+      vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+      vim.fn.append(start - 1, theirs)
+      vim.fn.append(start - 1, ours)
+    end
+  end
+end
+
+-- Jump to previous conflict
+_G.conflict.prev = function()
+  vim.fn.search('<<<<<<< ', 'bW')
+end
+
+-- Jump to next conflict
+_G.conflict.next = function()
+  vim.fn.search('<<<<<<< ', 'W')
+end
+
+-- CORRECTED: The proper way to use the new which-key format
+-- Normal mode mappings
 wk.register({
-  -- Leader mappings (normal mode)
-  { "<leader><cr>", "<cmd>noh<cr>", desc = "Clear search highlight" },
-  { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
+  ["<leader><cr>"] = { "<cmd>noh<cr>", "Clear search highlight" },
+  ["<leader>pp"] = { "<cmd>setlocal paste!<cr>", "Toggle paste mode" },
   
   -- Spelling
-  { "<leader>ss", "<cmd>setlocal spell!<cr>", desc = "Toggle spell checking" },
-  { "<leader>sn", "]s", desc = "Next misspelled word" },
-  { "<leader>sp", "[s", desc = "Previous misspelled word" },
-  { "<leader>sa", "zg", desc = "Add word to dictionary" },
-  { "<leader>s?", "z=", desc = "Suggest corrections" },
+  ["<leader>ss"] = { "<cmd>setlocal spell!<cr>", "Toggle spell checking" },
+  ["<leader>sn"] = { "]s", "Next misspelled word" },
+  ["<leader>sp"] = { "[s", "Previous misspelled word" },
+  ["<leader>sa"] = { "zg", "Add word to dictionary" },
+  ["<leader>s?"] = { "z=", "Suggest corrections" },
   
   -- FZF
-  { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
-  { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" },
+  ["<leader>f"] = { "<cmd>Files<CR>", "Find Files" },
+  ["<leader>k"] = { "<Plug>(fzf-maps-n)", "Show key mappings" },
   
   -- LSP actions
-  { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
-  { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
+  ["<leader>ca"] = { "<cmd>lua vim.lsp.buf.code_action()<CR>", "Code Action" },
+  ["<leader>rn"] = { "<cmd>lua vim.lsp.buf.rename()<CR>", "Rename Symbol" },
   
   -- IPython cell mappings
-  { "<leader>s", "<cmd>SlimeSend1 ipython --matplotlib<CR>", desc = "Start IPython" },
-  { "<leader>r", "<cmd>IPythonCellRun<CR>", desc = "Run Script" },
-  { "<leader>R", "<cmd>IPythonCellRunTime<CR>", desc = "Run Script (timed)" },
-  { "<leader>c", "<cmd>IPythonCellExecuteCell<CR>", desc = "Execute Cell" },
-  { "<leader>C", "<cmd>IPythonCellExecuteCellJump<CR>", desc = "Execute Cell & Jump" },
-  { "<leader>l", "<cmd>IPythonCellClear<CR>", desc = "Clear IPython Screen" },
-  { "<leader>x", "<cmd>IPythonCellClose<CR>", desc = "Close Matplotlib Windows" },
-  { "<leader>h", "<Plug>SlimeLineSend", desc = "Send Line to IPython" },
-  { "<leader>p", "<cmd>IPythonCellPrevCommand<CR>", desc = "Run Previous Command" },
-  { "<leader>Q", "<cmd>IPythonCellRestart<CR>", desc = "Restart IPython" },
-  { "<leader>d", "<cmd>SlimeSend1 %debug<CR>", desc = "Start Debug Mode" },
-  { "<leader>q", "<cmd>SlimeSend1 exit<CR>", desc = "Exit Debug/IPython" },
+  ["<leader>s"] = { "<cmd>SlimeSend1 ipython --matplotlib<CR>", "Start IPython" },
+  ["<leader>r"] = { "<cmd>IPythonCellRun<CR>", "Run Script" },
+  ["<leader>R"] = { "<cmd>IPythonCellRunTime<CR>", "Run Script (timed)" },
+  ["<leader>c"] = { "<cmd>IPythonCellExecuteCell<CR>", "Execute Cell" },
+  ["<leader>C"] = { "<cmd>IPythonCellExecuteCellJump<CR>", "Execute Cell & Jump" },
+  ["<leader>l"] = { "<cmd>IPythonCellClear<CR>", "Clear IPython Screen" },
+  ["<leader>x"] = { "<cmd>IPythonCellClose<CR>", "Close Matplotlib Windows" },
+  ["<leader>h"] = { "<Plug>SlimeLineSend", "Send Line to IPython" },
+  ["<leader>p"] = { "<cmd>IPythonCellPrevCommand<CR>", "Run Previous Command" },
+  ["<leader>Q"] = { "<cmd>IPythonCellRestart<CR>", "Restart IPython" },
+  ["<leader>d"] = { "<cmd>SlimeSend1 %debug<CR>", "Start Debug Mode" },
+  ["<leader>q"] = { "<cmd>SlimeSend1 exit<CR>", "Exit Debug/IPython" },
   
   -- Format
-  { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
+  ["<leader>=="] = { "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", "Format file or selection" },
   
   -- Text-to-Speech group
-  { "<leader>t", group = "Text-to-Speech" },
-  { "<leader>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
-  { "<leader>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
-  { "<leader>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
-  { "<leader>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
-  { "<leader>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
+  ["<leader>t"] = { name = "Text-to-Speech" },
+  ["<leader>tw"] = { "<cmd>call SpeakWord()<CR>", "Speak Word" },
+  ["<leader>tc"] = { "<cmd>call SpeakCurrentLine()<CR>", "Speak Current Line" },
+  ["<leader>tp"] = { "<cmd>call SpeakCurrentParagraph()<CR>", "Speak Paragraph" },
+  ["<leader>tf"] = { "<cmd>call SpeakCurrentFile()<CR>", "Speak File" },
+  ["<leader>tv"] = { "<cmd>call SpeakVisualSelection()<CR>", "Speak Selection" },
   
-  -- Space prefix mappings - Only defined once to avoid duplicates
-  { "<space>t", group = "Text-to-Speech" },
-  { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
-  { "<space>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
-  { "<space>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
-  { "<space>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
-  { "<space>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
+  -- Git operations with conflict resolution
+  ["<leader>g"] = { name = "Git" },
+  ["<leader>gd"] = { "<cmd>DiffviewOpen<CR>", "Diff View" },
+  ["<leader>gm"] = { "<cmd>DiffviewOpen --merge<CR>", "Merge Conflicts View" },
+  ["<leader>gc"] = { "<cmd>lua _G.conflict.open_conflicts()<CR>", "Open Conflicts" },
+  ["<leader>gx"] = { "<cmd>DiffviewClose<CR>", "Close Diff View" },
+  ["<leader>go"] = { "<cmd>lua _G.conflict.accept_current()<CR>", "Accept Current Changes" },
+  ["<leader>gt"] = { "<cmd>lua _G.conflict.accept_incoming()<CR>", "Accept Incoming Changes" },
+  ["<leader>gb"] = { "<cmd>lua _G.conflict.accept_both()<CR>", "Accept Both Changes" },
+  
+  -- Space prefix mappings
+  ["<space>t"] = { name = "Text-to-Speech" },
+  ["<space>tw"] = { "<cmd>call SpeakWord()<CR>", "Speak Word" },
+  ["<space>tc"] = { "<cmd>call SpeakCurrentLine()<CR>", "Speak Current Line" },
+  ["<space>tp"] = { "<cmd>call SpeakCurrentParagraph()<CR>", "Speak Paragraph" },
+  ["<space>tf"] = { "<cmd>call SpeakCurrentFile()<CR>", "Speak File" },
+  ["<space>tv"] = { "<cmd>call SpeakVisualSelection()<CR>", "Speak Selection" },
   
   -- g prefix mappings
-  { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
-  { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
-  { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
-  { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
-  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", desc = "Show Diagnostics" },
-  { "gnn", desc = "Initialize Treesitter Selection" },
+  ["gD"] = { "<cmd>lua vim.lsp.buf.declaration()<CR>", "Go to Declaration" },
+  ["gd"] = { "<cmd>lua vim.lsp.buf.definition()<CR>", "Go to Definition" },
+  ["gi"] = { "<cmd>lua vim.lsp.buf.implementation()<CR>", "Go to Implementation" },
+  ["gr"] = { "<cmd>lua vim.lsp.buf.references()<CR>", "Find References" },
+  ["gh"] = { "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", "Show Diagnostics" },
+  ["gnn"] = { "Initialize Treesitter Selection" },
   
   -- [ and ] mappings
-  { "[c", "<cmd>IPythonCellPrevCell<CR>", desc = "Previous Cell" },
-  { "]c", "<cmd>IPythonCellNextCell<CR>", desc = "Next Cell" },
+  ["[c"] = { "<cmd>IPythonCellPrevCell<CR>", "Previous Cell" },
+  ["]c"] = { "<cmd>IPythonCellNextCell<CR>", "Next Cell" },
+  ["[g"] = { "<cmd>lua _G.conflict.prev()<CR>", "Previous Conflict" },
+  ["]g"] = { "<cmd>lua _G.conflict.next()<CR>", "Next Conflict" },
   
   -- Function key mappings
-  { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
-  { "<F9>", "<cmd>IPythonCellInsertAbove<CR>a", desc = "Insert Cell Above" },
-  { "<F10>", "<cmd>IPythonCellInsertBelow<CR>a", desc = "Insert Cell Below" },
-  
-  -- Insert mode mappings (grouped with mode)
-  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help", mode = "i" },
-  { "<C-x>", group = "Completions", mode = "i" },
-  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word", mode = "i" },
-  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path", mode = "i" },
-  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line", mode = "i" },
-  { "<C-x><C-o>", desc = "Ollama AI completion", mode = "i" },
-  { "<F9>", "<C-o>:IPythonCellInsertAbove<CR>", desc = "Insert Cell Above", mode = "i" },
-  { "<F10>", "<C-o>:IPythonCellInsertBelow<CR>", desc = "Insert Cell Below", mode = "i" },
-  
-  -- Visual mode mappings
-  { "<leader>h", "<Plug>SlimeRegionSend", desc = "Send Selection to IPython", mode = "v" },
-  { "k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
-  
-  -- Operator pending mode mappings
-  { "k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
-})EOF
+  ["<F8>"] = { "<cmd>TagbarToggle<CR>", "Toggle Tagbar" },
+  ["<F9>"] = { "<cmd>IPythonCellInsertAbove<CR>a", "Insert Cell Above" },
+  ["<F10>"] = { "<cmd>IPythonCellInsertBelow<CR>a", "Insert Cell Below" },
+}, { mode = "n" })  -- Explicitly set normal mode
+
+-- Insert mode mappings
+wk.register({
+  ["<C-k>"] = { "<cmd>lua vim.lsp.buf.signature_help()<CR>", "Show Signature Help" },
+  ["<C-x>"] = { name = "Completions" },
+  ["<C-x><C-k>"] = { "<Plug>(fzf-complete-word)", "Complete Word" },
+  ["<C-x><C-f>"] = { "<Plug>(fzf-complete-path)", "Complete Path" },
+  ["<C-x><C-l>"] = { "<Plug>(fzf-complete-line)", "Complete Line" },
+  ["<C-x><C-o>"] = { "Ollama AI completion" },
+  ["<F9>"] = { "<C-o>:IPythonCellInsertAbove<CR>", "Insert Cell Above" },
+  ["<F10>"] = { "<C-o>:IPythonCellInsertBelow<CR>", "Insert Cell Below" },
+}, { mode = "i" })  -- Insert mode
+
+-- Visual mode mappings
+wk.register({
+  ["<leader>h"] = { "<Plug>SlimeRegionSend", "Send Selection to IPython" },
+  ["k"] = { "<plug>(fzf-maps-x)", "Show key mappings" },
+}, { mode = "v" })  -- Visual mode
+
+-- Operator pending mode mappings
+wk.register({
+  ["k"] = { "<plug>(fzf-maps-o)", "Show key mappings" },
+}, { mode = "o" })  -- Operator-pending mode
+EOF
 """ which-key configuration
