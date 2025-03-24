@@ -62,6 +62,7 @@ Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugi
 " Git
 Plug 'tpope/vim-fugitive'                                     " Git integration
 Plug 'lewis6991/gitsigns.nvim'                                " Git signs
+Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev 
 
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
@@ -1157,7 +1158,7 @@ lua << EOF
 -- Which-Key Configuration
 local wk = require("which-key")
 
--- Basic setup
+-- Basic setup with corrected delay configuration
 wk.setup({
   plugins = {
     marks = true,
@@ -1193,12 +1194,8 @@ wk.setup({
     align = "center",
   },
 
-  delay = {
-    -- Set delay to 0 for nowait triggers
-    nowait = {
-      "<C-x>",
-    }
-  }
+  -- FIX: Simple delay setting
+  delay = 100
 })
 
 -- Define conflict resolution functions in global scope
@@ -1213,54 +1210,139 @@ _G.conflict.open_conflicts = function()
   end
 end
 
--- Accept current changes (ours)
+-- More reliable method to handle conflict resolution
 _G.conflict.accept_current = function()
-  if vim.fn.search('<<<<<<< ', 'n') > 0 then
-    vim.cmd('diffget //2')
-    vim.cmd('diffupdate')
+  -- Find conflict markers
+  local pos = vim.fn.getpos(".")
+  local start = vim.fn.search('<<<<<<< ', 'bcn')
+  
+  if start <= 0 then
+    start = vim.fn.search('<<<<<<< ', 'cn')
+    if start <= 0 then
+      vim.notify('No conflict marker found', vim.log.levels.ERROR)
+      return
+    end
+  end
+  
+  local middle = vim.fn.search('=======', 'cn')
+  local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  
+  if start > 0 and middle > 0 and end_marker > 0 then
+    -- Keep the current changes (lines between <<<<<<< and =======)
+    local ours = vim.fn.getline(start + 1, middle - 1)
+    
+    -- Delete the entire conflict block
+    vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    
+    -- Insert our changes
+    if #ours > 0 then
+      vim.fn.append(start - 1, ours)
+    end
+    
+    -- Restore cursor position as best we can
+    vim.fn.setpos(".", pos)
+    vim.notify('Kept current changes', vim.log.levels.INFO)
+  else
+    vim.notify('Conflict markers not found in expected format', vim.log.levels.ERROR)
   end
 end
 
--- Accept incoming changes (theirs)
+-- Accept incoming changes
 _G.conflict.accept_incoming = function()
-  if vim.fn.search('<<<<<<< ', 'n') > 0 then
-    vim.cmd('diffget //3')
-    vim.cmd('diffupdate')
+  -- Find conflict markers
+  local pos = vim.fn.getpos(".")
+  local start = vim.fn.search('<<<<<<< ', 'bcn')
+  
+  if start <= 0 then
+    start = vim.fn.search('<<<<<<< ', 'cn')
+    if start <= 0 then
+      vim.notify('No conflict marker found', vim.log.levels.ERROR)
+      return
+    end
+  end
+  
+  local middle = vim.fn.search('=======', 'cn')
+  local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  
+  if start > 0 and middle > 0 and end_marker > 0 then
+    -- Keep the incoming changes (lines between ======= and >>>>>>>)
+    local theirs = vim.fn.getline(middle + 1, end_marker - 1)
+    
+    -- Delete the entire conflict block
+    vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    
+    -- Insert their changes
+    if #theirs > 0 then
+      vim.fn.append(start - 1, theirs)
+    end
+    
+    -- Restore cursor position as best we can
+    vim.fn.setpos(".", pos)
+    vim.notify('Kept incoming changes', vim.log.levels.INFO)
+  else
+    vim.notify('Conflict markers not found in expected format', vim.log.levels.ERROR)
   end
 end
 
 -- Accept both changes
 _G.conflict.accept_both = function()
-  if vim.fn.search('<<<<<<< ', 'n') > 0 then
-    local line = vim.fn.line('.')
-    local start = vim.fn.search('<<<<<<< ', 'bcn')
-    local middle = vim.fn.search('=======', 'cn')
-    local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  -- Find conflict markers
+  local pos = vim.fn.getpos(".")
+  local start = vim.fn.search('<<<<<<< ', 'bcn')
+  
+  if start <= 0 then
+    start = vim.fn.search('<<<<<<< ', 'cn')
+    if start <= 0 then
+      vim.notify('No conflict marker found', vim.log.levels.ERROR)
+      return
+    end
+  end
+  
+  local middle = vim.fn.search('=======', 'cn')
+  local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  
+  if start > 0 and middle > 0 and end_marker > 0 then
+    -- Get both parts
+    local ours = vim.fn.getline(start + 1, middle - 1)
+    local theirs = vim.fn.getline(middle + 1, end_marker - 1)
     
-    if start > 0 and middle > 0 and end_marker > 0 then
-      -- Get both parts
-      local ours = vim.fn.getline(start + 1, middle - 1)
-      local theirs = vim.fn.getline(middle + 1, end_marker - 1)
-      
-      -- Delete the conflict markers and insert both changes
-      vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    -- Delete the conflict markers and insert both changes
+    vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    
+    -- Add both changes
+    if #theirs > 0 then
       vim.fn.append(start - 1, theirs)
+    end
+    if #ours > 0 then
       vim.fn.append(start - 1, ours)
     end
+    
+    -- Restore cursor position as best we can
+    vim.fn.setpos(".", pos)
+    vim.notify('Kept both changes', vim.log.levels.INFO)
+  else
+    vim.notify('Conflict markers not found in expected format', vim.log.levels.ERROR)
   end
 end
 
 -- Jump to previous conflict
 _G.conflict.prev = function()
-  vim.fn.search('<<<<<<< ', 'bW')
+  local result = vim.fn.search('<<<<<<< ', 'bW')
+  if result == 0 then
+    vim.notify('No previous conflict found', vim.log.levels.INFO)
+  end
+  return result
 end
 
 -- Jump to next conflict
 _G.conflict.next = function()
-  vim.fn.search('<<<<<<< ', 'W')
+  local result = vim.fn.search('<<<<<<< ', 'W')
+  if result == 0 then
+    vim.notify('No next conflict found', vim.log.levels.INFO)
+  end
+  return result
 end
 
--- CORRECTED: The proper way to use the new which-key format
 -- Normal mode mappings
 wk.register({
   ["<leader><cr>"] = { "<cmd>noh<cr>", "Clear search highlight" },
