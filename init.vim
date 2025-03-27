@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-Plug 'github/copilot.vim'                                     " GitHub Copilot
+"Plug 'github/copilot.vim'                                     " GitHub Copilot
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -30,8 +30,22 @@ Plug 'PaterJason/cmp-conjure'                                 " Clojure completi
 Plug 'guns/vim-sexp'                                          " Clojure S-Expression 
 Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expression Mappings 
 
+" Go Development 
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
+
+" Zig development
+Plug 'ziglang/zig.vim'                                        " Zig development
+
+" Vim <-> IPython
+Plug 'jpalardy/vim-slime', { 'for': 'python' }                " Send to REPL 
+Plug 'hanschen/vim-ipython-cell', { 'for': 'python' }         " Vim <-> IPython
+
+" CSV viewer
+Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
+
 " Theme
 Plug 'Mofiqul/vscode.nvim'
+Plug 'projekt0n/github-nvim-theme'
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
@@ -39,43 +53,50 @@ Plug 'nvim-tree/nvim-web-devicons'                            " optional for ico
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }           " optional for the 'fzf' command
 Plug 'junegunn/fzf.vim'                                       " fzf vim bindings
 
-" Tim Pope's Essential Plugins
-Plug 'tpope/vim-fugitive'                                     " Git integration
+" Essential Plugins
 Plug 'tpope/vim-surround'                                     " Plugin for surrounding text
 Plug 'tpope/vim-commentary'                                   " Commenting plugin 
 Plug 'tpope/vim-repeat'                                       " Repeat plugin
 Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugin
 
+" Git
+Plug 'tpope/vim-fugitive'                                     " Git integration
+Plug 'lewis6991/gitsigns.nvim'                                " Git signs
+Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev 
+
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
+Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents  
 Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
-Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
+Plug 'jakobkhansen/journal.nvim'                              " Keep notes
+Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
 call plug#end()
 
-" GitHub Copilot
+""" GitHub Copilot -- leaving in, in case I reactivate Copilot
+let g:copilot_enabled = v:false
 let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
             \ "*": v:false,
             \ "python": v:true,
-            \ "typescript": v:true,
+            \ "go": v:true,
             \ "javascript": v:true,
+            \ "typescript": v:true,
             \ "clojure": v:true,
-            \ "sh": v:true,
-            \ "bash": v:true,
-            \ "zsh": v:true,
-            \ "vim": v:true,
             \ }
-let g:copilot_model = "gpt-4o"
+let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
+""" GitHub Copilot
 
-" ollama.nvim configuration
+""" ollama.nvim configuration
 lua << EOF
-opts = {
-  model = "granite3.1-dense:8b",
+local opts = {
+  model = "qwen2.5-coder:14b-instruct-q4_K_M",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -87,27 +108,73 @@ opts = {
 }
 require("ollama").setup(opts)
 
-vim.keymap.set('i', '<C-x><C-o>', function()
-    require('cmp').complete({
+vim.keymap.set("i", "<C-x><C-o>", function()
+    require("cmp").complete({
         config = {
             sources = {
-                { name = 'ollama' }
+                { name = "ollama" },
+                { name = "path"},
             }
         }
     })
 end)
 EOF
+""" ollama.nvim configuration
+
+""" journal.nvim
+lua << EOF
+local opts = {
+    filetype = 'md',                    -- Filetype to use for new journal entries
+    root = '~/journal',                 -- Root directory for journal entries
+    date_format = '%d/%m/%Y',           -- Date format for `:Journal <date-modifier>`
+    autocomplete_date_modifier = "end", -- "always"|"never"|"end". Enable date modifier autocompletion
+
+    -- Configuration for journal entries
+    journal = {
+        -- Default configuration for `:Journal <date-modifier>`
+        format = '%Y/%m-%B/daily/%d-%A',
+        template = '# %A %B %d %Y\n',
+        frequency = { day = 1 },
+
+        -- Nested configurations for `:Journal <type> <type> ... <date-modifier>`
+        entries = {
+            day = {
+                format = '%Y/%m-%B/daily/%d-%A', -- Format of the journal entry in the filesystem.
+                template = '# %A %B %d %Y\n',    -- Optional. Template used when creating a new journal entry
+                frequency = { day = 1 },         -- Optional. The frequency of the journal entry. Used for `:Journal next`, `:Journal -2` etc
+            },
+            week = {
+                format = '%Y/%m-%B/weekly/week-%W',
+                template = "# Week %W %B %Y\n",
+                frequency = { day = 7 },
+                date_modifier = "monday" -- Optional. Date modifier applied before other modifier given to `:Journal`
+            },
+            month = {
+                format = '%Y/%m-%B/%B',
+                template = "# %B %Y\n",
+                frequency = { month = 1 }
+            },
+            year = {
+                format = '%Y/%Y',
+                template = "# %Y\n",
+                frequency = { year = 1 }
+            },
+        },
+    }
+}
+require("journal").setup(opts)
+EOF
+""" journal.nvim
 
 " Leader Configuration
 let mapleader = " "
 let maplocalleader = ","
 
-" Basic Settings
+""" Basic Settings
 set relativenumber
 set expandtab                         " Use spaces instead of tabs
 set tabstop=4                         " Tab = 4 spaces
 set shiftwidth=4                      " Tab = 4 spaces
-set smartindent
 set softtabstop=2                     " Number of spaces for a tab in insert mode
 set autoindent                        " Auto indent
 set smartindent                       " Smart autoindenting when starting a new line
@@ -117,7 +184,7 @@ set wrap                              " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=100                   " Column indicating 100 characters
+set colorcolumn=90                   " Column indicating 100 characters
 set cursorcolumn                      " Indentation guide
 set cursorline
 set ruler                             " Always show current position
@@ -129,158 +196,226 @@ set spell                             " Enable spell checking
 set spelllang=en_gb
 set clipboard+=unnamedplus            " Clipboard Settings
 set background=dark                   " Set dark background
-" set t_Co=256                          " 256 colours
+set t_Co=256                          " 256 colours
 set termguicolors                     " True colour support
 
-colorscheme vscode                    " Theme Configuration
+colorscheme github_dark_high_contrast
 
-" Highlight on hover 
+
+""" Basic Settings
+
+"" Highlight on hover 
 set updatetime=1000
 autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
 autocmd CursorHold,CursorHoldI * match none
+"" Highlight on hover 
 
 " Disable highlight when <leader><cr> is pressed
 map <silent> <leader><cr> :noh<cr>
-
-" Code folding
-" choices are: manual|indent|syntax|marker|expr
-set foldmethod=expr
-  \ foldexpr=lsp#ui#vim#folding#foldexpr()
-  \ foldtext=lsp#ui#vim#folding#foldtext()
-
-" Replace all instances selected in Visual mode, using Ctrl+r
-vnoremap <C-r> "hy:%s/<C-r>h//gc<left><left><left>
-
-set laststatus=2                      " Always show the status line
-" Current mode
-let g:currentmode={
-    \ 'n'  : 'NORMAL',
-    \ 'no' : 'NORMAL,OP',
-    \ 'v'  : 'VISUAL',
-    \ 'V'  : 'V-LINE',
-    \ '^V' : 'V-BLOCK',
-    \ 's'  : 'SELECT',
-    \ 'S'  : 'S-LINE',
-    \ '^S' : 'S-BLOCK',
-    \ 'i'  : 'INSERT',
-    \ 'R'  : 'REPLACE',
-    \ 'Rv' : 'V-REPLACE',
-    \ 'c'  : 'COMMAND',
-    \ 'cv' : 'VIM EX',
-    \ 'ce' : 'EX',
-    \ 'r'  : 'PROMPT',
-    \ 'rm' : 'MORE',
-    \ 'r?' : 'CONFIRM',
-    \ '!'  : 'SHELL',
-    \ 't'  : 'TERMINAL'
-    \}
-
+"
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
-" Format the status line
-function! HasPaste()
-    if &paste
-        return 'PASTE MODE  '
-    endif
-    return ''
+
+""" Statusline configuration
+set laststatus=3                     " Global statusline (Neovim only)
+set noshowmode                       " Don't show mode in command line
+
+" Mode dictionary with simpler names
+let g:currentmode = {
+    \ 'n'  : 'NORMAL',
+    \ 'no' : 'N·OP',
+    \ 'v'  : 'VISUAL',
+    \ 'V'  : 'V·LINE',
+    \ "\<C-V>" : 'V·BLOCK',  
+    \ 's'  : 'SELECT',
+    \ 'S'  : 'S·LINE',
+    \ "\<C-S>" : 'S·BLOCK',  
+    \ 'i'  : 'INSERT',
+    \ 'R'  : 'REPLACE',
+    \ 'Rv' : 'V·REPLACE',
+    \ 'c'  : 'COMMAND',
+    \ 't'  : 'TERMINAL'
+\}
+
+" More reliable mode function that doesn't depend on g:currentmode dictionary
+function! CurrentMode()
+    let l:mode = mode()
+    return get(g:currentmode, l:mode, l:mode)
 endfunction
 
-" Get spell status
-function! SpellStatus()
-    if &spell
-        return 'SPELL '
-    endif
-    return ''
+" Simplified helper functions
+function! StatusPaste()
+    return &paste ? 'PASTE ' : ''
 endfunction
 
-" Get relative CWD
-function! GetRelCwd()
-    let cwd = getcwd()
-    let home = $HOME
-    let cwd = substitute(cwd, home, '~', 'g')
-    return cwd
+function! StatusSpell()
+    return &spell ? 'SPELL ' : ''
 endfunction
 
-" Get active virtual environment
-function! VirtualEnv()
+" Cache virtual env name when it doesn't change often
+let s:last_venv = ''
+let s:venv_name = ''
+
+function! StatusVenv()
     if exists('$VIRTUAL_ENV')
-        " Get the actual environment name from pyenv or virtualenv
-        let venv_path = $VIRTUAL_ENV
-        let venv_name = venv_path
-        
-        " Handle .venv directory case
-        if fnamemodify(venv_path, ':t') == '.venv'
-            let venv_name = fnamemodify(venv_path, ':h:t')
+        let l:current_venv = $VIRTUAL_ENV
+        if s:last_venv != l:current_venv
+            let s:last_venv = l:current_venv
+            let l:venv = fnamemodify(l:current_venv, ':t')
+            let s:venv_name = l:venv ==# '.venv' ? fnamemodify(l:current_venv, ':h:t') : l:venv
         endif
-        
-        return 'venv: (' . venv_name . ') '
+        return s:venv_name
     endif
+    let s:last_venv = ''
     return ''
 endfunction
 
-" Set default statusline background to a dark color
-hi StatusLine guifg=#FFFFFF guibg=#2B2B2B ctermfg=white ctermbg=235
-hi StatusLineNC guifg=#FFFFFF guibg=#1C1C1C ctermfg=white ctermbg=234
+" Display path in ~/project/file.ext format
+function! PWDPath()
+    let l:full_path = expand('%:p')
+    let l:home = $HOME
+    
+    " Replace home directory with tilde
+    if l:full_path =~# '^' . l:home
+        return '~' . l:full_path[len(l:home):]
+    endif
+    
+    " If not under home, return the full path
+    return l:full_path
+endfunction
 
-" Define highlight groups with harmonious dark colors
-hi User1 guifg=#FFFFFF guibg=#1B5E20 ctermfg=white ctermbg=green   " for mode (deep forest green)
-hi User2 guifg=#FFFFFF guibg=#5D4037 ctermfg=white ctermbg=yellow  " for file info (deep brown)
-hi User3 guifg=#FFFFFF guibg=#104E8B ctermfg=white ctermbg=blue    " for directory (dark blue)
-hi User4 guifg=#FFFFFF guibg=#8B008B ctermfg=white ctermbg=magenta " for git (dark magenta)
-hi User5 guifg=#FFFFFF guibg=#00585E ctermfg=white ctermbg=cyan    " for venv (deep teal)
-hi User6 guifg=#FFFFFF guibg=#8B0000 ctermfg=white ctermbg=red     " for position (dark red)
+" More informative git status with branch and changes
+function! GitInfo()
+    if !exists('*FugitiveHead') || FugitiveHead() == ''
+        return ''
+    endif
+    
+    let l:branch = FugitiveHead()
+    " Optional: Add status indicators if you have fugitive
+    return ' branch:' . l:branch . ' '
+endfunction
 
-" Statusline with colours
-set statusline=
-set statusline+=\ %1*%{g:currentmode[mode()]}%*\            " The current mode
-set statusline+=\ %2*%{&ff}%*\                              " file format
-set statusline+=\ %2*%{HasPaste()}%*\                       " Paste mode 
-set statusline+=\ %2*%{SpellStatus()}%F%m%r%h\ %w%*\ \      " Spell check and file
-set statusline+=\ %3*CWD:\ %r%{GetRelCwd()}%h%*\ \ \        " Current working directory 
-set statusline+=%4*%{fugitive#statusline()}%*\              " Git status
-set statusline+=%5*%{VirtualEnv()}%*\                       " Virtual environment
-set statusline+=%6*\ C:%c\ L:%l\ %p%%%*\                    " Line, column and %
+" Statusline colours - simplified to use a single setup function
+function! SetupStatusline()
+    " Define base colors
+    let l:fg = '#F8F8F2'
+    let l:bg_normal = '#005F87'
+    let l:bg_insert = '#AF5F00'
 
-" piper TTS
+    " Apply highlights using variables
+    exe 'hi StModeNormal guifg=' . l:fg . ' guibg=' . l:bg_normal . ' gui=bold'
+
+    " Define highlight groups with accessible, harmonious colours
+    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold  " Blue
+    hi StModeInsert   guifg=#F8F8F2 guibg=#AF5F00 ctermfg=255 ctermbg=130 gui=bold  " Amber
+    hi StModeVisual   guifg=#F8F8F2 guibg=#D70000 ctermfg=255 ctermbg=160 gui=bold  " Red
+    hi StModeReplace  guifg=#F8F8F2 guibg=#8700AF ctermfg=255 ctermbg=91  gui=bold  " Purple
+    hi StModeCommand  guifg=#F8F8F2 guibg=#005F5F ctermfg=255 ctermbg=23  gui=bold  " Teal
+    
+    hi StInfo         guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
+    hi StPath         guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=none  " Blue
+    hi StGit          guifg=#F8F8F2 guibg=#5F8700 ctermfg=255 ctermbg=64  gui=none  " Green
+    hi StVenv         guifg=#F8F8F2 guibg=#5F5F87 ctermfg=255 ctermbg=60  gui=none  " Slate
+    hi StPosition     guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
+    
+    " Update statusline with dynamically coloured mode segment
+    let &statusline = ''
+    let &statusline .= 'mode:%{%StatuslineMode()%}'                                           " Mode with dynamic colours
+    let &statusline .= '%#StInfo# fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()} '         " Format and states
+    let &statusline .= '%#StPath# path:%{PWDPath()} ' " File path relative to home
+    let &statusline .= '%#StGit#%{GitInfo()}%*'                                               " Git status
+    let &statusline .= '%='                                                                   " Switch sides
+    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'         " Virtual env if exists
+    let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% '                                     " Position info (clearer labels)
+endfunction
+
+" Dynamic mode colours function - more reliable
+function! StatuslineMode()
+    let l:mode = mode()
+    
+    " Set highlight based on mode
+    if l:mode =~# '\v(n|no)'
+        exe 'hi! link StatusLine StModeNormal'
+        return 'NORMAL '
+    elseif l:mode =~# '\v(i)'
+        exe 'hi! link StatusLine StModeInsert'
+        return 'INSERT '
+    elseif l:mode =~# '\v(v|V|\<C-v>)'
+        exe 'hi! link StatusLine StModeVisual'
+        return 'VISUAL '
+    elseif l:mode =~# '\v(R)'
+        exe 'hi! link StatusLine StModeReplace'
+        return 'REPLACE '
+    elseif l:mode =~# '\v(c)'
+        exe 'hi! link StatusLine StModeCommand'
+        return 'COMMAND '
+    else
+        exe 'hi! link StatusLine StModeNormal'
+        return '  ' . get(g:currentmode, l:mode, l:mode) . ' '
+    endif
+endfunction
+
+" Initialize the statusline when vim starts and ensure it updates properly
+augroup StatusLineSetup
+    autocmd!
+    autocmd VimEnter,ColorScheme * call SetupStatusline()
+    
+    " Only redraw on more specific events
+    autocmd BufEnter,WinEnter,FileType,BufWritePost,TextChanged,InsertLeave * 
+          \ if &laststatus > 0 | redrawstatus | endif
+augroup END
+
+" Call setup immediately
+call SetupStatusline()
+""" Statusline Configuration
+
+""" piper TTS
 let g:piper_bin = 'piperTTS'
-let g:piper_voice = '/usr/share/piper-voices/alba.onnx'
-" <space>tw = SpeakWord()
-" <space>tc = SpeakCurrentLine()
-" <space>tp = SpeakCurrentParagraph()
-" <space>tf = SpeakCurrentFile()
-" <space>tv = SpeakVisualSelection()
+let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
+                    " <space>tw = SpeakWord()
+                    " <space>tc = SpeakCurrentLine()
+                    " <space>tp = SpeakCurrentParagraph()
+                    " <space>tf = SpeakCurrentFile()
+                    " <space>tv = SpeakVisualSelection()
+""" piper TTS
 
 " Pressing ,ss will toggle and untoggle spell checking
 map <leader>ss :setlocal spell!<cr>
 
-" Shortcuts using <leader>
+""" Shortcuts using <leader>
 map <leader>sn ]s " Next spelling mistake    
 map <leader>sp [s " Previous spelling mistake
 map <leader>sa zg " Add word to dictionary
 map <leader>s? z= " Get suggestions
+""" Shortcuts using <leader>
 
-" Spelling mistakes will be coloured up red.
+""" Spelling mistakes will be coloured up red.
 hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellLocal cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
+""" Spelling mistakes will be coloured up red.
 
-" Conjure Configuration 
+""" Conjure Configuration 
 let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
+" SQLite
 let g:conjure#client#sql#stdio = "sqlite3"
+" HUD
 let g:conjure#log#wrap = 1 
 let g:conjure#log#fold#enabled = 1
 let g:conjure#preview#sample_limit = 1.0
 let g:conjure#log#hud#height = 0.5
 let g:conjure#log#hud#border = 0
+""" Conjure Configuration 
 
-" Conjure with Baleia Configuration
+""" Conjure with Baleia Configuration
 let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
 let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
 autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
+""" Conjure with Baleia Configuration
 
-" Glow configurations
+""" Glow configurations
 lua << EOF
 require('glow').setup({
   glow_path = "/usr/bin/glow", -- will be filled automatically with your glow bin in $PATH, if any
@@ -294,10 +429,28 @@ require('glow').setup({
   height_ratio = 0.7,
 })
 EOF
+""" Glow configurations
+
+""" tagbar
+nmap <F8> :TagbarToggle<CR>
+" https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
+let g:tagbar_left = 1
+let g:tagbar_autoclose = 0
+let g:tagbar_autofocus = 0 " If you set this option the cursor will move to the Tagbar window when it is opened
+let g:tagbar_compact = 1 " 0: Show short help and blank lines between top-level scopes
+                         " 1: Don't show the short help or the blank lines.
+                         " 2: Don't show the short help but show the blank lines.
+let g:tagbar_show_data_type = 1
+let g:tagbar_show_linenumbers = 1
+let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
+" let g:tagbar_iconchars = ['▸', '▾']
+" let g:tagbar_iconchars = ['▷', '◢']
+autocmd BufEnter * nested :call tagbar#autoopen(0) " Auto-open tagbar
+""" tagbar
 
 " Autopairs Configuration
 lua << EOF
-require("nvim-autopairs").setup {}
+require("nvim-autopairs").setup({})
 EOF
 
 " Indent Blankline Configuration
@@ -305,27 +458,31 @@ lua << EOF
 require("ibl").setup()
 EOF
 
-" Mason Configuration
+""" Mason Configuration
 lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "lua_ls",                -- Lua
+    "elixirls",              -- Elixir
     "clojure_lsp",           -- Clojure
     "pyright",               -- Python
+    "zls",                   -- Zig
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
+    "biome",                 -- JSON
+    "yamlls",               -- YAML
   },
   automatic_installation = true,
 })
 EOF
+""" Mason Configuration
 
-" Completion setup
+""" Completion setup
 lua << EOF
 -- Completion Setup
-local cmp = require('cmp')
+local cmp = require("cmp")
 cmp.setup({
    snippet = {
      -- REQUIRED - you must specify a snippet engine
@@ -342,20 +499,22 @@ cmp.setup({
       -- documentation = cmp.config.window.bordered(),
     },
     mapping = cmp.mapping.preset.insert({
-      ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-      ['<C-f>'] = cmp.mapping.scroll_docs(4),
-      ['<C-Space>'] = cmp.mapping.complete(),
-      ['<C-e>'] = cmp.mapping.abort(),
-      ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+      ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+      ["<C-f>"] = cmp.mapping.scroll_docs(4),
+      ["<C-Space>"] = cmp.mapping.complete(),
+      ["<C-e>"] = cmp.mapping.abort(),
+      ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
     }),
   sources = cmp.config.sources({
-    { name = 'nvim_lsp' },
-    { name = 'buffer' },
+    { name = "nvim_lsp" },
+    { name = "buffer" },
+    { name = "path"},
   })
 })
 EOF
+""" Completion setup
 
-" LSP Configuration
+""" LSP Configuration
 lua << EOF
 vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
 function _G.dump_lsp_client()
@@ -366,20 +525,25 @@ function _G.dump_lsp_client()
     end
 end
 
+-- Add better UI for diagnostics
+local signs = { Error = "x", Warn = "!", Hint = ">", Info = "i" }
+
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
+
 vim.diagnostic.config({
-    virtual_text = true,
+    virtual_text = false,
     signs = true,
     underline = true,
     update_in_insert = false,
     severity_sort = false,
+    globals = {"error", "warn"},
 })
 
--- Signs for better visibility
-local signs = { Error = "✘", Warn = "▲", Hint = "⚑", Info = "🛈" }
-for type, icon in pairs(signs) do
-    local hl = "DiagnosticSign" .. type
-    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
+-- Show diagnostics when pressing 'gh'
+vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
 
 -- Proper file type detection
 vim.cmd([[
@@ -416,18 +580,29 @@ local lspconfig = require('lspconfig')
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
-  print("LSP attached:", client.name)  -- Debug print
-  local opts = { noremap=true, silent=true }
+  -- Debug print
+  print("LSP attached:", client.name)
+  
+  -- Common options for most keymaps
+  local opts = { noremap = true, silent = true }
+  
+  -- Navigation keymaps
   vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
   vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-  vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-  vim.keymap.set('n', '<space>ca', vim.lsp.buf.code_action, opts)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+  
+  -- Information keymaps
+  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+  
+  -- Editing keymaps
+  vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
+  
+  -- Rename keymaps (remove duplicate)
+  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
 end
-
+  
 -- Language specific Setup
 lspconfig.clojure_lsp.setup({
   on_attach = on_attach,
@@ -438,28 +613,68 @@ lspconfig.clojure_lsp.setup({
 })
 
 lspconfig.pyright.setup({
-    on_attach = function(client, bufnr)
-        print("Pyright attached to buffer:", bufnr)  -- Debug print
-        
-        -- Enable hover explicitly
-        client.server_capabilities.hoverProvider = true
-        
-        -- Call your existing on_attach
-        on_attach(client, bufnr)
-    end,
-    capabilities = capabilities,
-    settings = {
-        python = {
-            analysis = {
-                autoSearchPaths = true,
-                diagnosticMode = "workspace",
-                useLibraryCodeForTypes = true
-            }
-        }
-    },
-    flags = {
-        debounce_text_changes = 150,
+  on_attach = function(client, bufnr)
+    print("Pyright attached to buffer:", bufnr)  -- Debug print
+  
+    -- Enable hover explicitly
+    client.server_capabilities.hoverProvider = true
+  
+    -- Call your existing on_attach
+    on_attach(client, bufnr)
+  end,
+  capabilities = capabilities,
+  settings = {
+    python = {
+      analysis = {
+        autoSearchPaths = true,
+        diagnosticMode = "workspace",
+        useLibraryCodeForTypes = true
+      }
     }
+  },
+  flags = {
+    debounce_text_changes = 150,
+  }
+})
+
+-- Jedi setup for all Python language features
+lspconfig.jedi_language_server.setup({
+  on_attach = function(client, bufnr)
+    -- Call your existing on_attach
+    on_attach(client, bufnr)
+  end,
+  capabilities = capabilities,
+  init_options = {
+    diagnostics = {
+      enable = true,  -- Enable Jedi diagnostics
+      didOpen = true,
+      didChange = true,
+      didSave = true,
+    },
+    completion = {
+      disableSnippets = false,
+      resolveEagerly = true,
+    },
+    hover = {
+      enable = true,
+    },
+    jediSettings = {
+      autoImportModules = {},  -- Add modules you want auto-imported
+      caseInsensitiveCompletion = true,
+      debug = false,
+    },
+  }
+})
+
+lspconfig.zls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  root_dir = lspconfig.util.root_pattern("build.zig.zon"),
+  init_options = {
+    enable = true,
+    lint = true,
+    unstable = true,
+  }
 })
 
 lspconfig.denols.setup({
@@ -503,9 +718,15 @@ lspconfig.bashls.setup({
   filetypes = { "sh", "bash", "zsh" },
   root_dir = lspconfig.util.root_pattern(".git"),
 })
-EOF
 
-" Configure diagnostic display
+lspconfig.gopls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+})
+EOF
+""" LSP Configuration
+
+""" Diagnostics configuration 
 lua << EOF
 -- Configure diagnostic display
 vim.diagnostic.config({
@@ -523,21 +744,14 @@ vim.diagnostic.config({
   },
 })
 
--- Add better UI for diagnostics
-local signs = { Error = "x", Warn = "!", Hint = ">", Info = "i" }
-
-for type, icon in pairs(signs) do
-  local hl = "DiagnosticSign" .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
-
 -- Mapping to manually trigger signature help
 vim.keymap.set('n', '<leader>s', function()
   vim.lsp.buf.signature_help()
 end, { noremap = true, silent = true })
 EOF
+""" Diagnostics configuration 
 
-" Linting and Formatting Configuration
+""" Linting and Formatting Configuration
 lua << EOF
 -- Linting Configuration
 require('lint').linters_by_ft = {
@@ -556,34 +770,59 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
-    python = { "ruff_format" },
+    python = { "ruff_organise_imports", "ruff_format" },
+    elixir = { "trivy" },
     clojure = { "cljfmt" },
     javascript = { "deno_fmt" },
     typescript = { "deno_fmt" },
-    lua = { "stylua" },
+    json = { "biome" },
   },
 
+  -- Organise Python imports
+    formatters = {
+        ruff_organise_imports = {
+          command = 'ruff',
+          args = {
+            'check',
+            '--force-exclude',
+            '--select=I001',
+            '--fix',
+            '--exit-zero',
+            '--stdin-filename',
+            '$FILENAME',
+            '-',
+          },
+          stdin = true,
+          cwd = require('conform.util').root_file {
+            'pyproject.toml',
+            'ruff.toml',
+            '.ruff.toml',
+          },
+        },
+      },
   -- Format on save
+
   format_on_save = {
     -- These options will be passed to conform.format()
     timeout_ms = 500,
     lsp_fallback = true,
   },
+})
 
   -- For format on key mapping (optional, if you want manual formatting)
-  vim.keymap.set({ "n", "v" }, "<leader>f", function()
+  vim.keymap.set({ "n", "v" }, "==", function()
     require("conform").format({
       lsp_fallback = true,
       async = false,
       timeout_ms = 500,
     })
   end, { desc = "Format file or range" })
-})
 EOF
+""" Linting, formatting configuration 
 
-" nvim-treesitter Configuration
+""" nvim-treesitter Configuration
 lua << EOF
-require'nvim-treesitter.configs'.setup {
+require("nvim-treesitter.configs").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -593,13 +832,15 @@ require'nvim-treesitter.configs'.setup {
         -- Languages you use
         "python",
         "clojure",
-        "lua",
         "typescript", -- for Deno/TypeScript
         "javascript", -- for Deno/JavaScript
 
         -- For documentation/markdown files
         "markdown",
-        "markdown_inline"
+        "markdown_inline",
+        
+        -- For Yaml files
+        "yaml"
         },
 
   sync_install = false,
@@ -616,6 +857,9 @@ require'nvim-treesitter.configs'.setup {
     end,
     additional_vim_regex_highlighting = false,
   },
+  fold = {
+      enable = true 
+  }, 
 
   -- Optional but recommended
   indent = {
@@ -632,7 +876,25 @@ require'nvim-treesitter.configs'.setup {
     },
   },
 }
+
+-- Code folding
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+
+-- Start with all folds closed 
+vim.opt.foldenable = false 
+vim.opt.foldlevel = 99
+
+-- Customize fold appearance (optional)
+vim.opt.fillchars = "fold: "
+vim.opt.foldtext = [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').' ... '.trim(getline(v:foldend))]]
 EOF
+""" nvim-treesitter Configuration
+
+""" context Configuration
+let g:context_enabled = 1
+""" context Configuration
+
 
 """ Fuzzy finding Configuration 
 let g:fzf_vim = {}
@@ -653,6 +915,8 @@ omap <leader>k <plug>(fzf-maps-o)
 imap <c-x><c-k> <plug>(fzf-complete-word)
 imap <c-x><c-f> <plug>(fzf-complete-path)
 imap <c-x><c-l> <plug>(fzf-complete-line)
+" files
+nnoremap <leader>f :Files<cr>
 "" Mappings
 "" Completion
 " Path completion with custom source command
@@ -673,3 +937,517 @@ inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
 autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
 """ Fuzzy finding Configuration 
+
+""" vim-ipython-cell
+"------------------------------------------------------------------------------
+" slime configuration 
+"------------------------------------------------------------------------------
+" always use tmux
+let g:slime_target = 'tmux'
+
+" fix paste issues in ipython
+let g:slime_python_ipython = 1
+
+" always send text to the top-right pane in the current tmux tab without asking
+let g:slime_default_config = {
+            \ 'socket_name': get(split($TMUX, ','), 0),
+            \ 'target_pane': '{top-right}' }
+
+let g:slime_dont_ask_default = 1
+
+"------------------------------------------------------------------------------
+" ipython-cell configuration
+"------------------------------------------------------------------------------
+" Keyboard mappings. <Leader> is \ (backslash) by default
+
+" map <Leader>s to start IPython
+nnoremap <Leader>s :SlimeSend1 ipython --matplotlib<CR>
+
+" map <Leader>r to run script
+nnoremap <Leader>r :IPythonCellRun<CR>
+
+" map <Leader>R to run script and time the execution
+nnoremap <Leader>R :IPythonCellRunTime<CR>
+
+" map <Leader>c to execute the current cell
+nnoremap <Leader>c :IPythonCellExecuteCell<CR>
+
+" map <Leader>C to execute the current cell and jump to the next cell
+nnoremap <Leader>C :IPythonCellExecuteCellJump<CR>
+
+" map <Leader>l to clear IPython screen
+nnoremap <Leader>l :IPythonCellClear<CR>
+
+" map <Leader>x to close all Matplotlib figure windows
+nnoremap <Leader>x :IPythonCellClose<CR>
+
+" map [c and ]c to jump to the previous and next cell header
+nnoremap [c :IPythonCellPrevCell<CR>
+nnoremap ]c :IPythonCellNextCell<CR>
+
+" map <Leader>h to send the current line or current selection to IPython
+nmap <Leader>h <Plug>SlimeLineSend
+xmap <Leader>h <Plug>SlimeRegionSend
+
+" map <Leader>p to run the previous command
+nnoremap <Leader>p :IPythonCellPrevCommand<CR>
+
+" map <Leader>Q to restart ipython
+nnoremap <Leader>Q :IPythonCellRestart<CR>
+
+" map <Leader>d to start debug mode
+nnoremap <Leader>d :SlimeSend1 %debug<CR>
+
+" map <Leader>q to exit debug mode or IPython
+nnoremap <Leader>q :SlimeSend1 exit<CR>
+
+" map <F9> and <F10> to insert a cell header tag above/below and enter insert mode
+nmap <F9> :IPythonCellInsertAbove<CR>a
+nmap <F10> :IPythonCellInsertBelow<CR>a
+
+" also make <F9> and <F10> work in insert mode
+imap <F9> <C-o>:IPythonCellInsertAbove<CR>
+imap <F10> <C-o>:IPythonCellInsertBelow<CR>
+""" vim-ipython-cell
+
+""" CSV viewer  
+lua << EOF
+require('csvview').setup()
+EOF
+""" CSV viewer  
+
+""" Align sentences
+lua << EOF
+function _G.align_sentences(start_line, end_line)
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+  local all_parts = {}
+  local max_lengths = {}
+  
+  -- Step 1: Split each line and analyze lengths
+  for _, line in ipairs(lines) do
+    local parts = {}
+    local pos = 1
+    local part_start = 1
+    
+    -- Split by period followed by whitespace
+    while true do
+      local period_pos = line:find('%.[%s]+', pos)
+      if not period_pos then break end
+      
+      local part = line:sub(part_start, period_pos)
+      table.insert(parts, part)
+      
+      pos = period_pos + 2
+      part_start = pos
+    end
+    
+    -- Add the final part if it exists
+    if part_start <= #line then
+      table.insert(parts, line:sub(part_start))
+    end
+    
+    table.insert(all_parts, parts)
+    
+    -- Track maximum length for each column
+    for i, part in ipairs(parts) do
+      max_lengths[i] = math.max(max_lengths[i] or 0, vim.fn.strwidth(part) + 1)
+    end
+  end
+  
+  -- Step 2: Format each line with proper padding
+  local result_lines = {}
+  for _, parts in ipairs(all_parts) do
+    local formatted = ""
+    
+    for i, part in ipairs(parts) do
+      -- Add period if it doesn't end with one
+      if not part:match('%.%s*$') then
+        part = part .. '.'
+      end
+      
+      -- Add appropriate padding except for the last column
+      if i < #parts then
+        local padding = max_lengths[i] - vim.fn.strwidth(part)
+        formatted = formatted .. part .. string.rep(' ', padding + 1)
+      else
+        formatted = formatted .. part
+      end
+    end
+    
+    table.insert(result_lines, formatted)
+  end
+  
+  -- Step 3: Replace the original lines
+  vim.api.nvim_buf_set_lines(0, start_line - 1, end_line, false, result_lines)
+end
+
+-- Create a command to call the Lua function
+vim.cmd([[
+  command! -range AlignSentences lua _G.align_sentences(<line1>, <line2>)
+]])
+EOF
+""" Align sentences 
+
+""" Git 
+lua << EOF
+require('gitsigns').setup({
+  current_line_blame = true,
+  signs = {
+    add = { text = '│' },
+    change = { text = '│' },
+    delete = { text = '_' },
+    topdelete = { text = '‾' },
+    changedelete = { text = '~' },
+    untracked = { text = '┆' },
+  },
+  on_attach = function(bufnr)
+    local gs = package.loaded.gitsigns
+    
+    -- Navigation between hunks
+    vim.keymap.set('n', ']c', function()
+      if vim.wo.diff then return ']c' end
+      vim.schedule(function() gs.next_hunk() end)
+      return '<Ignore>'
+    end, {expr=true, buffer=bufnr})
+    
+    vim.keymap.set('n', '[c', function()
+      if vim.wo.diff then return '[c' end
+      vim.schedule(function() gs.prev_hunk() end)
+      return '<Ignore>'
+    end, {expr=true, buffer=bufnr})
+    
+    -- Actions
+    vim.keymap.set('n', '<leader>hs', gs.stage_hunk)
+    vim.keymap.set('n', '<leader>hr', gs.reset_hunk)
+    vim.keymap.set('n', '<leader>hp', gs.preview_hunk)
+  end
+})
+
+require('diffview').setup({
+  enhanced_diff_hl = true,
+  use_icons = true,
+  view = {
+    default = {
+      layout = "diff2_horizontal",
+    },
+    merge_tool = {
+      layout = "diff3_horizontal",
+      disable_diagnostics = true,
+    },
+  },
+  keymaps = {
+    view = {
+      ["<tab>"] = function() vim.cmd("DiffviewToggleFiles") end,
+      ["co"] = "<Cmd>DiffviewOpen<CR>",            -- Open diffview
+      ["cc"] = "<Cmd>DiffviewClose<CR>",           -- Close diffview
+    },
+    file_panel = {
+      ["co"] = "open",                             -- Open
+      ["cc"] = "close",                            -- Close
+    },
+    file_history_panel = {
+      ["co"] = "open",                             -- Open
+      ["cc"] = "close",                            -- Close
+    },
+  },
+})
+EOF
+""" Git 
+
+""" which-key configuration
+lua << EOF
+-- Which-Key Configuration
+local wk = require("which-key")
+
+-- Basic setup with corrected delay configuration
+wk.setup({
+  plugins = {
+    marks = true,
+    registers = true,
+    spelling = {
+      enabled = false,
+    },
+    presets = {
+      operators = true,
+      motions = true,
+      text_objects = true,
+      windows = true,
+      nav = true,
+      z = true,
+      g = true,
+    },
+  },
+
+  replace = {
+    ["<space>"] = "SPC",
+    ["<cr>"] = "RET",
+    ["<tab>"] = "TAB",
+  },
+
+  win = {
+    border = "single",
+    padding = { 2, 2, 2, 2 },
+  },
+  layout = {
+    height = { min = 4, max = 25 },
+    width = { min = 20, max = 50 },
+    spacing = 3,
+    align = "center",
+  },
+
+  delay = 100
+})
+
+-- Define conflict resolution functions in global scope
+_G.conflict = {}
+
+-- Open conflicts in diffview
+_G.conflict.open_conflicts = function()
+  if vim.fn.search('<<<<<<< ', 'n') > 0 then
+    vim.cmd('DiffviewOpen --merge')
+  else
+    vim.notify('No merge conflicts found', vim.log.levels.INFO)
+  end
+end
+
+-- More reliable method to handle conflict resolution
+_G.conflict.accept_current = function()
+  -- Find conflict markers
+  local pos = vim.fn.getpos(".")
+  local start = vim.fn.search('<<<<<<< ', 'bcn')
+  
+  if start <= 0 then
+    start = vim.fn.search('<<<<<<< ', 'cn')
+    if start <= 0 then
+      vim.notify('No conflict marker found', vim.log.levels.ERROR)
+      return
+    end
+  end
+  
+  local middle = vim.fn.search('=======', 'cn')
+  local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  
+  if start > 0 and middle > 0 and end_marker > 0 then
+    -- Keep the current changes (lines between <<<<<<< and =======)
+    local ours = vim.fn.getline(start + 1, middle - 1)
+    
+    -- Delete the entire conflict block
+    vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    
+    -- Insert our changes
+    if #ours > 0 then
+      vim.fn.append(start - 1, ours)
+    end
+    
+    -- Restore cursor position as best we can
+    vim.fn.setpos(".", pos)
+    vim.notify('Kept current changes', vim.log.levels.INFO)
+  else
+    vim.notify('Conflict markers not found in expected format', vim.log.levels.ERROR)
+  end
+end
+
+-- Accept incoming changes
+_G.conflict.accept_incoming = function()
+  -- Find conflict markers
+  local pos = vim.fn.getpos(".")
+  local start = vim.fn.search('<<<<<<< ', 'bcn')
+  
+  if start <= 0 then
+    start = vim.fn.search('<<<<<<< ', 'cn')
+    if start <= 0 then
+      vim.notify('No conflict marker found', vim.log.levels.ERROR)
+      return
+    end
+  end
+  
+  local middle = vim.fn.search('=======', 'cn')
+  local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  
+  if start > 0 and middle > 0 and end_marker > 0 then
+    -- Keep the incoming changes (lines between ======= and >>>>>>>)
+    local theirs = vim.fn.getline(middle + 1, end_marker - 1)
+    
+    -- Delete the entire conflict block
+    vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    
+    -- Insert their changes
+    if #theirs > 0 then
+      vim.fn.append(start - 1, theirs)
+    end
+    
+    -- Restore cursor position as best we can
+    vim.fn.setpos(".", pos)
+    vim.notify('Kept incoming changes', vim.log.levels.INFO)
+  else
+    vim.notify('Conflict markers not found in expected format', vim.log.levels.ERROR)
+  end
+end
+
+-- Accept both changes
+_G.conflict.accept_both = function()
+  -- Find conflict markers
+  local pos = vim.fn.getpos(".")
+  local start = vim.fn.search('<<<<<<< ', 'bcn')
+  
+  if start <= 0 then
+    start = vim.fn.search('<<<<<<< ', 'cn')
+    if start <= 0 then
+      vim.notify('No conflict marker found', vim.log.levels.ERROR)
+      return
+    end
+  end
+  
+  local middle = vim.fn.search('=======', 'cn')
+  local end_marker = vim.fn.search('>>>>>>> ', 'cn')
+  
+  if start > 0 and middle > 0 and end_marker > 0 then
+    -- Get both parts
+    local ours = vim.fn.getline(start + 1, middle - 1)
+    local theirs = vim.fn.getline(middle + 1, end_marker - 1)
+    
+    -- Delete the conflict markers and insert both changes
+    vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
+    
+    -- Add both changes
+    if #theirs > 0 then
+      vim.fn.append(start - 1, theirs)
+    end
+    if #ours > 0 then
+      vim.fn.append(start - 1, ours)
+    end
+    
+    -- Restore cursor position as best we can
+    vim.fn.setpos(".", pos)
+    vim.notify('Kept both changes', vim.log.levels.INFO)
+  else
+    vim.notify('Conflict markers not found in expected format', vim.log.levels.ERROR)
+  end
+end
+
+-- Jump to previous conflict
+_G.conflict.prev = function()
+  local result = vim.fn.search('<<<<<<< ', 'bW')
+  if result == 0 then
+    vim.notify('No previous conflict found', vim.log.levels.INFO)
+  end
+  return result
+end
+
+-- Jump to next conflict
+_G.conflict.next = function()
+  local result = vim.fn.search('<<<<<<< ', 'W')
+  if result == 0 then
+    vim.notify('No next conflict found', vim.log.levels.INFO)
+  end
+  return result
+end
+
+-- Normal mode mappings using new API format
+wk.add({
+  { "<leader><cr>", "<cmd>noh<cr>", desc = "Clear search highlight" },
+  { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
+  
+  -- Spelling
+  { "<leader>s", group = "Spelling" },
+  { "<leader>ss", "<cmd>setlocal spell!<cr>", desc = "Toggle spell checking" },
+  { "<leader>sn", "]s", desc = "Next misspelled word" },
+  { "<leader>sp", "[s", desc = "Previous misspelled word" },
+  { "<leader>sa", "zg", desc = "Add word to dictionary" },
+  { "<leader>s?", "z=", desc = "Suggest corrections" },
+  
+  -- FZF
+  { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
+  { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" },
+  
+  -- LSP actions
+  { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
+  { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
+  
+  -- IPython cell mappings
+  { "<leader>s", "<cmd>SlimeSend1 ipython --matplotlib<CR>", desc = "Start IPython" },
+  { "<leader>r", "<cmd>IPythonCellRun<CR>", desc = "Run Script" },
+  { "<leader>R", "<cmd>IPythonCellRunTime<CR>", desc = "Run Script (timed)" },
+  { "<leader>c", "<cmd>IPythonCellExecuteCell<CR>", desc = "Execute Cell" },
+  { "<leader>C", "<cmd>IPythonCellExecuteCellJump<CR>", desc = "Execute Cell & Jump" },
+  { "<leader>l", "<cmd>IPythonCellClear<CR>", desc = "Clear IPython Screen" },
+  { "<leader>x", "<cmd>IPythonCellClose<CR>", desc = "Close Matplotlib Windows" },
+  { "<leader>h", "<Plug>SlimeLineSend", desc = "Send Line to IPython" },
+  { "<leader>p", "<cmd>IPythonCellPrevCommand<CR>", desc = "Run Previous Command" },
+  { "<leader>Q", "<cmd>IPythonCellRestart<CR>", desc = "Restart IPython" },
+  { "<leader>d", "<cmd>SlimeSend1 %debug<CR>", desc = "Start Debug Mode" },
+  { "<leader>q", "<cmd>SlimeSend1 exit<CR>", desc = "Exit Debug/IPython" },
+  
+  -- Format
+  { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
+  
+  -- Text-to-Speech group
+  { "<leader>t", group = "Text-to-Speech" },
+  { "<leader>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
+  { "<leader>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
+  { "<leader>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
+  { "<leader>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
+  { "<leader>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
+  
+  -- Git operations with conflict resolution
+  { "<leader>g", group = "Git" },
+  { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diff View" },
+  { "<leader>gm", "<cmd>DiffviewOpen --merge<CR>", desc = "Merge Conflicts View" },
+  { "<leader>gc", "<cmd>lua _G.conflict.open_conflicts()<CR>", desc = "Open Conflicts" },
+  { "<leader>gx", "<cmd>DiffviewClose<CR>", desc = "Close Diff View" },
+  { "<leader>go", "<cmd>lua _G.conflict.accept_current()<CR>", desc = "Accept Current Changes" },
+  { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
+  { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
+  
+  -- Space prefix mappings
+  { "<space>t", group = "Text-to-Speech" },
+  { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
+  { "<space>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
+  { "<space>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
+  { "<space>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
+  { "<space>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
+  
+  -- g prefix mappings
+  { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
+  { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
+  { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
+  { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
+  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", desc = "Show Diagnostics" },
+  { "gnn", "Initialize Treesitter Selection" },
+  
+  -- [ and ] mappings
+  { "[c", "<cmd>IPythonCellPrevCell<CR>", desc = "Previous Cell" },
+  { "]c", "<cmd>IPythonCellNextCell<CR>", desc = "Next Cell" },
+  { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
+  { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
+  
+  -- Function key mappings
+  { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
+  { "<F9>", "<cmd>IPythonCellInsertAbove<CR>a", desc = "Insert Cell Above" },
+  { "<F10>", "<cmd>IPythonCellInsertBelow<CR>a", desc = "Insert Cell Below" },
+}, { mode = "n" })
+
+-- Insert mode mappings
+wk.add({
+  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help", mode = "i" },
+  { "<C-x>", group = "Completions", mode = "i" },
+  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word", mode = "i" },
+  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path", mode = "i" },
+  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line", mode = "i" },
+  { "<C-x><C-o>", desc = "Ollama AI completion", mode = "i" },
+  { "<F9>", "<C-o>:IPythonCellInsertAbove<CR>", desc = "Insert Cell Above", mode = "i" },
+  { "<F10>", "<C-o>:IPythonCellInsertBelow<CR>", desc = "Insert Cell Below", mode = "i" },
+})
+
+-- Visual mode mappings
+wk.add({
+  { "<leader>h", "<Plug>SlimeRegionSend", desc = "Send Selection to IPython", mode = "v" },
+  { "k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
+})
+
+-- Operator pending mode mappings
+wk.add({
+  { "k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
+})
+EOF
+""" which-key configuration
