@@ -77,6 +77,10 @@ Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': 
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
+
+" Quarto
+Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
+Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
@@ -88,9 +92,8 @@ let g:copilot_filetypes = {
             \ "go": v:true,
             \ "javascript": v:true,
             \ "typescript": v:true,
-            \ "clojure": v:true,
             \ }
-let g:copilot_model = "claude3.5-sonnet" " or "gpt-4o"
+let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
 """ GitHub Copilot
 
 """ ollama.nvim configuration
@@ -463,10 +466,7 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "elixirls",              -- Elixir
-    "clojure_lsp",           -- Clojure
     "pyright",               -- Python
-    "zls",                   -- Zig
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -603,15 +603,6 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
 end
   
--- Language specific Setup
-lspconfig.clojure_lsp.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  cmd = { "clojure-lsp" },
-  filetypes = { "clojure", "edn" },
-  root_dir = lspconfig.util.root_pattern("deps.edn", "project.clj", "project.clj.edn", ".git"),
-})
-
 lspconfig.pyright.setup({
   on_attach = function(client, bufnr)
     print("Pyright attached to buffer:", bufnr)  -- Debug print
@@ -666,17 +657,6 @@ lspconfig.jedi_language_server.setup({
   }
 })
 
-lspconfig.zls.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  root_dir = lspconfig.util.root_pattern("build.zig.zon"),
-  init_options = {
-    enable = true,
-    lint = true,
-    unstable = true,
-  }
-})
-
 lspconfig.denols.setup({
   on_attach = on_attach,
   capabilities = capabilities,
@@ -695,6 +675,11 @@ lspconfig.denols.setup({
       }
     }
   }
+})
+
+lspconfig.gopls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
 })
 
 lspconfig.dockerls.setup({
@@ -719,31 +704,6 @@ lspconfig.bashls.setup({
   root_dir = lspconfig.util.root_pattern(".git"),
 })
 
-lspconfig.gopls.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-EOF
-""" LSP Configuration
-
-""" Diagnostics configuration 
-lua << EOF
--- Configure diagnostic display
-vim.diagnostic.config({
-  virtual_text = true,
-  signs = true,
-  underline = true,
-  update_in_insert = false,
-  severity_sort = true,
-  float = {
-    focusable = true,
-    border = "single",
-    source = "always",
-    header = "",
-    prefix = "",
-  },
-})
-
 -- Mapping to manually trigger signature help
 vim.keymap.set('n', '<leader>s', function()
   vim.lsp.buf.signature_help()
@@ -754,25 +714,160 @@ EOF
 """ Linting and Formatting Configuration
 lua << EOF
 -- Linting Configuration
-require('lint').linters_by_ft = {
-  clojure = {'clj-kondo'},
+local lint = require('lint')
+
+-- Define ruff as the only linter for Python
+lint.linters_by_ft = {
   python = {'ruff'},
 }
 
--- Auto-trigger linting
+-- Configure ruff to ensure it shows all diagnostics
+if lint.linters.ruff then
+  -- Keep original settings but add --exit-zero
+  local original_args = lint.linters.ruff.args or {}
+  table.insert(original_args, 2, "--exit-zero")
+  lint.linters.ruff.args = original_args
+end
+
+-- Function to count diagnostics and update status line
+local function update_diagnostics_status()
+  local diagnostics = vim.diagnostic.get(0)
+  local error_count = 0
+  local warn_count = 0
+  local error_lines = {}
+  local warn_lines = {}
+  
+  for _, diag in ipairs(diagnostics) do
+    if diag.severity == vim.diagnostic.severity.ERROR then
+      error_count = error_count + 1
+      table.insert(error_lines, diag.lnum + 1)  -- +1 to convert to 1-based line numbers
+    elseif diag.severity == vim.diagnostic.severity.WARN then
+      warn_count = warn_count + 1
+      table.insert(warn_lines, diag.lnum + 1)  -- +1 to convert to 1-based line numbers
+    end
+  end
+  
+  -- Sort line numbers
+  table.sort(error_lines)
+  table.sort(warn_lines)
+  
+  -- Prepare location strings (with up to 3 line numbers shown)
+  local error_loc = #error_lines > 0 and 
+    " [Lines: " .. table.concat(error_lines, ",", 1, math.min(3, #error_lines)) .. 
+    (#error_lines > 3 and "..." or "") .. "]" or ""
+    
+  local warn_loc = #warn_lines > 0 and 
+    " [Lines: " .. table.concat(warn_lines, ",", 1, math.min(3, #warn_lines)) .. 
+    (#warn_lines > 3 and "..." or "") .. "]" or ""
+  
+  -- Display diagnostic count in command line with locations
+  if error_count > 0 or warn_count > 0 then
+    local msg = string.format("Linting: %d errors%s, %d warnings%s", 
+      error_count, error_loc, warn_count, warn_loc)
+    vim.api.nvim_echo({{msg, "WarningMsg"}}, false, {})
+  end
+  
+  -- Update statusline variable
+  vim.g.linting_status = ""
+  if error_count > 0 then
+    vim.g.linting_status = vim.g.linting_status .. "E:" .. error_count
+    if #error_lines > 0 then
+      -- Show first error location
+      vim.g.linting_status = vim.g.linting_status .. "@" .. error_lines[1]
+    end
+    vim.g.linting_status = vim.g.linting_status .. " "
+  end
+  if warn_count > 0 then
+    vim.g.linting_status = vim.g.linting_status .. "W:" .. warn_count
+    if #warn_lines > 0 then
+      -- Show first warning location
+      vim.g.linting_status = vim.g.linting_status .. "@" .. warn_lines[1]
+    end
+    vim.g.linting_status = vim.g.linting_status .. " "
+  end
+end
+
+-- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+  pattern = { "*.py" },
   callback = function()
     require("lint").try_lint()
+    -- Update status after a short delay to ensure diagnostics are processed
+    vim.defer_fn(update_diagnostics_status, 100)
   end,
 })
+
+-- Define visible diagnostic signs in the gutter
+local signs = { Error = "E", Warn = "W", Hint = "H", Info = "I" }
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
+end
+
+-- Configure how diagnostics are displayed
+vim.diagnostic.config({
+  virtual_text = false,  -- Don't show messages at end of line
+  signs = true,          -- Show signs in the gutter
+  underline = true,      -- Underline problematic code
+  severity_sort = true,  -- Show errors before warnings
+  float = {              -- Configure hover behavior
+    focusable = false,
+    style = "minimal",
+    border = "rounded",
+    source = "always",
+    header = "",
+    prefix = "",
+  },
+})
+
+-- Set up keymapping to show diagnostics on hover
+vim.api.nvim_create_autocmd("CursorHold", {
+  callback = function()
+    vim.diagnostic.open_float(nil, {focus=false})
+  end
+})
+
+-- Add linting status to your statusline
+vim.o.statusline = vim.o.statusline .. " %{get(g:, 'linting_status', '')}"
+
+-- Add command to show all diagnostics with their locations
+vim.api.nvim_create_user_command("LintLocations", function()
+  local diagnostics = vim.diagnostic.get(0)
+  if #diagnostics == 0 then
+    print("No linting issues found")
+    return
+  end
+  
+  -- Sort diagnostics by line number
+  table.sort(diagnostics, function(a, b) return a.lnum < b.lnum end)
+  
+  -- Display all diagnostics in a nice format
+  local output = {"Linting issues:"}
+  for _, diag in ipairs(diagnostics) do
+    local severity = "Info"
+    if diag.severity == vim.diagnostic.severity.ERROR then
+      severity = "Error"
+    elseif diag.severity == vim.diagnostic.severity.WARN then
+      severity = "Warning"
+    elseif diag.severity == vim.diagnostic.severity.HINT then
+      severity = "Hint"
+    end
+    
+    table.insert(output, string.format("Line %d: [%s] %s", 
+      diag.lnum + 1, severity, diag.message))
+  end
+  
+  vim.api.nvim_echo(vim.tbl_map(function(line)
+    return {line, "Normal"}
+  end, output), true, {})
+end, {})
+
 
 -- Formatting Configuration
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    elixir = { "trivy" },
-    clojure = { "cljfmt" },
     javascript = { "deno_fmt" },
     typescript = { "deno_fmt" },
     json = { "biome" },
@@ -831,7 +926,6 @@ require("nvim-treesitter.configs").setup {
 
         -- Languages you use
         "python",
-        "clojure",
         "typescript", -- for Deno/TypeScript
         "javascript", -- for Deno/JavaScript
 
