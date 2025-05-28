@@ -187,7 +187,7 @@ set wrap                              " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=90                   " Column indicating 100 characters
+set colorcolumn=90                   " Column indicating 90 characters
 set cursorcolumn                      " Indentation guide
 set cursorline
 set ruler                             " Always show current position
@@ -199,11 +199,12 @@ set spell                             " Enable spell checking
 set spelllang=en_gb
 set clipboard+=unnamedplus            " Clipboard Settings
 set background=dark                   " Set dark background
-set t_Co=256                          " 256 colours
+if $COLORTERM == 'gnome-terminal'
+  set t_Co=256                        " 256 colours
+endif
 set termguicolors                     " True colour support
 
-colorscheme github_dark_high_contrast
-
+colorscheme github_dark_default 
 
 """ Basic Settings
 
@@ -466,13 +467,13 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "pyright",               -- Python
+    "jedi_language_server",  -- Python
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
     "biome",                 -- JSON
-    "yamlls",               -- YAML
+    "yamlls",                -- YAML
   },
   automatic_installation = true,
 })
@@ -603,30 +604,6 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
 end
   
-lspconfig.pyright.setup({
-  on_attach = function(client, bufnr)
-    print("Pyright attached to buffer:", bufnr)  -- Debug print
-  
-    -- Enable hover explicitly
-    client.server_capabilities.hoverProvider = true
-  
-    -- Call your existing on_attach
-    on_attach(client, bufnr)
-  end,
-  capabilities = capabilities,
-  settings = {
-    python = {
-      analysis = {
-        autoSearchPaths = true,
-        diagnosticMode = "workspace",
-        useLibraryCodeForTypes = true
-      }
-    }
-  },
-  flags = {
-    debounce_text_changes = 150,
-  }
-})
 
 -- Jedi setup for all Python language features
 lspconfig.jedi_language_server.setup({
