@@ -29,9 +29,6 @@ Plug 'mfussenegger/nvim-dap'                                  " Debug Adapter Pr
 Plug 'simrat39/rust-tools.nvim'                               " Tools for better development in rust 
 Plug 'saecki/crates.nvim', { 'tag': 'stable' }                " helps managing crates.io dependencies
 
-" Zig development
-Plug 'ziglang/zig.vim'                                        " Zig development
-
 " Vim <-> IPython
 Plug 'jpalardy/vim-slime', { 'for': 'python' }                " Send to REPL 
 Plug 'hanschen/vim-ipython-cell', { 'for': 'python' }         " Vim <-> IPython
