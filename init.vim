@@ -24,14 +24,10 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
-" Clojure Development
-Plug 'Olical/conjure'                                         " Clojure REPL 
-Plug 'PaterJason/cmp-conjure'                                 " Clojure completion
-Plug 'guns/vim-sexp'                                          " Clojure S-Expression 
-Plug 'tpope/vim-sexp-mappings-for-regular-people'             " Clojure S-Expression Mappings 
-
-" Go Development 
-Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development
+" Rust Development 
+Plug 'mfussenegger/nvim-dap'                                  " Debug Adapter Protocol client
+Plug 'simrat39/rust-tools.nvim'                               " Tools for better development in rust 
+Plug 'saecki/crates.nvim', { 'tag': 'stable' }                " helps managing crates.io dependencies
 
 " Zig development
 Plug 'ziglang/zig.vim'                                        " Zig development
@@ -210,8 +206,11 @@ colorscheme github_dark_default
 
 "" Highlight on hover 
 set updatetime=1000
-autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
-autocmd CursorHold,CursorHoldI * match none
+augroup HighlightOnHover
+    autocmd!
+    autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
+    autocmd CursorHold,CursorHoldI * match none
+augroup END
 "" Highlight on hover 
 
 " Disable highlight when <leader><cr> is pressed
@@ -402,21 +401,21 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
 """ Conjure Configuration 
-let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
-" SQLite
-let g:conjure#client#sql#stdio = "sqlite3"
-" HUD
-let g:conjure#log#wrap = 1 
-let g:conjure#log#fold#enabled = 1
-let g:conjure#preview#sample_limit = 1.0
-let g:conjure#log#hud#height = 0.5
-let g:conjure#log#hud#border = 0
+" let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
+" " SQLite
+" let g:conjure#client#sql#stdio = "sqlite3"
+" " HUD
+" let g:conjure#log#wrap = 1 
+" let g:conjure#log#fold#enabled = 1
+" let g:conjure#preview#sample_limit = 1.0
+" let g:conjure#log#hud#height = 0.5
+" let g:conjure#log#hud#border = 0
 """ Conjure Configuration 
 
 """ Conjure with Baleia Configuration
-let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
-let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
-autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
+" let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
+" let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
+" autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
 """ Conjure with Baleia Configuration
 
 """ Glow configurations
@@ -468,7 +467,7 @@ require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
     "jedi_language_server",  -- Python
-    "denols",                -- Deno
+    "rust_analyzer",         -- Rust
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
@@ -510,6 +509,7 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
+    { name = "crates" },
   })
 })
 EOF
@@ -521,8 +521,8 @@ vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
 function _G.dump_lsp_client()
     local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
     for _, client in pairs(buf_clients) do
-        print(string.format("Client: %s, Resolved capabilities:", client.name))
-        print(vim.inspect(client.resolved_capabilities))
+        print(string.format("Client: %s, Server capabilities:", client.name))
+        print(vim.inspect(client.server_capabilities))
     end
 end
 
@@ -540,7 +540,6 @@ vim.diagnostic.config({
     underline = true,
     update_in_insert = false,
     severity_sort = false,
-    globals = {"error", "warn"},
 })
 
 -- Show diagnostics when pressing 'gh'
@@ -634,29 +633,33 @@ lspconfig.jedi_language_server.setup({
   }
 })
 
-lspconfig.denols.setup({
+lspconfig.rust_analyzer.setup({
   on_attach = on_attach,
   capabilities = capabilities,
-  root_dir = lspconfig.util.root_pattern("deno.json", "deno.jsonc"),
-  init_options = {
-    enable = true,
-    lint = true,
-    unstable = true,
-    suggest = {
-      imports = {
-        hosts = {
-          ["https://deno.land"] = true,
-          ["https://cdn.nest.land"] = true,
-          ["https://crux.land"] = true
-        }
-      }
-    }
-  }
-})
-
-lspconfig.gopls.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
+  settings = {
+    ["rust-analyzer"] = {
+      cargo = {
+        allFeatures = true,
+        loadOutDirsFromCheck = true,
+        runBuildScripts = true,
+      },
+      checkOnSave = {
+        allFeatures = true,
+        command = "clippy",
+        extraArgs = { "--no-deps" },
+      },
+      -- Inlay hints
+      inlayHints = {
+        enable = true,
+        typeHints = { enable = true },
+        parameterHints = { enable = true },
+        chainingHints = { enable = true },
+      },
+      procMacro = {
+        enable = true,
+      },
+    },
+  },
 })
 
 lspconfig.dockerls.setup({
@@ -687,6 +690,39 @@ vim.keymap.set('n', '<leader>s', function()
 end, { noremap = true, silent = true })
 EOF
 """ Diagnostics configuration 
+
+""" rust configuration
+lua << EOF
+local rt = require("rust-tools")
+
+rt.setup({
+  server = {
+    on_attach = function(_, bufnr)
+      -- Hover actions
+      vim.keymap.set("n", "<C-space>", rt.hover_actions.hover_actions, { buffer = bufnr })
+      -- Code action groups
+      vim.keymap.set("n", "<Leader>a", rt.code_action_group.code_action_group, { buffer = bufnr })
+    end,
+  },
+})
+
+require('crates').setup({
+    text = {
+        loading = "   Loading",
+        version = "   %s",
+        prerelease = "   %s",
+        yanked = "   %s",
+        nomatch = "   No match",
+        upgrade = "   %s",
+        error = "   Error fetching crate",
+    },
+    popup = {
+        autofocus = true,
+        border = "rounded",
+    },
+})
+EOF
+""" rust configuration
 
 """ Linting and Formatting Configuration
 lua << EOF
@@ -845,8 +881,7 @@ require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    javascript = { "deno_fmt" },
-    typescript = { "deno_fmt" },
+    rust = { "rustfmt" },
     json = { "biome" },
   },
 
@@ -903,8 +938,7 @@ require("nvim-treesitter.configs").setup {
 
         -- Languages you use
         "python",
-        "typescript", -- for Deno/TypeScript
-        "javascript", -- for Deno/JavaScript
+        "rust",
 
         -- For documentation/markdown files
         "markdown",
@@ -1031,8 +1065,8 @@ let g:slime_dont_ask_default = 1
 "------------------------------------------------------------------------------
 " Keyboard mappings. <Leader> is \ (backslash) by default
 
-" map <Leader>s to start IPython
-nnoremap <Leader>s :SlimeSend1 ipython --matplotlib<CR>
+" map <Leader>is to start IPython
+nnoremap <Leader>is :SlimeSend1 ipython --matplotlib<CR>
 
 " map <Leader>r to run script
 nnoremap <Leader>r :IPythonCellRun<CR>
@@ -1416,8 +1450,34 @@ end
 
 -- Normal mode mappings using new API format
 wk.add({
+  -- Rust operations
+  { "<leader>cr", group = "Rust" },
+  { "<leader>crr", "<cmd>!cargo run<CR>", desc = "Cargo Run" },
+  { "<leader>crt", "<cmd>!cargo test<CR>", desc = "Cargo Test" },
+  { "<leader>crb", "<cmd>!cargo build<CR>", desc = "Cargo Build" },
+  { "<leader>crc", "<cmd>!cargo check<CR>", desc = "Cargo Check" },
+  { "<leader>crd", "<cmd>!cargo doc --open<CR>", desc = "Cargo Doc" },
+  -- 
   { "<leader><cr>", "<cmd>noh<cr>", desc = "Clear search highlight" },
   { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
+  -- Rust Crates management
+  { "<leader>ck", group = "Crates" },
+  { "<leader>ckt", "<cmd>lua require('crates').toggle()<CR>", desc = "Toggle Crates" },
+  { "<leader>ckr", "<cmd>lua require('crates').reload()<CR>", desc = "Reload Crates" },
+  { "<leader>ckv", "<cmd>lua require('crates').show_versions_popup()<CR>", desc = "Show Versions" },
+  { "<leader>ckf", "<cmd>lua require('crates').show_features_popup()<CR>", desc = "Show Features" },
+  { "<leader>ckd", "<cmd>lua require('crates').show_dependencies_popup()<CR>", desc = "Show Dependencies" },
+  { "<leader>cku", "<cmd>lua require('crates').update_crate()<CR>", desc = "Update Crate" },
+  { "<leader>cka", "<cmd>lua require('crates').update_all_crates()<CR>", desc = "Update All Crates" },
+  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crate()<CR>", desc = "Upgrade Crate" },
+  { "<leader>ckA", "<cmd>lua require('crates').upgrade_all_crates()<CR>", desc = "Upgrade All Crates" },
+  { "<leader>ckx", "<cmd>lua require('crates').expand_plain_crate_to_inline_table()<CR>", desc = "Expand Crate" },
+  { "<leader>ckX", "<cmd>lua require('crates').extract_crate_into_table()<CR>", desc = "Extract Crate" },
+  { "<leader>ckH", "<cmd>lua require('crates').open_homepage()<CR>", desc = "Open Homepage" },
+  { "<leader>ckR", "<cmd>lua require('crates').open_repository()<CR>", desc = "Open Repository" },
+  { "<leader>ckD", "<cmd>lua require('crates').open_documentation()<CR>", desc = "Open Documentation" },
+  { "<leader>ckC", "<cmd>lua require('crates').open_crates_io()<CR>", desc = "Open Crates.io" },
+  { "<leader>ckL", "<cmd>lua require('crates').open_lib_rs()<CR>", desc = "Open Lib.rs" },
   
   -- Spelling
   { "<leader>s", group = "Spelling" },
@@ -1436,7 +1496,7 @@ wk.add({
   { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
   
   -- IPython cell mappings
-  { "<leader>s", "<cmd>SlimeSend1 ipython --matplotlib<CR>", desc = "Start IPython" },
+  { "<leader>is", "<cmd>SlimeSend1 ipython --matplotlib<CR>", desc = "Start IPython" },
   { "<leader>r", "<cmd>IPythonCellRun<CR>", desc = "Run Script" },
   { "<leader>R", "<cmd>IPythonCellRunTime<CR>", desc = "Run Script (timed)" },
   { "<leader>c", "<cmd>IPythonCellExecuteCell<CR>", desc = "Execute Cell" },
@@ -1514,6 +1574,8 @@ wk.add({
 wk.add({
   { "<leader>h", "<Plug>SlimeRegionSend", desc = "Send Selection to IPython", mode = "v" },
   { "k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
+  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates", mode = "v" },
+  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates", mode = "v" },
 })
 
 -- Operator pending mode mappings
