@@ -397,24 +397,6 @@ hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
-""" Conjure Configuration 
-" let g:conjure#client#python#stdio#command = "python -iq -m asyncio" " https://github.com/Olical/conjure/issues/545#issuecomment-1878879728
-" " SQLite
-" let g:conjure#client#sql#stdio = "sqlite3"
-" " HUD
-" let g:conjure#log#wrap = 1 
-" let g:conjure#log#fold#enabled = 1
-" let g:conjure#preview#sample_limit = 1.0
-" let g:conjure#log#hud#height = 0.5
-" let g:conjure#log#hud#border = 0
-""" Conjure Configuration 
-
-""" Conjure with Baleia Configuration
-" let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
-" let s:baleia = luaeval("require('baleia').setup { line_starts_at = 3 }")
-" autocmd BufWinEnter conjure-log-* call s:baleia.automatically(bufnr('%'))
-""" Conjure with Baleia Configuration
-
 """ Glow configurations
 lua << EOF
 require('glow').setup({
