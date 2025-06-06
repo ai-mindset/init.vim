@@ -444,7 +444,8 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "jedi_language_server",  -- Python
+    -- "jedi_language_server",  -- Python
+    "pyright",               -- Python
     "rust_analyzer",         -- Rust
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -583,32 +584,54 @@ end
   
 
 -- Jedi setup for all Python language features
-lspconfig.jedi_language_server.setup({
+-- lspconfig.jedi_language_server.setup({
+--   on_attach = function(client, bufnr)
+--     -- Call your existing on_attach
+--     on_attach(client, bufnr)
+--   end,
+--   capabilities = capabilities,
+--   init_options = {
+--     diagnostics = {
+--       enable = true,  -- Enable Jedi diagnostics
+--       didOpen = true,
+--       didChange = true,
+--       didSave = true,
+--     },
+--     completion = {
+--       disableSnippets = false,
+--       resolveEagerly = true,
+--     },
+--     hover = {
+--       enable = true,
+--     },
+--     jediSettings = {
+--       autoImportModules = {},  -- Add modules you want auto-imported
+--       caseInsensitiveCompletion = true,
+--       debug = false,
+--     },
+--   }
+-- })
+
+lspconfig.pyright.setup({
   on_attach = function(client, bufnr)
-    -- Call your existing on_attach
+    -- Call your existing on_attach (e.g. keymaps, etc.)
     on_attach(client, bufnr)
   end,
   capabilities = capabilities,
-  init_options = {
-    diagnostics = {
-      enable = true,  -- Enable Jedi diagnostics
-      didOpen = true,
-      didChange = true,
-      didSave = true,
+  settings = {
+    python = {
+      analysis = {
+        -- enable type checking mode: "off", "basic", "strict"
+        typeCheckingMode = "basic",
+        -- use library code for types where available
+        useLibraryCodeForTypes = true,
+        -- auto-search paths for imports
+        autoSearchPaths = true,
+        -- set your own extra paths, e.g. { "src", "tests" }
+        extraPaths = {},
+      },
     },
-    completion = {
-      disableSnippets = false,
-      resolveEagerly = true,
-    },
-    hover = {
-      enable = true,
-    },
-    jediSettings = {
-      autoImportModules = {},  -- Add modules you want auto-imported
-      caseInsensitiveCompletion = true,
-      debug = false,
-    },
-  }
+  },
 })
 
 lspconfig.rust_analyzer.setup({
