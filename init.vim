@@ -444,8 +444,8 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    -- "jedi_language_server",  -- Python
-    "pyright",               -- Python
+     "jedi_language_server",  -- Python
+--     "pyright",               -- Python
     "rust_analyzer",         -- Rust
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -454,6 +454,114 @@ require("mason-lspconfig").setup({
     "yamlls",                -- YAML
   },
   automatic_installation = true,
+  handlers = {
+    -- Jedi Language Server (Python)
+    jedi_language_server = function()
+      require("lspconfig").jedi_language_server.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+        init_options = {
+          diagnostics = {
+            enable = true,
+            didOpen = true,
+            didChange = true,
+            didSave = true,
+          },
+          completion = {
+            disableSnippets = false,
+            resolveEagerly = true,
+          },
+          hover = {
+            enable = true,
+          },
+          jediSettings = {
+            autoImportModules = {},
+            caseInsensitiveCompletion = true,
+            debug = false,
+          },
+        }
+      })
+    end,
+
+    -- Rust Analyzer
+    rust_analyzer = function()
+      require("lspconfig").rust_analyzer.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+        settings = {
+          ["rust-analyzer"] = {
+            cargo = {
+              allFeatures = true,
+              loadOutDirsFromCheck = true,
+              runBuildScripts = true,
+            },
+            checkOnSave = {
+              allFeatures = true,
+              command = "clippy",
+              extraArgs = { "--no-deps" },
+            },
+            inlayHints = {
+              enable = true,
+              typeHints = { enable = true },
+              parameterHints = { enable = true },
+              chainingHints = { enable = true },
+            },
+            procMacro = {
+              enable = true,
+            },
+          },
+        },
+      })
+    end,
+
+    -- Docker Language Server
+    dockerls = function()
+      require("lspconfig").dockerls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+        cmd = { "docker-langserver", "--stdio" },
+        filetypes = { "Dockerfile", "dockerfile" },
+        root_dir = require("lspconfig").util.root_pattern("Dockerfile", ".git"),
+      })
+    end,
+
+    -- Markdown Oxide
+    markdown_oxide = function()
+      require("lspconfig").markdown_oxide.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+        filetypes = { "markdown", "markdown.mdx" },
+        root_dir = require("lspconfig").util.root_pattern(".git"),
+      })
+    end,
+
+    -- Bash Language Server
+    bashls = function()
+      require("lspconfig").bashls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+        filetypes = { "sh", "bash", "zsh" },
+        root_dir = require("lspconfig").util.root_pattern(".git"),
+      })
+    end,
+
+    -- Biome (JSON)
+    biome = function()
+      require("lspconfig").biome.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+    end,
+
+    -- YAML Language Server
+    yamlls = function()
+      require("lspconfig").yamlls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+    end,
+  }
+
 })
 EOF
 """ Mason Configuration
@@ -555,7 +663,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
 -- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
-local lspconfig = require('lspconfig')
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
@@ -582,109 +689,6 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
 end
   
-
--- Jedi setup for all Python language features
--- lspconfig.jedi_language_server.setup({
---   on_attach = function(client, bufnr)
---     -- Call your existing on_attach
---     on_attach(client, bufnr)
---   end,
---   capabilities = capabilities,
---   init_options = {
---     diagnostics = {
---       enable = true,  -- Enable Jedi diagnostics
---       didOpen = true,
---       didChange = true,
---       didSave = true,
---     },
---     completion = {
---       disableSnippets = false,
---       resolveEagerly = true,
---     },
---     hover = {
---       enable = true,
---     },
---     jediSettings = {
---       autoImportModules = {},  -- Add modules you want auto-imported
---       caseInsensitiveCompletion = true,
---       debug = false,
---     },
---   }
--- })
-
-lspconfig.pyright.setup({
-  on_attach = function(client, bufnr)
-    -- Call your existing on_attach (e.g. keymaps, etc.)
-    on_attach(client, bufnr)
-  end,
-  capabilities = capabilities,
-  settings = {
-    python = {
-      analysis = {
-        -- enable type checking mode: "off", "basic", "strict"
-        typeCheckingMode = "basic",
-        -- use library code for types where available
-        useLibraryCodeForTypes = true,
-        -- auto-search paths for imports
-        autoSearchPaths = true,
-        -- set your own extra paths, e.g. { "src", "tests" }
-        extraPaths = {},
-      },
-    },
-  },
-})
-
-lspconfig.rust_analyzer.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  settings = {
-    ["rust-analyzer"] = {
-      cargo = {
-        allFeatures = true,
-        loadOutDirsFromCheck = true,
-        runBuildScripts = true,
-      },
-      checkOnSave = {
-        allFeatures = true,
-        command = "clippy",
-        extraArgs = { "--no-deps" },
-      },
-      -- Inlay hints
-      inlayHints = {
-        enable = true,
-        typeHints = { enable = true },
-        parameterHints = { enable = true },
-        chainingHints = { enable = true },
-      },
-      procMacro = {
-        enable = true,
-      },
-    },
-  },
-})
-
-lspconfig.dockerls.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  cmd = { "docker-langserver", "--stdio" },
-  filetypes = { "Dockerfile", "dockerfile" },
-  root_dir = lspconfig.util.root_pattern("Dockerfile", ".git"),
-})
-
-lspconfig.markdown_oxide.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  filetypes = { "markdown", "markdown.mdx" },
-  root_dir = lspconfig.util.root_pattern(".git"),
-})
-
-lspconfig.bashls.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  filetypes = { "sh", "bash", "zsh" },
-  root_dir = lspconfig.util.root_pattern(".git"),
-})
-
 -- Mapping to manually trigger signature help
 vim.keymap.set('n', '<leader>s', function()
   vim.lsp.buf.signature_help()
