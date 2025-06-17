@@ -25,9 +25,9 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
 " Rust Development 
-Plug 'mfussenegger/nvim-dap'                                  " Debug Adapter Protocol client
-Plug 'simrat39/rust-tools.nvim'                               " Tools for better development in rust 
-Plug 'saecki/crates.nvim', { 'tag': 'stable' }                " helps managing crates.io dependencies
+"Plug 'mfussenegger/nvim-dap'                                  " Debug Adapter Protocol client
+"Plug 'simrat39/rust-tools.nvim'                               " Tools for better development in rust 
+"Plug 'saecki/crates.nvim', { 'tag': 'stable' }                " helps managing crates.io dependencies
 
 " Vim <-> IPython
 Plug 'jpalardy/vim-slime', { 'for': 'python' }                " Send to REPL 
@@ -72,8 +72,8 @@ Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
 
 " Quarto
-Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
-Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
+"Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
+"Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
@@ -446,6 +446,7 @@ require("mason-lspconfig").setup({
   ensure_installed = {
      "jedi_language_server",  -- Python
 --     "pyright",               -- Python
+    "julials",               -- Julia
     "rust_analyzer",         -- Rust
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -480,6 +481,43 @@ require("mason-lspconfig").setup({
             debug = false,
           },
         }
+      })
+    end,
+
+    -- Julia (julials)
+    julials = function()
+      require("lspconfig").julials.setup({
+        cmd = {
+          "julia",               -- or full path to your julia executable
+          "--startup-file=no",   -- do not load ~/.julia/config/startup.jl
+          "--history-file=no",   -- do not load ~/.julia/history
+          "-e", [[
+            import LanguageServer, SymbolServer;
+            env_path = dirname(pathof(SymbolServer));
+            server = LanguageServer.LanguageServerInstance(stdin, stdout, env_path, "");
+            LanguageServer.run(server);
+          ]]
+        },
+        filetypes = { "julia" },
+        root_dir = util.root_pattern("Project.toml", "Manifest.toml", ".git"),
+        on_attach = on_attach,
+        capabilities = capabilities,
+        settings = {
+          julia = {
+            format = { indent = 4 },
+            lint = {
+              missingrefs = "warn",
+              invalidopts = "warn",
+            },
+            index = {
+              packageSymbols = true,
+              globalMacros   = true,
+            },
+            runLintOnSave = true,
+            -- Whether to run inference on startup (slower but more accurate)
+            dynamicTypeInference = true,
+          },
+        },
       })
     end,
 
