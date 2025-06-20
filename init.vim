@@ -70,10 +70,6 @@ Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': 
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
-
-" Quarto
-Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
-Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
 call plug#end()
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
