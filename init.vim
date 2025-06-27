@@ -24,21 +24,15 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
-" Rust Development 
-Plug 'mfussenegger/nvim-dap'                                  " Debug Adapter Protocol client
-Plug 'simrat39/rust-tools.nvim'                               " Tools for better development in rust 
-Plug 'saecki/crates.nvim', { 'tag': 'stable' }                " helps managing crates.io dependencies
-
-" Vim <-> IPython
-Plug 'jpalardy/vim-slime', { 'for': 'python' }                " Send to REPL 
-Plug 'hanschen/vim-ipython-cell', { 'for': 'python' }         " Vim <-> IPython
+" Neovim <-> IPython 
+Plug 'jpalardy/vim-slime'
+Plug 'hkupty/iron.nvim'
 
 " CSV viewer
 Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
 
 " Theme
-Plug 'Mofiqul/vscode.nvim'
-Plug 'projekt0n/github-nvim-theme'
+Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
@@ -72,6 +66,146 @@ Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
 call plug#end()
 
+""" Catppuccin Theme Configuration with Accessibility Improvements
+lua << EOF
+require("catppuccin").setup({
+  flavour = "mocha",  -- The highest contrast variant
+  no_italic = true,   -- Avoid italics for better readability
+  no_bold = false,    -- Keep bold for structure
+  styles = {
+    comments = {},
+    conditionals = {},
+    loops = {},
+    functions = {},
+    keywords = {},
+    strings = {},
+    variables = {},
+    numbers = {},
+    booleans = {},
+    properties = {},
+    types = {},
+  },
+  color_overrides = {
+    mocha = {
+      base = "#000000",  -- Deeper black for better contrast
+      text = "#FFFFFF",  -- Brighter text
+    },
+  },
+  integrations = {
+    which_key = true,
+    treesitter = true,
+    mason = true,
+    native_lsp = {
+      enabled = true,
+      underlines = {
+        errors = { "underline" },
+        hints = { "underline" },
+        information = { "underline" },
+        warnings = { "underline" },
+      },
+    },
+  },
+})
+EOF
+
+" Set the theme
+colorscheme catppuccin
+
+" Additional accessibility improvements
+hi CursorLine guibg=#303030 ctermbg=236
+hi Comment guifg=#a0a0a0 ctermfg=247
+hi Visual guibg=#005f87 ctermbg=24 guifg=#ffffff ctermfg=15
+hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
+" Make gutter line numbers more accessible
+hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
+hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
+
+
+""" vim-slime configuration for IPython
+let g:slime_target = "tmux"
+let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
+let g:slime_dont_ask_default = 1
+let g:slime_python_ipython = 1
+
+" Keep your existing cell navigation (works perfectly with vim-slime)
+" Clear the [c and ]c mappings from gitsigns
+silent! unmap [c
+silent! unmap ]c
+
+" Your existing FlashCurrentCell function (keep as-is)
+function! FlashCurrentCell()
+  " Save current CursorLine highlight settings
+  let cursorline_enabled = &cursorline
+  let hl_cursorline = execute('highlight CursorLine')
+  
+  " Enable cursorline and set to bright yellow temporarily
+  set cursorline
+  highlight CursorLine ctermbg=yellow guibg=#FFFF00
+  
+  " Redraw screen to show highlight
+  redraw
+  
+  " Wait briefly
+  sleep 100m
+  
+  " Restore original CursorLine settings
+  if !cursorline_enabled
+    set nocursorline
+  else
+    " Parse the original highlight command to restore it
+    let matches = matchlist(hl_cursorline, 'xxx\s\+\(.*\)')
+    if len(matches) > 1
+      execute 'highlight CursorLine ' . matches[1]
+    else
+      " Fallback to a standard style if parsing fails
+      highlight CursorLine guibg=#303030 ctermbg=236
+    endif
+  endif
+  
+  " Redraw again to apply restored settings
+  redraw
+endfunction
+
+" Your existing cell navigation (keep as-is)
+nnoremap [c :call search("^# %%", "bW")<CR>:call FlashCurrentCell()<CR>
+nnoremap ]c :call search("^# %%", "W")<CR>:call FlashCurrentCell()<CR>
+
+" Simple vim-slime mappings for IPython
+nnoremap <localleader>l :SlimeSendCurrentLine<CR>
+nnoremap <localleader>v :SlimeSend<CR>
+vnoremap <localleader>v :SlimeSend<CR>
+nnoremap <localleader>c :call SlimeSendCell()<CR>
+
+" Function to send current cell
+function! SlimeSendCell()
+  " Save cursor position
+  let save_pos = getpos('.')
+  
+  " Find cell boundaries
+  let cell_start = search("^# %%", "bcnW")
+  let cell_end = search("^# %%", "nW")
+  
+  if cell_start == 0
+    let cell_start = 1
+  endif
+  
+  if cell_end == 0
+    let cell_end = line('$')
+  else
+    let cell_end = cell_end - 1
+  endif
+  
+  " Send the cell
+  execute cell_start . "," . cell_end . "SlimeSend"
+  
+  " Restore cursor position
+  call setpos('.', save_pos)
+  
+  " Flash the cell
+  call FlashCurrentCell()
+endfunction
+""" vim-slime configuration
+
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
 let g:copilot_enabled = v:false
 let g:copilot_telemetry = v:false
@@ -88,7 +222,7 @@ let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 local opts = {
-  model = "devstral:latest",
+  model = "codestral:latest",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -192,8 +326,6 @@ if $COLORTERM == 'gnome-terminal'
   set t_Co=256                        " 256 colours
 endif
 set termguicolors                     " True colour support
-
-colorscheme github_dark_default 
 
 """ Basic Settings
 
@@ -442,7 +574,7 @@ require("mason-lspconfig").setup({
   ensure_installed = {
      "jedi_language_server",  -- Python
 --     "pyright",               -- Python
-    "rust_analyzer",         -- Rust
+    "denols",                -- Deno 
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
@@ -479,44 +611,61 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Rust Analyzer
-    rust_analyzer = function()
-      require("lspconfig").rust_analyzer.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        settings = {
-          ["rust-analyzer"] = {
-            cargo = {
-              allFeatures = true,
-              loadOutDirsFromCheck = true,
-              runBuildScripts = true,
-            },
-            checkOnSave = {
-              allFeatures = true,
-              command = "clippy",
-              extraArgs = { "--no-deps" },
-            },
-            inlayHints = {
-              enable = true,
-              typeHints = { enable = true },
-              parameterHints = { enable = true },
-              chainingHints = { enable = true },
-            },
-            procMacro = {
-              enable = true,
+    -- Deno Language Server
+    denols = function()
+      require("lspconfig").denols.setup({
+        root_dir = require("lspconfig.util").root_pattern(
+          "deno.json", 
+          "deno.jsonc"
+        ),
+        single_file_support = false,
+        
+        init_options = {
+          lint = true,
+          unstable = true,
+          suggest = {
+            imports = {
+              hosts = {
+                ["https://deno.land"] = true,
+                ["https://cdn.nest.land"] = true,
+                ["https://crux.land"] = true,
+              },
             },
           },
         },
+        
+        settings = {
+          deno = {
+            enable = true,
+            lint = true,
+            unstable = true,
+            codeLens = {
+              references = true,
+              referencesAllFunctions = true,
+              test = true,
+            },
+            suggest = {
+              imports = {
+                hosts = {
+                  ["https://deno.land"] = true,
+                },
+              },
+            },
+          },
+        },
+        
+        on_attach = on_attach,
+        capabilities = capabilities,
       })
     end,
-
+    
     -- Docker Language Server
     dockerls = function()
       require("lspconfig").dockerls.setup({
         on_attach = on_attach,
         capabilities = capabilities,
         cmd = { "docker-langserver", "--stdio" },
-        filetypes = { "Dockerfile", "dockerfile" },
+        filetypes = { "Dockerfile", "dockerfile", "Containerfile", "containerfile" },
         root_dir = require("lspconfig").util.root_pattern("Dockerfile", ".git"),
       })
     end,
@@ -632,7 +781,7 @@ vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=f
 vim.cmd([[
   augroup python_lsp
     autocmd!
-    autocmd FileType python lua vim.diagnostic.enable(0)
+    autocmd FileType python lua vim.diagnostic.enable(true)
     autocmd FileType python setlocal omnifunc=v:lua.vim.lsp.omnifunc
   augroup END
 ]])
@@ -691,39 +840,6 @@ vim.keymap.set('n', '<leader>s', function()
 end, { noremap = true, silent = true })
 EOF
 """ Diagnostics configuration 
-
-""" rust configuration
-lua << EOF
-local rt = require("rust-tools")
-
-rt.setup({
-  server = {
-    on_attach = function(_, bufnr)
-      -- Hover actions
-      vim.keymap.set("n", "<C-space>", rt.hover_actions.hover_actions, { buffer = bufnr })
-      -- Code action groups
-      vim.keymap.set("n", "<Leader>a", rt.code_action_group.code_action_group, { buffer = bufnr })
-    end,
-  },
-})
-
-require('crates').setup({
-    text = {
-        loading = "   Loading",
-        version = "   %s",
-        prerelease = "   %s",
-        yanked = "   %s",
-        nomatch = "   No match",
-        upgrade = "   %s",
-        error = "   Error fetching crate",
-    },
-    popup = {
-        autofocus = true,
-        border = "rounded",
-    },
-})
-EOF
-""" rust configuration
 
 """ Linting and Formatting Configuration
 lua << EOF
@@ -812,7 +928,13 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 })
 
 -- Define visible diagnostic signs in the gutter
-local signs = { Error = "E", Warn = "W", Hint = "H", Info = "I" }
+-- local signs = { Error = "E", Warn = "W", Hint = "H", Info = "I" }
+local signs = {
+  Error = "✖",   -- U+2716 HEAVY MULTIPLICATION X
+  Warn  = "⚠",   -- U+26A0 WARNING SIGN
+  Hint  = "💡",  -- U+1F4A1 ELECTRIC LIGHT BULB
+  Info  = "ℹ",   -- U+2139 INFORMATION SOURCE
+}
 for type, icon in pairs(signs) do
   local hl = "DiagnosticSign" .. type
   vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
@@ -882,7 +1004,7 @@ require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    rust = { "rustfmt" },
+    deno = { "deno_fmt" },
     json = { "biome" },
   },
 
@@ -939,7 +1061,8 @@ require("nvim-treesitter.configs").setup {
 
         -- Languages you use
         "python",
-        "rust",
+        "javascript",
+        "typescript",
 
         -- For documentation/markdown files
         "markdown",
@@ -1044,78 +1167,6 @@ autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
 """ Fuzzy finding Configuration 
 
-""" vim-ipython-cell
-"------------------------------------------------------------------------------
-" slime configuration 
-"------------------------------------------------------------------------------
-" always use tmux
-let g:slime_target = 'tmux'
-
-" fix paste issues in ipython
-let g:slime_python_ipython = 1
-
-" always send text to the top-right pane in the current tmux tab without asking
-let g:slime_default_config = {
-            \ 'socket_name': get(split($TMUX, ','), 0),
-            \ 'target_pane': '{top-right}' }
-
-let g:slime_dont_ask_default = 1
-
-"------------------------------------------------------------------------------
-" ipython-cell configuration
-"------------------------------------------------------------------------------
-" Keyboard mappings. <Leader> is \ (backslash) by default
-
-" map <Leader>is to start IPython
-nnoremap <Leader>is :SlimeSend1 ipython --matplotlib<CR>
-
-" map <Leader>r to run script
-nnoremap <Leader>r :IPythonCellRun<CR>
-
-" map <Leader>R to run script and time the execution
-nnoremap <Leader>R :IPythonCellRunTime<CR>
-
-" map <Leader>c to execute the current cell
-nnoremap <Leader>c :IPythonCellExecuteCell<CR>
-
-" map <Leader>C to execute the current cell and jump to the next cell
-nnoremap <Leader>C :IPythonCellExecuteCellJump<CR>
-
-" map <Leader>l to clear IPython screen
-nnoremap <Leader>l :IPythonCellClear<CR>
-
-" map <Leader>x to close all Matplotlib figure windows
-nnoremap <Leader>x :IPythonCellClose<CR>
-
-" map [c and ]c to jump to the previous and next cell header
-nnoremap [c :IPythonCellPrevCell<CR>
-nnoremap ]c :IPythonCellNextCell<CR>
-
-" map <Leader>h to send the current line or current selection to IPython
-nmap <Leader>h <Plug>SlimeLineSend
-xmap <Leader>h <Plug>SlimeRegionSend
-
-" map <Leader>p to run the previous command
-nnoremap <Leader>p :IPythonCellPrevCommand<CR>
-
-" map <Leader>Q to restart ipython
-nnoremap <Leader>Q :IPythonCellRestart<CR>
-
-" map <Leader>d to start debug mode
-nnoremap <Leader>d :SlimeSend1 %debug<CR>
-
-" map <Leader>q to exit debug mode or IPython
-nnoremap <Leader>q :SlimeSend1 exit<CR>
-
-" map <F9> and <F10> to insert a cell header tag above/below and enter insert mode
-nmap <F9> :IPythonCellInsertAbove<CR>a
-nmap <F10> :IPythonCellInsertBelow<CR>a
-
-" also make <F9> and <F10> work in insert mode
-imap <F9> <C-o>:IPythonCellInsertAbove<CR>
-imap <F10> <C-o>:IPythonCellInsertBelow<CR>
-""" vim-ipython-cell
-
 """ CSV viewer  
 lua << EOF
 require('csvview').setup()
@@ -1210,14 +1261,14 @@ require('gitsigns').setup({
     local gs = package.loaded.gitsigns
     
     -- Navigation between hunks
-    vim.keymap.set('n', ']c', function()
-      if vim.wo.diff then return ']c' end
+    vim.keymap.set('n', '>c', function()
+      if vim.wo.diff then return '>c' end
       vim.schedule(function() gs.next_hunk() end)
       return '<Ignore>'
     end, {expr=true, buffer=bufnr})
     
-    vim.keymap.set('n', '[c', function()
-      if vim.wo.diff then return '[c' end
+    vim.keymap.set('n', '<c', function()
+      if vim.wo.diff then return '<c' end
       vim.schedule(function() gs.prev_hunk() end)
       return '<Ignore>'
     end, {expr=true, buffer=bufnr})
@@ -1451,35 +1502,6 @@ end
 
 -- Normal mode mappings using new API format
 wk.add({
-  -- Rust operations
-  { "<leader>cr", group = "Rust" },
-  { "<leader>crr", "<cmd>!cargo run<CR>", desc = "Cargo Run" },
-  { "<leader>crt", "<cmd>!cargo test<CR>", desc = "Cargo Test" },
-  { "<leader>crb", "<cmd>!cargo build<CR>", desc = "Cargo Build" },
-  { "<leader>crc", "<cmd>!cargo check<CR>", desc = "Cargo Check" },
-  { "<leader>crd", "<cmd>!cargo doc --open<CR>", desc = "Cargo Doc" },
-  -- 
-  { "<leader><cr>", "<cmd>noh<cr>", desc = "Clear search highlight" },
-  { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
-  -- Rust Crates management
-  { "<leader>ck", group = "Crates" },
-  { "<leader>ckt", "<cmd>lua require('crates').toggle()<CR>", desc = "Toggle Crates" },
-  { "<leader>ckr", "<cmd>lua require('crates').reload()<CR>", desc = "Reload Crates" },
-  { "<leader>ckv", "<cmd>lua require('crates').show_versions_popup()<CR>", desc = "Show Versions" },
-  { "<leader>ckf", "<cmd>lua require('crates').show_features_popup()<CR>", desc = "Show Features" },
-  { "<leader>ckd", "<cmd>lua require('crates').show_dependencies_popup()<CR>", desc = "Show Dependencies" },
-  { "<leader>cku", "<cmd>lua require('crates').update_crate()<CR>", desc = "Update Crate" },
-  { "<leader>cka", "<cmd>lua require('crates').update_all_crates()<CR>", desc = "Update All Crates" },
-  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crate()<CR>", desc = "Upgrade Crate" },
-  { "<leader>ckA", "<cmd>lua require('crates').upgrade_all_crates()<CR>", desc = "Upgrade All Crates" },
-  { "<leader>ckx", "<cmd>lua require('crates').expand_plain_crate_to_inline_table()<CR>", desc = "Expand Crate" },
-  { "<leader>ckX", "<cmd>lua require('crates').extract_crate_into_table()<CR>", desc = "Extract Crate" },
-  { "<leader>ckH", "<cmd>lua require('crates').open_homepage()<CR>", desc = "Open Homepage" },
-  { "<leader>ckR", "<cmd>lua require('crates').open_repository()<CR>", desc = "Open Repository" },
-  { "<leader>ckD", "<cmd>lua require('crates').open_documentation()<CR>", desc = "Open Documentation" },
-  { "<leader>ckC", "<cmd>lua require('crates').open_crates_io()<CR>", desc = "Open Crates.io" },
-  { "<leader>ckL", "<cmd>lua require('crates').open_lib_rs()<CR>", desc = "Open Lib.rs" },
-  
   -- Spelling
   { "<leader>s", group = "Spelling" },
   { "<leader>ss", "<cmd>setlocal spell!<cr>", desc = "Toggle spell checking" },
@@ -1496,19 +1518,10 @@ wk.add({
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
   { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
   
-  -- IPython cell mappings
-  { "<leader>is", "<cmd>SlimeSend1 ipython --matplotlib<CR>", desc = "Start IPython" },
-  { "<leader>r", "<cmd>IPythonCellRun<CR>", desc = "Run Script" },
-  { "<leader>R", "<cmd>IPythonCellRunTime<CR>", desc = "Run Script (timed)" },
-  { "<leader>c", "<cmd>IPythonCellExecuteCell<CR>", desc = "Execute Cell" },
-  { "<leader>C", "<cmd>IPythonCellExecuteCellJump<CR>", desc = "Execute Cell & Jump" },
-  { "<leader>l", "<cmd>IPythonCellClear<CR>", desc = "Clear IPython Screen" },
-  { "<leader>x", "<cmd>IPythonCellClose<CR>", desc = "Close Matplotlib Windows" },
-  { "<leader>h", "<Plug>SlimeLineSend", desc = "Send Line to IPython" },
-  { "<leader>p", "<cmd>IPythonCellPrevCommand<CR>", desc = "Run Previous Command" },
-  { "<leader>Q", "<cmd>IPythonCellRestart<CR>", desc = "Restart IPython" },
-  { "<leader>d", "<cmd>SlimeSend1 %debug<CR>", desc = "Start Debug Mode" },
-  { "<leader>q", "<cmd>SlimeSend1 exit<CR>", desc = "Exit Debug/IPython" },
+  -- IPython/Slime integration
+  { "<localleader>c", "<cmd>call SlimeSendCell()<CR>", desc = "Send Cell to IPython" },
+  { "<localleader>l", "<cmd>SlimeSendCurrentLine<CR>", desc = "Send Line to IPython" },
+  { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send to IPython" },
   
   -- Format
   { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
@@ -1548,15 +1561,21 @@ wk.add({
   { "gnn", "Initialize Treesitter Selection" },
   
   -- [ and ] mappings
-  { "[c", "<cmd>IPythonCellPrevCell<CR>", desc = "Previous Cell" },
-  { "]c", "<cmd>IPythonCellNextCell<CR>", desc = "Next Cell" },
+  { "[c", 
+    "<cmd>call search('^# %%', 'bW')<CR><cmd>call FlashCurrentCell()<CR>", 
+    desc = "Previous Cell (highlighted)" 
+  },
+  { "]c", 
+    "<cmd>call search('^# %%', 'W')<CR><cmd>call FlashCurrentCell()<CR>", 
+    desc = "Next Cell (highlighted)" 
+  },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
   
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
-  { "<F9>", "<cmd>IPythonCellInsertAbove<CR>a", desc = "Insert Cell Above" },
-  { "<F10>", "<cmd>IPythonCellInsertBelow<CR>a", desc = "Insert Cell Below" },
+  { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
+  { "<F10>", "o# %%<CR>", desc = "Insert Cell Below" },
 }, { mode = "n" })
 
 -- Insert mode mappings
@@ -1567,21 +1586,67 @@ wk.add({
   { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path", mode = "i" },
   { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line", mode = "i" },
   { "<C-x><C-o>", desc = "Ollama AI completion", mode = "i" },
-  { "<F9>", "<C-o>:IPythonCellInsertAbove<CR>", desc = "Insert Cell Above", mode = "i" },
-  { "<F10>", "<C-o>:IPythonCellInsertBelow<CR>", desc = "Insert Cell Below", mode = "i" },
+  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above", mode = "i" },
+  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below", mode = "i" },
 })
 
 -- Visual mode mappings
 wk.add({
-  { "<leader>h", "<Plug>SlimeRegionSend", desc = "Send Selection to IPython", mode = "v" },
-  { "k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
+  { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send Selection to IPython", mode = "v" },
+  { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
   { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates", mode = "v" },
   { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates", mode = "v" },
 })
 
 -- Operator pending mode mappings
 wk.add({
-  { "k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
+  { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
 })
 EOF
 """ which-key configuration
+
+""" Jupyter notebook
+" ─────────────────────────────────────────────────────────────
+" 1) autocommand group to intercept *.ipynb reads/writes
+augroup NotebookInplace
+  autocmd!
+  autocmd BufReadPost  *.ipynb call s:OpenNotebook(expand('<afile>'))
+  autocmd BufWritePre *.ipynb call s:SaveNotebook()
+augroup END
+
+" ─────────────────────────────────────────────────────────────
+" 2) Convert .ipynb → percent-formatted lines in current buffer
+function! s:OpenNotebook(path) abort
+  " read the raw JSON and pipe through jupytext (stdin→stdout)
+  " percent format keeps #%% cell markers
+  let l:json = join(readfile(a:path), "\n")
+  let l:py   = system('jupytext --to py:percent --from ipynb -', l:json)
+
+  " wipe out the buffer and replace with the py:percent lines
+  execute 'setlocal buftype='
+  execute 'setlocal filetype=python'
+  silent 0delete _
+  call append(0, split(l:py, "\n"))
+  " remember the real path in a buffer-local var
+  let b:__real_ipynb = a:path
+  setlocal buftype=acwrite       " trigger BufWritePre
+  setlocal bufhidden=wipe        " no leftover if aborted
+  file    `=fnamemodify(a:path, ':t')`  " show correct name in status
+endfunction
+
+" ─────────────────────────────────────────────────────────────
+" 3) On write, convert buffer → JSON and overwrite the real .ipynb
+function! s:SaveNotebook() abort
+  if !exists('b:__real_ipynb')
+    return
+  endif
+  " grab all lines in the buffer
+  let l:cells = join(getbufline('%', 1, '$'), "\n")
+  " pipe them to jupytext to re-encode as notebook JSON
+  let l:json  = system('jupytext --to ipynb --from py:percent -', l:cells)
+  " overwrite the real notebook
+  call writefile(split(l:json, "\n"), b:__real_ipynb)
+  " prevent Vim thinking we still need to write this buffer
+  setlocal nomodified
+endfunction
+""" Jupyter notebook
