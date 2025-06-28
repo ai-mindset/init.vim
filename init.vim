@@ -211,7 +211,6 @@ let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
             \ "*": v:false,
             \ "python": v:true,
-            \ "go": v:true,
             \ "javascript": v:true,
             \ "typescript": v:true,
             \ }
@@ -757,22 +756,21 @@ function _G.dump_lsp_client()
     end
 end
 
--- Add better UI for diagnostics
-local signs = { Error = "x", Warn = "!", Hint = ">", Info = "i" }
-
-for type, icon in pairs(signs) do
-  local hl = "DiagnosticSign" .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
-
+-- New way - define signs directly in diagnostic config
 vim.diagnostic.config({
     virtual_text = false,
-    signs = true,
+    signs = {
+      text = {
+        [vim.diagnostic.severity.ERROR] = "✖",
+        [vim.diagnostic.severity.WARN] = "⚠",
+        [vim.diagnostic.severity.HINT] = "💡",
+        [vim.diagnostic.severity.INFO] = "ℹ",
+      }
+    },
     underline = true,
     update_in_insert = false,
     severity_sort = false,
 })
-
 -- Show diagnostics when pressing 'gh'
 vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
 
@@ -927,25 +925,20 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 })
 
 -- Define visible diagnostic signs in the gutter
--- local signs = { Error = "E", Warn = "W", Hint = "H", Info = "I" }
-local signs = {
-  Error = "✖",   -- U+2716 HEAVY MULTIPLICATION X
-  Warn  = "⚠",   -- U+26A0 WARNING SIGN
-  Hint  = "💡",  -- U+1F4A1 ELECTRIC LIGHT BULB
-  Info  = "ℹ",   -- U+2139 INFORMATION SOURCE
-}
-for type, icon in pairs(signs) do
-  local hl = "DiagnosticSign" .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-end
-
--- Configure how diagnostics are displayed
+-- New way - define signs directly in diagnostic config
 vim.diagnostic.config({
-  virtual_text = false,  -- Don't show messages at end of line
-  signs = true,          -- Show signs in the gutter
-  underline = true,      -- Underline problematic code
-  severity_sort = true,  -- Show errors before warnings
-  float = {              -- Configure hover behavior
+  virtual_text = false,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = "✖",
+      [vim.diagnostic.severity.WARN] = "⚠",
+      [vim.diagnostic.severity.HINT] = "💡",
+      [vim.diagnostic.severity.INFO] = "ℹ",
+    }
+  },
+  underline = true,
+  severity_sort = true,
+  float = {
     focusable = false,
     style = "minimal",
     border = "rounded",
