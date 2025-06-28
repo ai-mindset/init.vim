@@ -26,7 +26,6 @@ Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
 " Neovim <-> IPython 
 Plug 'jpalardy/vim-slime'
-Plug 'hkupty/iron.nvim'
 
 " CSV viewer
 Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
