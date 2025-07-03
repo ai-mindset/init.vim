@@ -1107,10 +1107,11 @@ require("nvim-treesitter.configs").setup {
 
 -- Code folding
 vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()" 
+
 
 -- Start with all folds closed 
-vim.opt.foldenable = false 
+vim.opt.foldenable = true 
 vim.opt.foldlevel = 99
 
 -- Customize fold appearance (optional)
