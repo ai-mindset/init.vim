@@ -68,9 +68,9 @@ call plug#end()
 """ Catppuccin Theme Configuration with Accessibility Improvements
 lua << EOF
 require("catppuccin").setup({
-  flavour = "mocha",  -- The highest contrast variant
-  no_italic = true,   -- Avoid italics for better readability
-  no_bold = false,    -- Keep bold for structure
+  flavour = "mocha",   -- The highest contrast variant
+  no_italic = false,   -- Avoid italics for better readability
+  no_bold = false,     -- Keep bold for structure
   styles = {
     comments = {},
     conditionals = {},
@@ -118,7 +118,15 @@ hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
 " Make gutter line numbers more accessible
 hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
 hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
+""" Catppuccin Theme Configuration with Accessibility Improvements
 
+
+""" Use jq for JSON formatting
+" Makes :Format run `:%!jq .`
+command! Format %!jq . 
+" Map <leader>j → :Format
+nnoremap <silent> <leader>j :Format<CR>
+""" Use jq for JSON formatting
 
 """ vim-slime configuration for IPython
 let g:slime_target = "tmux"
@@ -171,7 +179,6 @@ nnoremap ]c :call search("^# %%", "W")<CR>:call FlashCurrentCell()<CR>
 
 " Simple vim-slime mappings for IPython
 nnoremap <localleader>l :SlimeSendCurrentLine<CR>
-nnoremap <localleader>v :SlimeSend<CR>
 vnoremap <localleader>v :SlimeSend<CR>
 nnoremap <localleader>c :call SlimeSendCell()<CR>
 
@@ -220,7 +227,7 @@ let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 local opts = {
-  model = "codestral:latest",
+  model = "gemma3n:e2b-it-q4_K_M",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -1517,6 +1524,7 @@ wk.add({
   
   -- Format
   { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
+  { "<leader>j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
   
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
