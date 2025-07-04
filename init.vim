@@ -818,6 +818,36 @@ local on_attach = function(client, bufnr)
   -- Debug print
   print("LSP attached:", client.name)
   
+  -- Signature help auto-trigger https://neovim.discourse.group/t/show-signature-help-on-insert-mode/2007/5
+  signature_help_window_opened = false
+  signature_help_forced = false
+  function my_signature_help_handler(handler)
+      return function (...)
+          if _G.signature_help_forced and _G.signature_help_window_opened then
+              _G.signature_help_forced = false
+              return handler(...)
+          end
+          if _G.signature_help_window_opened then
+              return
+          end
+          local fbuf, fwin = handler(...)
+          _G.signature_help_window_opened = true
+          vim.api.nvim_exec("autocmd WinClosed "..fwin.." lua _G.signature_help_window_opened=false", false)
+          return fbuf, fwin
+      end
+  end
+  
+  function force_signature_help()
+      _G.signature_help_forced = true
+      vim.lsp.buf.signature_help()
+  end
+  
+  vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
+      my_signature_help_handler(vim.lsp.handlers.signature_help),
+      {}
+  )
+  -- Signature help auto-trigger
+
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true }
   
@@ -837,13 +867,13 @@ local on_attach = function(client, bufnr)
   -- Rename keymaps (remove duplicate)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
 end
-  
--- Mapping to manually trigger signature help
-vim.keymap.set('n', '<leader>s', function()
-  vim.lsp.buf.signature_help()
-end, { noremap = true, silent = true })
 EOF
-""" Diagnostics configuration 
+
+augroup lsp
+    autocmd!
+    autocmd CursorHoldI *.* lua vim.lsp.buf.signature_help()
+augroup END
+""" LSP Configuration
 
 """ Linting and Formatting Configuration
 lua << EOF
