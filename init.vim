@@ -69,7 +69,7 @@ call plug#end()
 lua << EOF
 require("catppuccin").setup({
   flavour = "mocha",   -- The highest contrast variant
-  no_italic = false,   -- Avoid italics for better readability
+  no_italic = false,   
   no_bold = false,     -- Keep bold for structure
   styles = {
     comments = {},
@@ -227,7 +227,7 @@ let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
 """ ollama.nvim configuration
 lua << EOF
 local opts = {
-  model = "gemma3n:e2b-it-q4_K_M",
+  model = "gemma3n:latest",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -842,9 +842,12 @@ local on_attach = function(client, bufnr)
       vim.lsp.buf.signature_help()
   end
   
+  -- Signature help auto-trigger
   vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
-      my_signature_help_handler(vim.lsp.handlers.signature_help),
-      {}
+    vim.lsp.handlers.signature_help, {
+      border = 'rounded',
+      close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
+    }
   )
   -- Signature help auto-trigger
 
@@ -866,13 +869,34 @@ local on_attach = function(client, bufnr)
   
   -- Rename keymaps (remove duplicate)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
+
+  -- Only trigger signature help for programming languages
+  local programming_filetypes = {
+    'python', 'go', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
+    'lua', 'rust', 'c', 'cpp', 'java', 'php', 'ruby', 'html', 'css', 'scss'
+  }
+  
+  local function is_programming_filetype()
+    local ft = vim.bo.filetype
+    for _, prog_ft in ipairs(programming_filetypes) do
+      if ft == prog_ft then
+        return true
+      end
+    end
+    return false
+  end
+
+  -- Set up signature help autocmd only for programming files
+  if is_programming_filetype() then
+    vim.api.nvim_create_autocmd('CursorHoldI', {
+      buffer = bufnr,
+      callback = function()
+        vim.lsp.buf.signature_help()
+      end,
+    })
+  end
 end
 EOF
-
-augroup lsp
-    autocmd!
-    autocmd CursorHoldI *.* lua vim.lsp.buf.signature_help()
-augroup END
 """ LSP Configuration
 
 """ Linting and Formatting Configuration
