@@ -1044,6 +1044,7 @@ require("conform").setup({
     python = { "ruff_organise_imports", "ruff_format" },
     deno = { "deno_fmt" },
     json = { "biome" },
+    ["*"] = { "trim_whitespace" },
   },
 
   -- Organise Python imports
