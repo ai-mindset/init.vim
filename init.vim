@@ -810,7 +810,16 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end,
 })
 
--- LSP Configuration
+-- Configure signature help handler once (globally, outside on_attach)
+vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
+  vim.lsp.handlers.signature_help, {
+    border = 'rounded',
+    close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
+    focusable = false,
+  }
+)
+
+-- LSP Configuration  
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 -- LSP Keybindings
@@ -818,41 +827,8 @@ local on_attach = function(client, bufnr)
   -- Debug print
   print("LSP attached:", client.name)
   
-  -- Signature help auto-trigger https://neovim.discourse.group/t/show-signature-help-on-insert-mode/2007/5
-  signature_help_window_opened = false
-  signature_help_forced = false
-  function my_signature_help_handler(handler)
-      return function (...)
-          if _G.signature_help_forced and _G.signature_help_window_opened then
-              _G.signature_help_forced = false
-              return handler(...)
-          end
-          if _G.signature_help_window_opened then
-              return
-          end
-          local fbuf, fwin = handler(...)
-          _G.signature_help_window_opened = true
-          vim.api.nvim_exec("autocmd WinClosed "..fwin.." lua _G.signature_help_window_opened=false", false)
-          return fbuf, fwin
-      end
-  end
-  
-  function force_signature_help()
-      _G.signature_help_forced = true
-      vim.lsp.buf.signature_help()
-  end
-  
-  -- Signature help auto-trigger
-  vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
-    vim.lsp.handlers.signature_help, {
-      border = 'rounded',
-      close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
-    }
-  )
-  -- Signature help auto-trigger
-
   -- Common options for most keymaps
-  local opts = { noremap = true, silent = true }
+  local opts = { noremap = true, silent = true, buffer = bufnr }
   
   -- Navigation keymaps
   vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
@@ -866,32 +842,41 @@ local on_attach = function(client, bufnr)
   
   -- Editing keymaps
   vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
-  
-  -- Rename keymaps (remove duplicate)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
 
-  -- Only trigger signature help for programming languages
+  -- Programming filetypes where signature help should auto-trigger
   local programming_filetypes = {
-    'python', 'go', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
-    'lua', 'rust', 'c', 'cpp', 'java', 'php', 'ruby', 'html', 'css', 'scss'
+    'python', 'jupyter', 'go', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
+    'lua', 'rust', 'c', 'cpp', 'java', 'php', 'ruby'
   }
   
-  local function is_programming_filetype()
-    local ft = vim.bo.filetype
-    for _, prog_ft in ipairs(programming_filetypes) do
-      if ft == prog_ft then
-        return true
-      end
-    end
-    return false
-  end
-
-  -- Set up signature help autocmd only for programming files
-  if is_programming_filetype() then
+  -- Set up signature help auto-trigger only for programming files
+  if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
+    -- Use InsertCharPre instead of TextChangedI - fires BEFORE character insertion
+    vim.api.nvim_create_autocmd('InsertCharPre', {
+      buffer = bufnr,
+      callback = function()
+        local char = vim.v.char
+        if char == '(' or char == ',' then
+          vim.schedule(function()
+            pcall(vim.lsp.buf.signature_help)
+          end)
+        end
+      end,
+    })
+    
+    -- Backup: CursorHoldI for when pausing inside function calls
     vim.api.nvim_create_autocmd('CursorHoldI', {
       buffer = bufnr,
       callback = function()
-        vim.lsp.buf.signature_help()
+        local line = vim.api.nvim_get_current_line()
+        local col = vim.api.nvim_win_get_cursor(0)[2]
+        local before_cursor = col > 0 and line:sub(1, col) or ''
+        
+        -- Only trigger if we're likely inside a function call
+        if before_cursor:match('%(') and not before_cursor:match('%)') then
+          pcall(vim.lsp.buf.signature_help)
+        end
       end,
     })
   end
