@@ -14,7 +14,7 @@ Plug 'mfussenegger/nvim-lint'                                 " Linting engine
 Plug 'stevearc/conform.nvim'                                  " Formatting engine
 Plug 'hrsh7th/nvim-cmp'                                       " Completion Engine
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
-Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion 
+Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
@@ -24,7 +24,7 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
-" Neovim <-> IPython 
+" Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
 
 " CSV viewer
@@ -41,22 +41,22 @@ Plug 'junegunn/fzf.vim'                                       " fzf vim bindings
 
 " Essential Plugins
 Plug 'tpope/vim-surround'                                     " Plugin for surrounding text
-Plug 'tpope/vim-commentary'                                   " Commenting plugin 
+Plug 'tpope/vim-commentary'                                   " Commenting plugin
 Plug 'tpope/vim-repeat'                                       " Repeat plugin
 Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugin
 
 " Git
 Plug 'tpope/vim-fugitive'                                     " Git integration
 Plug 'lewis6991/gitsigns.nvim'                                " Git signs
-Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev 
+Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
 
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
-Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents  
+Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents
 Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
 Plug 'wolandark/vim-piper'                                    " Text to speech
-Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text 
+Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
@@ -69,7 +69,7 @@ call plug#end()
 lua << EOF
 require("catppuccin").setup({
   flavour = "mocha",   -- The highest contrast variant
-  no_italic = false,   
+  no_italic = false,
   no_bold = false,     -- Keep bold for structure
   styles = {
     comments = {},
@@ -123,7 +123,7 @@ hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cter
 
 """ Use jq for JSON formatting
 " Makes :Format run `:%!jq .`
-command! Format %!jq . 
+command! Format %!jq .
 " Map <leader>j → :Format
 nnoremap <silent> <leader>j :Format<CR>
 """ Use jq for JSON formatting
@@ -144,17 +144,17 @@ function! FlashCurrentCell()
   " Save current CursorLine highlight settings
   let cursorline_enabled = &cursorline
   let hl_cursorline = execute('highlight CursorLine')
-  
+
   " Enable cursorline and set to bright yellow temporarily
   set cursorline
   highlight CursorLine ctermbg=yellow guibg=#FFFF00
-  
+
   " Redraw screen to show highlight
   redraw
-  
+
   " Wait briefly
   sleep 100m
-  
+
   " Restore original CursorLine settings
   if !cursorline_enabled
     set nocursorline
@@ -168,7 +168,7 @@ function! FlashCurrentCell()
       highlight CursorLine guibg=#303030 ctermbg=236
     endif
   endif
-  
+
   " Redraw again to apply restored settings
   redraw
 endfunction
@@ -186,27 +186,27 @@ nnoremap <localleader>c :call SlimeSendCell()<CR>
 function! SlimeSendCell()
   " Save cursor position
   let save_pos = getpos('.')
-  
+
   " Find cell boundaries
   let cell_start = search("^# %%", "bcnW")
   let cell_end = search("^# %%", "nW")
-  
+
   if cell_start == 0
     let cell_start = 1
   endif
-  
+
   if cell_end == 0
     let cell_end = line('$')
   else
     let cell_end = cell_end - 1
   endif
-  
+
   " Send the cell
   execute cell_start . "," . cell_end . "SlimeSend"
-  
+
   " Restore cursor position
   call setpos('.', save_pos)
-  
+
   " Flash the cell
   call FlashCurrentCell()
 endfunction
@@ -334,14 +334,14 @@ set termguicolors                     " True colour support
 
 """ Basic Settings
 
-"" Highlight on hover 
+"" Highlight on hover
 set updatetime=1000
 augroup HighlightOnHover
     autocmd!
     autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
     autocmd CursorHold,CursorHoldI * match none
 augroup END
-"" Highlight on hover 
+"" Highlight on hover
 
 " Disable highlight when <leader><cr> is pressed
 map <silent> <leader><cr> :noh<cr>
@@ -360,10 +360,10 @@ let g:currentmode = {
     \ 'no' : 'N·OP',
     \ 'v'  : 'VISUAL',
     \ 'V'  : 'V·LINE',
-    \ "\<C-V>" : 'V·BLOCK',  
+    \ "\<C-V>" : 'V·BLOCK',
     \ 's'  : 'SELECT',
     \ 'S'  : 'S·LINE',
-    \ "\<C-S>" : 'S·BLOCK',  
+    \ "\<C-S>" : 'S·BLOCK',
     \ 'i'  : 'INSERT',
     \ 'R'  : 'REPLACE',
     \ 'Rv' : 'V·REPLACE',
@@ -408,12 +408,12 @@ endfunction
 function! PWDPath()
     let l:full_path = expand('%:p')
     let l:home = $HOME
-    
+
     " Replace home directory with tilde
     if l:full_path =~# '^' . l:home
         return '~' . l:full_path[len(l:home):]
     endif
-    
+
     " If not under home, return the full path
     return l:full_path
 endfunction
@@ -423,7 +423,7 @@ function! GitInfo()
     if !exists('*FugitiveHead') || FugitiveHead() == ''
         return ''
     endif
-    
+
     let l:branch = FugitiveHead()
     " Optional: Add status indicators if you have fugitive
     return ' branch:' . l:branch . ' '
@@ -445,13 +445,13 @@ function! SetupStatusline()
     hi StModeVisual   guifg=#F8F8F2 guibg=#D70000 ctermfg=255 ctermbg=160 gui=bold  " Red
     hi StModeReplace  guifg=#F8F8F2 guibg=#8700AF ctermfg=255 ctermbg=91  gui=bold  " Purple
     hi StModeCommand  guifg=#F8F8F2 guibg=#005F5F ctermfg=255 ctermbg=23  gui=bold  " Teal
-    
+
     hi StInfo         guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
     hi StPath         guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=none  " Blue
     hi StGit          guifg=#F8F8F2 guibg=#5F8700 ctermfg=255 ctermbg=64  gui=none  " Green
     hi StVenv         guifg=#F8F8F2 guibg=#5F5F87 ctermfg=255 ctermbg=60  gui=none  " Slate
     hi StPosition     guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
-    
+
     " Update statusline with dynamically coloured mode segment
     let &statusline = ''
     let &statusline .= 'mode:%{%StatuslineMode()%}'                                           " Mode with dynamic colours
@@ -466,7 +466,7 @@ endfunction
 " Dynamic mode colours function - more reliable
 function! StatuslineMode()
     let l:mode = mode()
-    
+
     " Set highlight based on mode
     if l:mode =~# '\v(n|no)'
         exe 'hi! link StatusLine StModeNormal'
@@ -493,9 +493,9 @@ endfunction
 augroup StatusLineSetup
     autocmd!
     autocmd VimEnter,ColorScheme * call SetupStatusline()
-    
+
     " Only redraw on more specific events
-    autocmd BufEnter,WinEnter,FileType,BufWritePost,TextChanged,InsertLeave * 
+    autocmd BufEnter,WinEnter,FileType,BufWritePost,TextChanged,InsertLeave *
           \ if &laststatus > 0 | redrawstatus | endif
 augroup END
 
@@ -517,7 +517,7 @@ let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
 map <leader>ss :setlocal spell!<cr>
 
 """ Shortcuts using <leader>
-map <leader>sn ]s " Next spelling mistake    
+map <leader>sn ]s " Next spelling mistake
 map <leader>sp [s " Previous spelling mistake
 map <leader>sa zg " Add word to dictionary
 map <leader>s? z= " Get suggestions
@@ -577,9 +577,9 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-     "jedi_language_server",  -- Python
---     "pyright",               -- Python
-    "denols",                -- Deno 
+    "jedi_language_server",  -- Python
+    "ty",                    -- Python type checker
+    "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
@@ -616,15 +616,26 @@ require("mason-lspconfig").setup({
       })
     end,
 
+    -- Ty
+    ty_type_checker = function()
+      require('lspconfig').ty.setup({
+        init_options = {
+          settings = {
+            -- ty language server settings go here
+          }
+        }
+      })
+      end,
+
     -- Deno Language Server
     denols = function()
       require("lspconfig").denols.setup({
         root_dir = require("lspconfig.util").root_pattern(
-          "deno.json", 
+          "deno.json",
           "deno.jsonc"
         ),
         single_file_support = false,
-        
+
         init_options = {
           lint = true,
           unstable = true,
@@ -638,7 +649,7 @@ require("mason-lspconfig").setup({
             },
           },
         },
-        
+
         settings = {
           deno = {
             enable = true,
@@ -658,12 +669,12 @@ require("mason-lspconfig").setup({
             },
           },
         },
-        
+
         on_attach = on_attach,
         capabilities = capabilities,
       })
     end,
-    
+
     -- Docker Language Server
     dockerls = function()
       require("lspconfig").dockerls.setup({
@@ -819,37 +830,37 @@ vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
   }
 )
 
--- LSP Configuration  
+-- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
   -- Debug print
   print("LSP attached:", client.name)
-  
+
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true, buffer = bufnr }
-  
+
   -- Navigation keymaps
   vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
   vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-  
+
   -- Information keymaps
   vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
   vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-  
+
   -- Editing keymaps
   vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
-  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts) 
+  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
 
   -- Programming filetypes where signature help should auto-trigger
   local programming_filetypes = {
     'python', 'jupyter', 'go', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
     'lua', 'rust', 'c', 'cpp', 'java', 'php', 'ruby'
   }
-  
+
   -- Set up signature help auto-trigger only for programming files
   if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
     -- Use InsertCharPre instead of TextChangedI - fires BEFORE character insertion
@@ -864,7 +875,7 @@ local on_attach = function(client, bufnr)
         end
       end,
     })
-    
+
     -- Backup: CursorHoldI for when pausing inside function calls
     vim.api.nvim_create_autocmd('CursorHoldI', {
       buffer = bufnr,
@@ -872,7 +883,7 @@ local on_attach = function(client, bufnr)
         local line = vim.api.nvim_get_current_line()
         local col = vim.api.nvim_win_get_cursor(0)[2]
         local before_cursor = col > 0 and line:sub(1, col) or ''
-        
+
         -- Only trigger if we're likely inside a function call
         if before_cursor:match('%(') and not before_cursor:match('%)') then
           pcall(vim.lsp.buf.signature_help)
@@ -909,7 +920,7 @@ local function update_diagnostics_status()
   local warn_count = 0
   local error_lines = {}
   local warn_lines = {}
-  
+
   for _, diag in ipairs(diagnostics) do
     if diag.severity == vim.diagnostic.severity.ERROR then
       error_count = error_count + 1
@@ -919,27 +930,27 @@ local function update_diagnostics_status()
       table.insert(warn_lines, diag.lnum + 1)  -- +1 to convert to 1-based line numbers
     end
   end
-  
+
   -- Sort line numbers
   table.sort(error_lines)
   table.sort(warn_lines)
-  
+
   -- Prepare location strings (with up to 3 line numbers shown)
-  local error_loc = #error_lines > 0 and 
-    " [Lines: " .. table.concat(error_lines, ",", 1, math.min(3, #error_lines)) .. 
+  local error_loc = #error_lines > 0 and
+    " [Lines: " .. table.concat(error_lines, ",", 1, math.min(3, #error_lines)) ..
     (#error_lines > 3 and "..." or "") .. "]" or ""
-    
-  local warn_loc = #warn_lines > 0 and 
-    " [Lines: " .. table.concat(warn_lines, ",", 1, math.min(3, #warn_lines)) .. 
+
+  local warn_loc = #warn_lines > 0 and
+    " [Lines: " .. table.concat(warn_lines, ",", 1, math.min(3, #warn_lines)) ..
     (#warn_lines > 3 and "..." or "") .. "]" or ""
-  
+
   -- Display diagnostic count in command line with locations
   if error_count > 0 or warn_count > 0 then
-    local msg = string.format("Linting: %d errors%s, %d warnings%s", 
+    local msg = string.format("Linting: %d errors%s, %d warnings%s",
       error_count, error_loc, warn_count, warn_loc)
     vim.api.nvim_echo({{msg, "WarningMsg"}}, false, {})
   end
-  
+
   -- Update statusline variable
   vim.g.linting_status = ""
   if error_count > 0 then
@@ -1011,10 +1022,10 @@ vim.api.nvim_create_user_command("LintLocations", function()
     print("No linting issues found")
     return
   end
-  
+
   -- Sort diagnostics by line number
   table.sort(diagnostics, function(a, b) return a.lnum < b.lnum end)
-  
+
   -- Display all diagnostics in a nice format
   local output = {"Linting issues:"}
   for _, diag in ipairs(diagnostics) do
@@ -1026,11 +1037,11 @@ vim.api.nvim_create_user_command("LintLocations", function()
     elseif diag.severity == vim.diagnostic.severity.HINT then
       severity = "Hint"
     end
-    
-    table.insert(output, string.format("Line %d: [%s] %s", 
+
+    table.insert(output, string.format("Line %d: [%s] %s",
       diag.lnum + 1, severity, diag.message))
   end
-  
+
   vim.api.nvim_echo(vim.tbl_map(function(line)
     return {line, "Normal"}
   end, output), true, {})
@@ -1087,7 +1098,7 @@ require("conform").setup({
     })
   end, { desc = "Format file or range" })
 EOF
-""" Linting, formatting configuration 
+""" Linting, formatting configuration
 
 """ nvim-treesitter Configuration
 lua << EOF
@@ -1106,7 +1117,7 @@ require("nvim-treesitter.configs").setup {
         -- For documentation/markdown files
         "markdown",
         "markdown_inline",
-        
+
         -- For Yaml files
         "yaml"
         },
@@ -1126,14 +1137,14 @@ require("nvim-treesitter.configs").setup {
     additional_vim_regex_highlighting = false,
   },
   fold = {
-      enable = true 
-  }, 
+      enable = true
+  },
 
   -- Optional but recommended
   indent = {
     enable = true,
   },
-  
+
   incremental_selection = {
     enable = true,
     keymaps = {
@@ -1147,11 +1158,11 @@ require("nvim-treesitter.configs").setup {
 
 -- Code folding
 vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()" 
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 
 
--- Start with all folds closed 
-vim.opt.foldenable = true 
+-- Start with all folds closed
+vim.opt.foldenable = true
 vim.opt.foldlevel = 99
 
 -- Customize fold appearance (optional)
@@ -1165,7 +1176,7 @@ let g:context_enabled = 1
 """ context Configuration
 
 
-""" Fuzzy finding Configuration 
+""" Fuzzy finding Configuration
 let g:fzf_vim = {}
 " This is the default option:
 "   - Preview window on the right with 50% width
@@ -1205,13 +1216,13 @@ inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
 " Statusline
 autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
-""" Fuzzy finding Configuration 
+""" Fuzzy finding Configuration
 
-""" CSV viewer  
+""" CSV viewer
 lua << EOF
 require('csvview').setup()
 EOF
-""" CSV viewer  
+""" CSV viewer
 
 """ Align sentences
 lua << EOF
@@ -1219,49 +1230,49 @@ function _G.align_sentences(start_line, end_line)
   local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
   local all_parts = {}
   local max_lengths = {}
-  
+
   -- Step 1: Split each line and analyze lengths
   for _, line in ipairs(lines) do
     local parts = {}
     local pos = 1
     local part_start = 1
-    
+
     -- Split by period followed by whitespace
     while true do
       local period_pos = line:find('%.[%s]+', pos)
       if not period_pos then break end
-      
+
       local part = line:sub(part_start, period_pos)
       table.insert(parts, part)
-      
+
       pos = period_pos + 2
       part_start = pos
     end
-    
+
     -- Add the final part if it exists
     if part_start <= #line then
       table.insert(parts, line:sub(part_start))
     end
-    
+
     table.insert(all_parts, parts)
-    
+
     -- Track maximum length for each column
     for i, part in ipairs(parts) do
       max_lengths[i] = math.max(max_lengths[i] or 0, vim.fn.strwidth(part) + 1)
     end
   end
-  
+
   -- Step 2: Format each line with proper padding
   local result_lines = {}
   for _, parts in ipairs(all_parts) do
     local formatted = ""
-    
+
     for i, part in ipairs(parts) do
       -- Add period if it doesn't end with one
       if not part:match('%.%s*$') then
         part = part .. '.'
       end
-      
+
       -- Add appropriate padding except for the last column
       if i < #parts then
         local padding = max_lengths[i] - vim.fn.strwidth(part)
@@ -1270,10 +1281,10 @@ function _G.align_sentences(start_line, end_line)
         formatted = formatted .. part
       end
     end
-    
+
     table.insert(result_lines, formatted)
   end
-  
+
   -- Step 3: Replace the original lines
   vim.api.nvim_buf_set_lines(0, start_line - 1, end_line, false, result_lines)
 end
@@ -1283,9 +1294,9 @@ vim.cmd([[
   command! -range AlignSentences lua _G.align_sentences(<line1>, <line2>)
 ]])
 EOF
-""" Align sentences 
+""" Align sentences
 
-""" Git 
+""" Git
 lua << EOF
 require('gitsigns').setup({
   current_line_blame = true,
@@ -1299,20 +1310,20 @@ require('gitsigns').setup({
   },
   on_attach = function(bufnr)
     local gs = package.loaded.gitsigns
-    
+
     -- Navigation between hunks
     vim.keymap.set('n', '>c', function()
       if vim.wo.diff then return '>c' end
       vim.schedule(function() gs.next_hunk() end)
       return '<Ignore>'
     end, {expr=true, buffer=bufnr})
-    
+
     vim.keymap.set('n', '<c', function()
       if vim.wo.diff then return '<c' end
       vim.schedule(function() gs.prev_hunk() end)
       return '<Ignore>'
     end, {expr=true, buffer=bufnr})
-    
+
     -- Actions
     vim.keymap.set('n', '<leader>hs', gs.stage_hunk)
     vim.keymap.set('n', '<leader>hr', gs.reset_hunk)
@@ -1349,7 +1360,7 @@ require('diffview').setup({
   },
 })
 EOF
-""" Git 
+""" Git
 
 """ which-key configuration
 lua << EOF
@@ -1412,7 +1423,7 @@ _G.conflict.accept_current = function()
   -- Find conflict markers
   local pos = vim.fn.getpos(".")
   local start = vim.fn.search('<<<<<<< ', 'bcn')
-  
+
   if start <= 0 then
     start = vim.fn.search('<<<<<<< ', 'cn')
     if start <= 0 then
@@ -1420,22 +1431,22 @@ _G.conflict.accept_current = function()
       return
     end
   end
-  
+
   local middle = vim.fn.search('=======', 'cn')
   local end_marker = vim.fn.search('>>>>>>> ', 'cn')
-  
+
   if start > 0 and middle > 0 and end_marker > 0 then
     -- Keep the current changes (lines between <<<<<<< and =======)
     local ours = vim.fn.getline(start + 1, middle - 1)
-    
+
     -- Delete the entire conflict block
     vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
-    
+
     -- Insert our changes
     if #ours > 0 then
       vim.fn.append(start - 1, ours)
     end
-    
+
     -- Restore cursor position as best we can
     vim.fn.setpos(".", pos)
     vim.notify('Kept current changes', vim.log.levels.INFO)
@@ -1449,7 +1460,7 @@ _G.conflict.accept_incoming = function()
   -- Find conflict markers
   local pos = vim.fn.getpos(".")
   local start = vim.fn.search('<<<<<<< ', 'bcn')
-  
+
   if start <= 0 then
     start = vim.fn.search('<<<<<<< ', 'cn')
     if start <= 0 then
@@ -1457,22 +1468,22 @@ _G.conflict.accept_incoming = function()
       return
     end
   end
-  
+
   local middle = vim.fn.search('=======', 'cn')
   local end_marker = vim.fn.search('>>>>>>> ', 'cn')
-  
+
   if start > 0 and middle > 0 and end_marker > 0 then
     -- Keep the incoming changes (lines between ======= and >>>>>>>)
     local theirs = vim.fn.getline(middle + 1, end_marker - 1)
-    
+
     -- Delete the entire conflict block
     vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
-    
+
     -- Insert their changes
     if #theirs > 0 then
       vim.fn.append(start - 1, theirs)
     end
-    
+
     -- Restore cursor position as best we can
     vim.fn.setpos(".", pos)
     vim.notify('Kept incoming changes', vim.log.levels.INFO)
@@ -1486,7 +1497,7 @@ _G.conflict.accept_both = function()
   -- Find conflict markers
   local pos = vim.fn.getpos(".")
   local start = vim.fn.search('<<<<<<< ', 'bcn')
-  
+
   if start <= 0 then
     start = vim.fn.search('<<<<<<< ', 'cn')
     if start <= 0 then
@@ -1494,18 +1505,18 @@ _G.conflict.accept_both = function()
       return
     end
   end
-  
+
   local middle = vim.fn.search('=======', 'cn')
   local end_marker = vim.fn.search('>>>>>>> ', 'cn')
-  
+
   if start > 0 and middle > 0 and end_marker > 0 then
     -- Get both parts
     local ours = vim.fn.getline(start + 1, middle - 1)
     local theirs = vim.fn.getline(middle + 1, end_marker - 1)
-    
+
     -- Delete the conflict markers and insert both changes
     vim.fn.deletebufline(vim.fn.bufnr(), start, end_marker)
-    
+
     -- Add both changes
     if #theirs > 0 then
       vim.fn.append(start - 1, theirs)
@@ -1513,7 +1524,7 @@ _G.conflict.accept_both = function()
     if #ours > 0 then
       vim.fn.append(start - 1, ours)
     end
-    
+
     -- Restore cursor position as best we can
     vim.fn.setpos(".", pos)
     vim.notify('Kept both changes', vim.log.levels.INFO)
@@ -1549,24 +1560,24 @@ wk.add({
   { "<leader>sp", "[s", desc = "Previous misspelled word" },
   { "<leader>sa", "zg", desc = "Add word to dictionary" },
   { "<leader>s?", "z=", desc = "Suggest corrections" },
-  
+
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
   { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" },
-  
+
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
   { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
-  
+
   -- IPython/Slime integration
   { "<localleader>c", "<cmd>call SlimeSendCell()<CR>", desc = "Send Cell to IPython" },
   { "<localleader>l", "<cmd>SlimeSendCurrentLine<CR>", desc = "Send Line to IPython" },
   { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send to IPython" },
-  
+
   -- Format
   { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
   { "<leader>j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
-  
+
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
   { "<leader>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
@@ -1574,7 +1585,7 @@ wk.add({
   { "<leader>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
   { "<leader>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
   { "<leader>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
-  
+
   -- Git operations with conflict resolution
   { "<leader>g", group = "Git" },
   { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diff View" },
@@ -1584,7 +1595,7 @@ wk.add({
   { "<leader>go", "<cmd>lua _G.conflict.accept_current()<CR>", desc = "Accept Current Changes" },
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
-  
+
   -- Space prefix mappings
   { "<space>t", group = "Text-to-Speech" },
   { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
@@ -1592,7 +1603,7 @@ wk.add({
   { "<space>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
   { "<space>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
   { "<space>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
-  
+
   -- g prefix mappings
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
@@ -1600,19 +1611,19 @@ wk.add({
   { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
   { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", desc = "Show Diagnostics" },
   { "gnn", "Initialize Treesitter Selection" },
-  
+
   -- [ and ] mappings
-  { "[c", 
-    "<cmd>call search('^# %%', 'bW')<CR><cmd>call FlashCurrentCell()<CR>", 
-    desc = "Previous Cell (highlighted)" 
+  { "[c",
+    "<cmd>call search('^# %%', 'bW')<CR><cmd>call FlashCurrentCell()<CR>",
+    desc = "Previous Cell (highlighted)"
   },
-  { "]c", 
-    "<cmd>call search('^# %%', 'W')<CR><cmd>call FlashCurrentCell()<CR>", 
-    desc = "Next Cell (highlighted)" 
+  { "]c",
+    "<cmd>call search('^# %%', 'W')<CR><cmd>call FlashCurrentCell()<CR>",
+    desc = "Next Cell (highlighted)"
   },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
-  
+
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
   { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
