@@ -577,8 +577,7 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "jedi_language_server",  -- Python
-    "ty",                    -- Python type checker
+    "pyright",               -- Python
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -616,12 +615,18 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Ty
-    ty_type_checker = function()
-      require('lspconfig').ty.setup({
+    -- Pyright
+    pyright_ls_type_checker = function()
+      require('lspconfig').pyright.setup({
         init_options = {
           settings = {
-            -- ty language server settings go here
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = "workspace",
+                useLibraryCodeForTypes = true
+              }
+            }
           }
         }
       })
