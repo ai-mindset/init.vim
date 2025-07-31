@@ -861,10 +861,7 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
 
   -- Programming filetypes where signature help should auto-trigger
-  local programming_filetypes = {
-    'python', 'jupyter', 'go', 'typescript', 'javascript', 'typescriptreact', 'javascriptreact',
-    'lua', 'rust', 'c', 'cpp', 'java', 'php', 'ruby'
-  }
+  local programming_filetypes = {'python', 'typescript', 'javascript'}
 
   -- Set up signature help auto-trigger only for programming files
   if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
