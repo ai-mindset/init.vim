@@ -19,7 +19,8 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-"Plug 'github/copilot.vim'                                     " GitHub Copilot
+Plug 'github/copilot.vim'                                     " GitHub Copilot
+Plug 'CopilotC-Nvim/CopilotChat.nvim'                         " Chat with GitHub Copilot
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -63,6 +64,7 @@ Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': 
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
+Plug 'norcalli/nvim-colorizer.lua'                            " Colour preview
 call plug#end()
 
 """ Catppuccin Theme Configuration with Accessibility Improvements
@@ -213,16 +215,52 @@ endfunction
 """ vim-slime configuration
 
 """ GitHub Copilot -- leaving in, in case I reactivate Copilot
-let g:copilot_enabled = v:false
+let g:copilot_enabled = v:true
 let g:copilot_telemetry = v:false
 let g:copilot_filetypes = {
             \ "*": v:false,
             \ "python": v:true,
             \ "javascript": v:true,
             \ "typescript": v:true,
+            \ 'sh': v:true,
+            \ 'bash': v:true,
+            \ 'zsh': v:true,
             \ }
-let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
+let g:copilot_model = "gpt-4.1"
+let g:copilot_no_tab_map = v:true
+imap <C-J> <Plug>(copilot-next)
+imap <C-K> <Plug>(copilot-previous)
 """ GitHub Copilot
+
+""" GitHub Copilot Chat
+lua << EOF
+require("CopilotChat").setup({
+  model = 'gpt-4.1',           -- AI model to use
+  temperature = 0.1,           -- Lower = focused, higher = creative
+  window = {
+    layout = 'vertical',       -- 'vertical', 'horizontal', 'float'
+    width = 0.5,               -- 50% of screen width
+  },
+  auto_insert_mode = true,     -- Enter insert mode when opening
+  window = {
+    layout = 'float',
+    width = 80, -- Fixed width in columns
+    height = 20, -- Fixed height in rows
+    border = 'rounded', -- 'single', 'double', 'rounded', 'solid'
+    title = '🤖 AI Assistant',
+    zindex = 100, -- Ensure window stays on top
+  },
+
+  headers = {
+    user = '👤 You: ',
+    assistant = '🤖 Copilot: ',
+    tool = '🔧 Tool: ',
+  },
+  separator = '━━',
+  show_folds = false, -- Disable folding for cleaner look
+})
+EOF
+""" GitHub Copilot Chat
 
 """ ollama.nvim configuration
 lua << EOF
@@ -1704,3 +1742,9 @@ function! s:SaveNotebook() abort
   setlocal nomodified
 endfunction
 """ Jupyter notebook
+
+""" nvim-colorizer
+lua << EOF
+require("colorizer").setup()
+EOF
+""" nvim-colorizer
