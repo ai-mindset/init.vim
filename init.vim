@@ -19,8 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-Plug 'github/copilot.vim'                                     " GitHub Copilot
-Plug 'CopilotC-Nvim/CopilotChat.nvim'                         " Chat with GitHub Copilot
+Plug 'zbirenbaum/copilot.lua'                                 " Fully featured & enhanced replacement for copilot.vim
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -214,80 +213,83 @@ function! SlimeSendCell()
 endfunction
 """ vim-slime configuration
 
-""" GitHub Copilot -- leaving in, in case I reactivate Copilot
-let g:copilot_enabled = v:true
-let g:copilot_telemetry = v:false
-let g:copilot_filetypes = {
-            \ "*": v:false,
-            \ "python": v:true,
-            \ "javascript": v:true,
-            \ "typescript": v:true,
-            \ 'sh': v:true,
-            \ 'bash': v:true,
-            \ 'zsh': v:true,
-            \ }
-let g:copilot_model = "gpt-4.1"
-let g:copilot_no_tab_map = v:true
-imap <C-J> <Plug>(copilot-next)
-imap <C-K> <Plug>(copilot-previous)
-""" GitHub Copilot
-
-""" GitHub Copilot Chat
+""" Copilot
 lua << EOF
-require("CopilotChat").setup({
-  model = 'gpt-4.1',           -- AI model to use
-  temperature = 0.1,           -- Lower = focused, higher = creative
-  window = {
-    layout = 'vertical',       -- 'vertical', 'horizontal', 'float'
-    width = 0.5,               -- 50% of screen width
+require('copilot').setup({
+  panel = {
+    enabled = true,
+    auto_refresh = false,
+    keymap = {
+      jump_prev = "[[",
+      jump_next = "]]",
+      accept = "<CR>",
+      refresh = "gr",
+      open = "<M-CR>"
+    },
+    layout = {
+      position = "bottom",
+      ratio = 0.4
+    },
   },
-  auto_insert_mode = true,     -- Enter insert mode when opening
-  window = {
-    layout = 'float',
-    width = 80, -- Fixed width in columns
-    height = 20, -- Fixed height in rows
-    border = 'rounded', -- 'single', 'double', 'rounded', 'solid'
-    title = '🤖 AI Assistant',
-    zindex = 100, -- Ensure window stays on top
+  suggestion = {
+    enabled = true,
+    auto_trigger = true,
+    hide_during_completion = true,
+    debounce = 75,
+    keymap = {
+      accept = "<Tab>",
+      accept_word = false,
+      accept_line = false,
+      next = "<M-]>",
+      prev = "<M-[>",
+      dismiss = "<C-]>",
+    },
   },
-
-  headers = {
-    user = '👤 You: ',
-    assistant = '🤖 Copilot: ',
-    tool = '🔧 Tool: ',
+  filetypes = {
+    -- Enable only specified languages
+    python = true,
+    javascript = true,
+    typescript = true,
+    javascriptreact = true,
+    typescriptreact = true,
+    sh = true,
+    bash = true,
+    zsh = true,
+    ["."] = false,
+    ["*"] = false,  -- Default disable all
   },
-  separator = '━━',
-  show_folds = false, -- Disable folding for cleaner look
+  copilot_node_command = 'node',
+  server_opts_overrides = {},
 })
 EOF
-""" GitHub Copilot Chat
+""" Copilot
 
-""" ollama.nvim configuration
-lua << EOF
-local opts = {
-  model = "gemma3n:latest",
-  url = "http://127.0.0.1:11434",
-  serve = {
-    on_start = false,
-    command = "ollama",
-    args = { "serve" },
-    stop_command = "pkill",
-    stop_args = { "-SIGTERM", "ollama" },
-  }
-}
-require("ollama").setup(opts)
+" """ ollama.nvim configuration
+" lua << EOF
+" local opts = {
+"   model = "gemma3n:latest",
+"   url = "http://127.0.0.1:11434",
+"   serve = {
+"     on_start = false,
+"     command = "ollama",
+"     args = { "serve" },
+"     stop_command = "pkill",
+"     stop_args = { "-SIGTERM", "ollama" },
+"   }
+" }
+" require("ollama").setup(opts)
 
-vim.keymap.set("i", "<C-x><C-o>", function()
-    require("cmp").complete({
-        config = {
-            sources = {
-                { name = "ollama" },
-                { name = "path"},
-            }
-        }
-    })
-end)
-EOF
+" vim.keymap.set("i", "<C-x><C-o>", function()
+"     require("cmp").complete({
+"         config = {
+"             sources = {
+"                 { name = "ollama" },
+"                 { name = "path"},
+"             }
+"         }
+"     })
+" end)
+" EOF
 """ ollama.nvim configuration
 
 """ journal.nvim
@@ -800,7 +802,7 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
-    { name = "crates" },
+--     { name = "ollama" },
   })
 })
 EOF
