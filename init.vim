@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " GitHub Copilot
-"Plug 'github/copilot.vim'                                     " GitHub Copilot
+Plug 'zbirenbaum/copilot.lua'                                 " Fully featured & enhanced replacement for copilot.vim
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
@@ -63,6 +63,7 @@ Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': 
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
+Plug 'norcalli/nvim-colorizer.lua'                            " Colour preview
 call plug#end()
 
 """ Catppuccin Theme Configuration with Accessibility Improvements
@@ -212,44 +213,83 @@ function! SlimeSendCell()
 endfunction
 """ vim-slime configuration
 
-""" GitHub Copilot -- leaving in, in case I reactivate Copilot
-let g:copilot_enabled = v:false
-let g:copilot_telemetry = v:false
-let g:copilot_filetypes = {
-            \ "*": v:false,
-            \ "python": v:true,
-            \ "javascript": v:true,
-            \ "typescript": v:true,
-            \ }
-let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
-""" GitHub Copilot
-
-""" ollama.nvim configuration
+""" Copilot
 lua << EOF
-local opts = {
-  model = "gemma3n:latest",
-  url = "http://127.0.0.1:11434",
-  serve = {
-    on_start = false,
-    command = "ollama",
-    args = { "serve" },
-    stop_command = "pkill",
-    stop_args = { "-SIGTERM", "ollama" },
-  }
-}
-require("ollama").setup(opts)
-
-vim.keymap.set("i", "<C-x><C-o>", function()
-    require("cmp").complete({
-        config = {
-            sources = {
-                { name = "ollama" },
-                { name = "path"},
-            }
-        }
-    })
-end)
+require('copilot').setup({
+  panel = {
+    enabled = false,
+    auto_refresh = false,
+    keymap = {
+      jump_prev = "[[",
+      jump_next = "]]",
+      accept = "<CR>",
+      refresh = "gr",
+      open = "<M-CR>"
+    },
+    layout = {
+      position = "bottom",
+      ratio = 0.4
+    },
+  },
+  suggestion = {
+    enabled = false,
+    auto_trigger = true,
+    hide_during_completion = true,
+    debounce = 75,
+    keymap = {
+      accept = "<Tab>",
+      accept_word = false,
+      accept_line = false,
+      next = "<M-]>",
+      prev = "<M-[>",
+      dismiss = "<C-]>",
+    },
+  },
+  filetypes = {
+    -- Enable only specified languages
+    python = true,
+    javascript = true,
+    typescript = true,
+    javascriptreact = true,
+    typescriptreact = true,
+    sh = true,
+    bash = true,
+    zsh = true,
+    ["."] = false,
+    ["*"] = false,  -- Default disable all
+  },
+  copilot_node_command = 'node',
+  server_opts_overrides = {},
+})
 EOF
+""" Copilot
+
+" """ ollama.nvim configuration
+" lua << EOF
+" local opts = {
+"   model = "gemma3n:latest",
+"   url = "http://127.0.0.1:11434",
+"   serve = {
+"     on_start = false,
+"     command = "ollama",
+"     args = { "serve" },
+"     stop_command = "pkill",
+"     stop_args = { "-SIGTERM", "ollama" },
+"   }
+" }
+" require("ollama").setup(opts)
+
+" vim.keymap.set("i", "<C-x><C-o>", function()
+"     require("cmp").complete({
+"         config = {
+"             sources = {
+"                 { name = "ollama" },
+"                 { name = "path"},
+"             }
+"         }
+"     })
+" end)
+" EOF
 """ ollama.nvim configuration
 
 """ journal.nvim
@@ -587,34 +627,6 @@ require("mason-lspconfig").setup({
   },
   automatic_installation = true,
   handlers = {
-    -- Jedi Language Server (Python)
-    jedi_language_server = function()
-      require("lspconfig").jedi_language_server.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        init_options = {
-          diagnostics = {
-            enable = true,
-            didOpen = true,
-            didChange = true,
-            didSave = true,
-          },
-          completion = {
-            disableSnippets = false,
-            resolveEagerly = true,
-          },
-          hover = {
-            enable = true,
-          },
-          jediSettings = {
-            autoImportModules = {},
-            caseInsensitiveCompletion = true,
-            debug = false,
-          },
-        }
-      })
-    end,
-
     -- Pyright
     pyright_ls_type_checker = function()
       require('lspconfig').pyright.setup({
@@ -762,7 +774,7 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
-    { name = "crates" },
+    { name = "ollama" },
   })
 })
 EOF
@@ -1704,3 +1716,9 @@ function! s:SaveNotebook() abort
   setlocal nomodified
 endfunction
 """ Jupyter notebook
+
+""" nvim-colorizer
+lua << EOF
+require("colorizer").setup()
+EOF
+""" nvim-colorizer
