@@ -217,7 +217,7 @@ endfunction
 lua << EOF
 require('copilot').setup({
   panel = {
-    enabled = true,
+    enabled = false,
     auto_refresh = false,
     keymap = {
       jump_prev = "[[",
@@ -232,7 +232,7 @@ require('copilot').setup({
     },
   },
   suggestion = {
-    enabled = true,
+    enabled = false,
     auto_trigger = true,
     hide_during_completion = true,
     debounce = 75,
@@ -627,34 +627,6 @@ require("mason-lspconfig").setup({
   },
   automatic_installation = true,
   handlers = {
-    -- Jedi Language Server (Python)
-    jedi_language_server = function()
-      require("lspconfig").jedi_language_server.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        init_options = {
-          diagnostics = {
-            enable = true,
-            didOpen = true,
-            didChange = true,
-            didSave = true,
-          },
-          completion = {
-            disableSnippets = false,
-            resolveEagerly = true,
-          },
-          hover = {
-            enable = true,
-          },
-          jediSettings = {
-            autoImportModules = {},
-            caseInsensitiveCompletion = true,
-            debug = false,
-          },
-        }
-      })
-    end,
-
     -- Pyright
     pyright_ls_type_checker = function()
       require('lspconfig').pyright.setup({
@@ -802,7 +774,7 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
---     { name = "ollama" },
+    { name = "ollama" },
   })
 })
 EOF
