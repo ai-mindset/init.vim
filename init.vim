@@ -18,9 +18,6 @@ Plug 'hrsh7th/cmp-buffer'                                     " Buffer completio
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
-" GitHub Copilot
-Plug 'zbirenbaum/copilot.lua'                                 " Fully featured & enhanced replacement for copilot.vim
-
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
@@ -213,83 +210,32 @@ function! SlimeSendCell()
 endfunction
 """ vim-slime configuration
 
-""" Copilot
+""" ollama.nvim configuration
 lua << EOF
-require('copilot').setup({
-  panel = {
-    enabled = false,
-    auto_refresh = false,
-    keymap = {
-      jump_prev = "[[",
-      jump_next = "]]",
-      accept = "<CR>",
-      refresh = "gr",
-      open = "<M-CR>"
-    },
-    layout = {
-      position = "bottom",
-      ratio = 0.4
-    },
-  },
-  suggestion = {
-    enabled = false,
-    auto_trigger = true,
-    hide_during_completion = true,
-    debounce = 75,
-    keymap = {
-      accept = "<Tab>",
-      accept_word = false,
-      accept_line = false,
-      next = "<M-]>",
-      prev = "<M-[>",
-      dismiss = "<C-]>",
-    },
-  },
-  filetypes = {
-    -- Enable only specified languages
-    python = true,
-    javascript = true,
-    typescript = true,
-    javascriptreact = true,
-    typescriptreact = true,
-    sh = true,
-    bash = true,
-    zsh = true,
-    ["."] = false,
-    ["*"] = false,  -- Default disable all
-  },
-  copilot_node_command = 'node',
-  server_opts_overrides = {},
-})
+local opts = {
+  model = "codestral:latest",
+  url = "http://127.0.0.1:11434",
+  serve = {
+    on_start = false,
+    command = "ollama",
+    args = { "serve" },
+    stop_command = "pkill",
+    stop_args = { "-SIGTERM", "ollama" },
+  }
+}
+require("ollama").setup(opts)
+
+vim.keymap.set("i", "<C-x><C-o>", function()
+    require("cmp").complete({
+        config = {
+            sources = {
+                { name = "ollama" },
+                { name = "path"},
+            }
+        }
+    })
+end)
 EOF
-""" Copilot
-
-" """ ollama.nvim configuration
-" lua << EOF
-" local opts = {
-"   model = "gemma3n:latest",
-"   url = "http://127.0.0.1:11434",
-"   serve = {
-"     on_start = false,
-"     command = "ollama",
-"     args = { "serve" },
-"     stop_command = "pkill",
-"     stop_args = { "-SIGTERM", "ollama" },
-"   }
-" }
-" require("ollama").setup(opts)
-
-" vim.keymap.set("i", "<C-x><C-o>", function()
-"     require("cmp").complete({
-"         config = {
-"             sources = {
-"                 { name = "ollama" },
-"                 { name = "path"},
-"             }
-"         }
-"     })
-" end)
-" EOF
 """ ollama.nvim configuration
 
 """ journal.nvim
