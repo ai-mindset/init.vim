@@ -259,6 +259,8 @@ require('tabnine').setup({
   --   end,
   -- },
 })
+-- render tabnine status widget
+require('tabnine.status').status()
 EOF
 """ Tabnine
 
