@@ -21,6 +21,9 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
+" Tabnine
+Plug 'codota/tabnine-nvim', { 'do': './dl_binaries.sh' }      " Tabnine Client for Neovim
+
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
 
@@ -55,7 +58,6 @@ Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation line
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
-Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
@@ -237,6 +239,27 @@ vim.keymap.set("i", "<C-x><C-o>", function()
 end)
 EOF
 """ ollama.nvim configuration
+
+""" Tabnine
+lua << EOF
+require('tabnine').setup({
+  disable_auto_comment=true,
+  accept_keymap="<Tab>",
+  dismiss_keymap = "<C-]>",
+  debounce_ms = 800,
+  suggestion_color = {gui = "#808080", cterm = 244},
+  exclude_filetypes = {"TelescopePrompt", "NvimTree"},
+  log_file_path = nil, -- absolute path to Tabnine log file
+  ignore_certificate_errors = false,
+  -- workspace_folders = {
+  --   paths = { "/your/project" },
+  --   get_paths = function()
+  --       return { "/your/project" }
+  --   end,
+  -- },
+})
+EOF
+""" Tabnine
 
 """ journal.nvim
 lua << EOF
@@ -515,22 +538,6 @@ hi SpellLocal cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
-
-""" Glow configurations
-lua << EOF
-require('glow').setup({
-  glow_path = "/usr/bin/glow", -- will be filled automatically with your glow bin in $PATH, if any
-  install_path = "/usr/bin", -- default path for installing glow binary
-  border = "shadow", -- floating window border config
-  style = "dark", -- filled automatically with your current editor background, you can override using glow json style
-  pager = false,
-  width = 80,
-  height = 100,
-  width_ratio = 0.7, -- maximum width of the Glow window compared to the nvim window size (overrides `width`)
-  height_ratio = 0.7,
-})
-EOF
-""" Glow configurations
 
 """ tagbar
 nmap <F8> :TagbarToggle<CR>
