@@ -243,8 +243,15 @@ EOF
 
 """ Github Copilot
 " Enable Copilot only for Python, JS, TS, sh, and zsh
-autocmd FileType python,javascript,typescript,sh,zsh Copilot enable
-autocmd FileType * if index(["python","javascript","typescript","sh","zsh", "bash"], &filetype) < 0 | Copilot disable | endif
+let g:copilot_enabled = 1
+let g:copilot_filetypes = {
+      \ 'python': v:true,
+      \ 'javascript': v:true,
+      \ 'typescript': v:true,
+      \ 'sh': v:true,
+      \ 'zsh': v:true,
+      \ "*": v:false,
+      \ }
 """ Github Copilot
 
 """ journal.nvim
