@@ -58,7 +58,6 @@ Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation line
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
-Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
@@ -539,22 +538,6 @@ hi SpellLocal cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
-
-""" Glow configurations
-lua << EOF
-require('glow').setup({
-  glow_path = "/usr/bin/glow", -- will be filled automatically with your glow bin in $PATH, if any
-  install_path = "/usr/bin", -- default path for installing glow binary
-  border = "shadow", -- floating window border config
-  style = "dark", -- filled automatically with your current editor background, you can override using glow json style
-  pager = false,
-  width = 80,
-  height = 100,
-  width_ratio = 0.7, -- maximum width of the Glow window compared to the nvim window size (overrides `width`)
-  height_ratio = 0.7,
-})
-EOF
-""" Glow configurations
 
 """ tagbar
 nmap <F8> :TagbarToggle<CR>
