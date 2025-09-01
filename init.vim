@@ -22,7 +22,8 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
 " Tabnine
-Plug 'codota/tabnine-nvim', { 'do': './dl_binaries.sh' }      " Tabnine Client for Neovim
+Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
+
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -240,26 +241,11 @@ end)
 EOF
 """ ollama.nvim configuration
 
-""" Tabnine
-lua << EOF
-require('tabnine').setup({
-  disable_auto_comment=true,
-  accept_keymap="<Tab>",
-  dismiss_keymap = "<C-]>",
-  debounce_ms = 800,
-  suggestion_color = {gui = "#808080", cterm = 244},
-  exclude_filetypes = {"TelescopePrompt", "NvimTree"},
-  log_file_path = nil, -- absolute path to Tabnine log file
-  ignore_certificate_errors = false,
-  -- workspace_folders = {
-  --   paths = { "/your/project" },
-  --   get_paths = function()
-  --       return { "/your/project" }
-  --   end,
-  -- },
-})
-EOF
-""" Tabnine
+""" Github Copilot
+" Enable Copilot only for Python, JS, TS, sh, and zsh
+autocmd FileType python,javascript,typescript,sh,zsh Copilot enable
+autocmd FileType * if index(["python","javascript","typescript","sh","zsh", "bash"], &filetype) < 0 | Copilot disable | endif
+""" Github Copilot
 
 """ journal.nvim
 lua << EOF
