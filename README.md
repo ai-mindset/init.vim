@@ -2,7 +2,7 @@
 A comprehensive Neovim configuration that turns Neovim into a full-featured IDE for Data Science, AI Engineering, and Backend development. Supports Python, TypeScript/JavaScript with Deno, shell scripting, containerisation, and technical documentation.
 
 ## Development Environments
-- Tabnine AI assistance
+- GitHub Copilot AI assistance
 - Ollama local AI assistance
 
 ### Python (Data Science/AI)
@@ -18,7 +18,7 @@ A comprehensive Neovim configuration that turns Neovim into a full-featured IDE 
 - Shell script (Bash/Zsh) language server
 
 ### Documentation
-- Markdown LSP with preview via [glow](https://github.com/charmbracelet/glow)
+- Markdown LSP with preview via [markdown preview](https://github.com/iamcco/markdown-preview.nvim)
 - Spell checking
 - Text-to-speech support via Piper
 
@@ -41,7 +41,7 @@ A comprehensive Neovim configuration that turns Neovim into a full-featured IDE 
 - [node.js](https://nodejs.org/) (for copilot.vim)
 - [ollama](https://ollama.com/) (for [ollama.nvim](https://github.com/nomnivore/ollama.nvim))
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for global line completions through fzf.vim (optional)
-- [glow](https://github.com/charmbracelet/glow) for Markdown preview (optional)
+- [Markdown Preview](https://github.com/iamcco/markdown-preview.nvim) for Markdown preview (optional)
 - [Deno](https://ai-mindset.github.io/deno/) (for TypeScript/JavaScript)
 - [Python](https://ai-mindset.github.io/bring-it-back-to-basics/)
 - [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
