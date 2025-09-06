@@ -21,7 +21,7 @@ Plug 'hrsh7th/cmp-path'                                       " Path completion
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
-" Tabnine
+" GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
 
