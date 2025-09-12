@@ -32,7 +32,7 @@ Plug 'jmbuhr/otter.nvim'                                      " provides lsp fea
 Plug 'jpalardy/vim-slime'
 
 " CSV viewer
-Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
+Plug 'cameron-wags/rainbow_csv.nvim'                          " Highlight columns in CSV and TSV files and run queries in SQL-like language
 
 " Theme
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
@@ -1269,7 +1269,7 @@ autocmd! FileType fzf set laststatus=0 noshowmode noruler
 
 """ CSV viewer
 lua << EOF
-require('csvview').setup()
+require('rainbow_csv').setup()
 EOF
 """ CSV viewer
 
