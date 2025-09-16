@@ -253,7 +253,6 @@ let g:copilot_filetypes = {
       \ 'typescript': v:true,
       \ 'sh': v:true,
       \ 'zsh': v:true,
-      \ 'markdown': v:true,
       \ "*": v:false,
       \ }
 """ Github Copilot
