@@ -1601,6 +1601,12 @@ end
 
 -- Normal mode mappings using new API format
 wk.add({
+  -- Copy path
+  { "<leader>Y", group = "Copy path" },
+  { "<leader>Yf", "<cmd>let @+=expand('%:p')<cr>", desc = "Copy full path" },
+  { "<leader>Yr", "<cmd>let @+=expand('%')<cr>", desc = "Copy relative path" },
+  { "<leader>Yn", "<cmd>let @+=expand('%:t')<cr>", desc = "Copy filename only" },
+
   -- Spelling
   { "<leader>s", group = "Spelling" },
   { "<leader>ss", "<cmd>setlocal spell!<cr>", desc = "Toggle spell checking" },
