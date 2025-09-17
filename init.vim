@@ -1097,11 +1097,20 @@ end, {})
 
 
 -- Formatting Configuration
+-- https://questions.deno.com/m/1233267429656891495
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    deno = { "deno_fmt" },
+    css = { "deno_fmt" },
+    html = { "deno_fmt" },
+    javascript = { "deno_fmt" },
+    typescript = { "deno_fmt" },
+    json = { "deno_fmt" },
+    jsonc = { "deno_fmt" },
+    javascriptreact = { "deno_fmt" },
+    typescriptreact = { "deno_fmt" },
+    markdown = { "deno_fmt" },
     json = { "biome" },
     ["*"] = { "trim_whitespace" },
   },
@@ -1132,6 +1141,7 @@ require("conform").setup({
 
   format_on_save = {
     -- These options will be passed to conform.format()
+    enabled = true,
     timeout_ms = 500,
     lsp_fallback = true,
   },
