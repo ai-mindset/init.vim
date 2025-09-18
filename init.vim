@@ -433,9 +433,6 @@ augroup HighlightOnHover
 augroup END
 "" Highlight on hover
 
-" Disable highlight when <leader><cr> is pressed
-map <silent> <leader><cr> :noh<cr>
-"
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
@@ -841,7 +838,7 @@ vim.diagnostic.config({
     severity_sort = false,
 })
 -- Show diagnostics when pressing 'gh'
-vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
+vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
 
 -- Proper file type detection
 vim.cmd([[
@@ -865,7 +862,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
             local winid = require('vim.lsp.util').open_floating_preview(
                 {'Fetching documentation...'}, 'markdown', {
                     border = 'rounded',
-                    focusable = false,
+                    focusable = true,
                 })
             vim.lsp.buf.hover()
         end, opts)
@@ -877,7 +874,7 @@ vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
   vim.lsp.handlers.signature_help, {
     border = 'rounded',
     close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
-    focusable = false,
+    focusable = true,
   }
 )
 
@@ -1044,7 +1041,7 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   float = {
-    focusable = false,
+    focusable = true,
     style = "minimal",
     border = "rounded",
     source = "always",
@@ -1056,7 +1053,7 @@ vim.diagnostic.config({
 -- Set up keymapping to show diagnostics on hover
 vim.api.nvim_create_autocmd("CursorHold", {
   callback = function()
-    vim.diagnostic.open_float(nil, {focus=false})
+    vim.diagnostic.open_float(nil, {focus=true})
   end
 })
 
@@ -1673,7 +1670,7 @@ wk.add({
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
   { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
   { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
-  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", desc = "Show Diagnostics" },
+  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=true})<CR>", desc = "Show Diagnostics" },
   { "gnn", "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
