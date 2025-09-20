@@ -24,12 +24,15 @@ Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
+" Quarto
+Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
+Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
 
 " CSV viewer
-Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
+Plug 'cameron-wags/rainbow_csv.nvim'                          " Highlight columns in CSV and TSV files and run queries in SQL-like language
 
 " Theme
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
@@ -254,6 +257,91 @@ let g:copilot_filetypes = {
       \ }
 """ Github Copilot
 
+""" quarto
+lua << EOF
+-- otter
+local otter = require'otter'
+otter.setup{
+  lsp = {
+    -- `:h events` that cause the diagnostics to update. Set to:
+    -- { "BufWritePost", "InsertLeave", "TextChanged" } for less performant
+    -- but more instant diagnostic updates
+    diagnostic_update_events = { "BufWritePost" },
+    -- function to find the root dir where the otter-ls is started
+    root_dir = function(_, bufnr)
+      return vim.fs.root(bufnr or 0, {
+        ".git",
+        "_quarto.yml",
+        "package.json",
+      }) or vim.fn.getcwd(0)
+    end,
+  },
+  -- options related to the otter buffers
+  buffers = {
+    -- if set to true, the filetype of the otterbuffers will be set.
+    -- otherwise only the autocommand of lspconfig that attaches
+    -- the language server will be executed without setting the filetype
+    --- this setting is deprecated and will default to true in the future
+    set_filetype = true,
+    -- write <path>.otter.<embedded language extension> files
+    -- to disk on save of main buffer.
+    -- usefule for some linters that require actual files.
+    -- otter files are deleted on quit or main buffer close
+    write_to_disk = false,
+    -- a table of preambles for each language. The key is the language and the value is a table of strings that will be written to the otter buffer starting on the first line.
+    preambles = {},
+    -- a table of postambles for each language. The key is the language and the value is a table of strings that will be written to the end of the otter buffer.
+    postambles = {},
+    -- A table of patterns to ignore for each language. The key is the language and the value is a lua match pattern to ignore.
+    -- lua patterns: https://www.lua.org/pil/20.2.html
+    ignore_pattern = {
+      -- ipython cell magic (lines starting with %) and shell commands (lines starting with !)
+      python = "^(%s*[%%!].*)",
+    },
+  },
+  -- list of characters that should be stripped from the beginning and end of the code chunks
+  strip_wrapping_quote_characters = { "'", '"', "`" },
+  -- remove whitespace from the beginning of the code chunks when writing to the ottter buffers
+  -- and calculate it back in when handling lsp requests
+  handle_leading_whitespace = true,
+  -- mapping of filetypes to extensions for those not already included in otter.tools.extensions
+  -- e.g. ["bash"] = "sh"
+  extensions = {
+  },
+  -- add event listeners for LSP events for debugging
+  debug = false,
+  verbose = { -- set to false to disable all verbose messages
+    no_code_found = false -- warn if otter.activate is called, but no injected code was found
+  },
+}
+
+-- quarto
+require('quarto').setup{
+  debug = false,
+  closePreviewOnExit = true,
+  lspFeatures = {
+    enabled = true,
+    chunks = "curly",
+    languages = { "r", "python", "julia", "bash", "html" },
+    diagnostics = {
+      enabled = true,
+      triggers = { "BufWritePost" },
+    },
+    completion = {
+      enabled = true,
+    },
+  },
+  codeRunner = {
+    enabled = true,
+    default_method = "slime", -- "molten", "slime", "iron" or <function>
+    ft_runners = {}, -- filetype to runner, ie. `{ python = "molten" }`.
+    -- Takes precedence over `default_method`
+    never_run = { 'yaml' }, -- filetypes which are never sent to a code runner
+  },
+}
+EOF
+""" quarto
+
 """ journal.nvim
 lua << EOF
 local opts = {
@@ -345,9 +433,6 @@ augroup HighlightOnHover
 augroup END
 "" Highlight on hover
 
-" Disable highlight when <leader><cr> is pressed
-map <silent> <leader><cr> :noh<cr>
-"
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
@@ -753,7 +838,7 @@ vim.diagnostic.config({
     severity_sort = false,
 })
 -- Show diagnostics when pressing 'gh'
-vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
+vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
 
 -- Proper file type detection
 vim.cmd([[
@@ -777,7 +862,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
             local winid = require('vim.lsp.util').open_floating_preview(
                 {'Fetching documentation...'}, 'markdown', {
                     border = 'rounded',
-                    focusable = false,
+                    focusable = true,
                 })
             vim.lsp.buf.hover()
         end, opts)
@@ -789,7 +874,7 @@ vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
   vim.lsp.handlers.signature_help, {
     border = 'rounded',
     close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
-    focusable = false,
+    focusable = true,
   }
 )
 
@@ -956,7 +1041,7 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   float = {
-    focusable = false,
+    focusable = true,
     style = "minimal",
     border = "rounded",
     source = "always",
@@ -968,7 +1053,7 @@ vim.diagnostic.config({
 -- Set up keymapping to show diagnostics on hover
 vim.api.nvim_create_autocmd("CursorHold", {
   callback = function()
-    vim.diagnostic.open_float(nil, {focus=false})
+    vim.diagnostic.open_float(nil, {focus=true})
   end
 })
 
@@ -1009,11 +1094,20 @@ end, {})
 
 
 -- Formatting Configuration
+-- https://questions.deno.com/m/1233267429656891495
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    deno = { "deno_fmt" },
+    css = { "deno_fmt" },
+    html = { "deno_fmt" },
+    javascript = { "deno_fmt" },
+    typescript = { "deno_fmt" },
+    json = { "deno_fmt" },
+    jsonc = { "deno_fmt" },
+    javascriptreact = { "deno_fmt" },
+    typescriptreact = { "deno_fmt" },
+    markdown = { "deno_fmt" },
     json = { "biome" },
     ["*"] = { "trim_whitespace" },
   },
@@ -1044,6 +1138,7 @@ require("conform").setup({
 
   format_on_save = {
     -- These options will be passed to conform.format()
+    enabled = true,
     timeout_ms = 500,
     lsp_fallback = true,
   },
@@ -1180,7 +1275,7 @@ autocmd! FileType fzf set laststatus=0 noshowmode noruler
 
 """ CSV viewer
 lua << EOF
-require('csvview').setup()
+require('rainbow_csv').setup()
 EOF
 """ CSV viewer
 
@@ -1513,6 +1608,12 @@ end
 
 -- Normal mode mappings using new API format
 wk.add({
+  -- Copy path
+  { "<leader>Y", group = "Copy path" },
+  { "<leader>Yf", "<cmd>let @+=expand('%:p')<cr>", desc = "Copy full path" },
+  { "<leader>Yr", "<cmd>let @+=expand('%')<cr>", desc = "Copy relative path" },
+  { "<leader>Yn", "<cmd>let @+=expand('%:t')<cr>", desc = "Copy filename only" },
+
   -- Spelling
   { "<leader>s", group = "Spelling" },
   { "<leader>ss", "<cmd>setlocal spell!<cr>", desc = "Toggle spell checking" },
@@ -1569,7 +1670,7 @@ wk.add({
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
   { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
   { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
-  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", desc = "Show Diagnostics" },
+  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=true})<CR>", desc = "Show Diagnostics" },
   { "gnn", "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
