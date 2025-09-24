@@ -28,6 +28,9 @@ Plug 'github/copilot.vim'                                     " Neovim plugin fo
 Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
 Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
 
+" Rust
+Plug 'rust-lang/rust.vim'                                     " Vim configuration for Rust
+
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
 
@@ -649,6 +652,7 @@ require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
     "pyright",               -- Python
+    "rust_analyzer",         -- Rust
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -671,6 +675,31 @@ require("mason-lspconfig").setup({
               }
             }
           }
+        }
+      })
+      end,
+
+      -- Rust Analyzer
+      rust_analyzer = function()
+      require('lspconfig').rust_analyzer.setup({
+        on_attach = on_attach,
+        settings = {
+            ["rust-analyzer"] = {
+                imports = {
+                    granularity = {
+                        group = "module",
+                    },
+                    prefix = "self",
+                },
+                cargo = {
+                    buildScripts = {
+                        enable = true,
+                    },
+                },
+                procMacro = {
+                    enable = true
+                },
+            }
         }
       })
       end,
@@ -1109,6 +1138,7 @@ require("conform").setup({
     typescriptreact = { "deno_fmt" },
     markdown = { "deno_fmt" },
     json = { "biome" },
+    rust = { "rustfmt" },
     ["*"] = { "trim_whitespace" },
   },
 
@@ -1168,6 +1198,7 @@ require("nvim-treesitter.configs").setup {
         "python",
         "javascript",
         "typescript",
+        "rust",
 
         -- For documentation/markdown files
         "markdown",
