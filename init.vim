@@ -418,7 +418,7 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard+=unnamedplus            " Clipboard Settings
+set clipboard=unnamedplus            " Clipboard Settings
 set background=dark                   " Set dark background
 if $COLORTERM == 'gnome-terminal'
   set t_Co=256                        " 256 colours
@@ -1145,23 +1145,33 @@ require("conform").setup({
   -- Organise Python imports
     formatters = {
         ruff_organise_imports = {
-          command = 'ruff',
+          command = "ruff",
           args = {
-            'check',
-            '--force-exclude',
-            '--select=I001',
-            '--fix',
-            '--exit-zero',
-            '--stdin-filename',
-            '$FILENAME',
-            '-',
+            "check",
+            "--force-exclude",
+            "--select=I001",
+            "--fix",
+            "--exit-zero",
+            "--stdin-filename",
+            "$FILENAME",
+            "-",
           },
           stdin = true,
-          cwd = require('conform.util').root_file {
-            'pyproject.toml',
-            'ruff.toml',
-            '.ruff.toml',
+          cwd = require("conform.util").root_file {
+            "pyproject.toml",
+            "ruff.toml",
+            ".ruff.toml",
           },
+        },
+        deno_fmt = {
+            command = "deno",
+            args = {
+                "fmt",
+                "--prose-wrap=never",
+                "--line-width=10000",
+                "-" -- For stdin
+            },
+            stdin = true,
         },
       },
   -- Format on save
