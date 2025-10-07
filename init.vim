@@ -186,7 +186,7 @@ nnoremap ]c :call search("^# %%", "W")<CR>:call FlashCurrentCell()<CR>
 
 " Simple vim-slime mappings for IPython
 nnoremap <localleader>l :SlimeSendCurrentLine<CR>
-vnoremap <localleader>v :SlimeSend<CR>
+xnoremap <localleader>v :'<,'>SlimeSend<CR>
 nnoremap <localleader>c :call SlimeSendCell()<CR>
 
 " Function to send current cell
@@ -1746,7 +1746,7 @@ wk.add({
 
 -- Visual mode mappings
 wk.add({
-  { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send Selection to IPython", mode = "v" },
+  { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython", mode = "v" },
   { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
   { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates", mode = "v" },
   { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates", mode = "v" },
