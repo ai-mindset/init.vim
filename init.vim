@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Local LLM completion
-Plug 'nomnivore/ollama.nvim'                                  " LLM completion
+Plug 'ggml-org/llama.vim'                                     " LLM completion
 
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
@@ -221,33 +221,29 @@ function! SlimeSendCell()
 endfunction
 """ vim-slime configuration
 
-""" ollama.nvim configuration
-lua << EOF
-local opts = {
-  model = "codestral:latest",
-  url = "http://127.0.0.1:11434",
-  serve = {
-    on_start = false,
-    command = "ollama",
-    args = { "serve" },
-    stop_command = "pkill",
-    stop_args = { "-SIGTERM", "ollama" },
-  }
-}
-require("ollama").setup(opts)
-
-vim.keymap.set("i", "<C-x><C-o>", function()
-    require("cmp").complete({
-        config = {
-            sources = {
-                { name = "ollama" },
-                { name = "path"},
-            }
-        }
-    })
-end)
-EOF
-""" ollama.nvim configuration
+""" llama.nvim configuration
+let s:default_config = {
+    \ 'endpoint':           'http://127.0.0.1:8012/infill',
+    \ 'api_key':            '',
+    \ 'n_prefix':           256,
+    \ 'n_suffix':           64,
+    \ 'n_predict':          128,
+    \ 't_max_prompt_ms':    500,
+    \ 't_max_predict_ms':   500,
+    \ 'show_info':          2,
+    \ 'auto_fim':           v:true,
+    \ 'max_line_suffix':    8,
+    \ 'max_cache_keys':     250,
+    \ 'ring_n_chunks':      16,
+    \ 'ring_chunk_size':    64,
+    \ 'ring_scope':         1024,
+    \ 'ring_update_ms':     1000,
+    \ 'keymap_trigger':     "<C-F>",
+    \ 'keymap_accept_full': "<Tab>",
+    \ 'keymap_accept_line': "<S-Tab>",
+    \ 'keymap_accept_word': "<C-B>",
+    \ }
+""" llama.nvim configuration
 
 """ GitHub Copilot
 " Enable Copilot only for Python, JS, TS, sh, and zsh
@@ -858,7 +854,7 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
-    { name = "ollama" },
+    { name = "llama" },
   })
 })
 EOF
@@ -1774,8 +1770,11 @@ wk.add({
   { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path" },
   { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line" },
 
-  -- Ollama
-  { "<C-x><C-o>", desc = "Ollama AI completion" },
+  -- llama.vim
+  { "<C-F>", desc = "Trigger llama AI completion" },
+  { "<Tab>", desc = "Accept full llama AI completion" },
+  { "<S-Tab>", desc = "Accept line llama AI completion" },
+  { "<C-B>", desc = "Accept word llama AI completion" },
 
   -- IPython
   { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above" },
