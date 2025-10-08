@@ -23,6 +23,8 @@ Plug 'nomnivore/ollama.nvim'                                  " LLM completion
 
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
+Plug 'CopilotC-Nvim/CopilotChat.nvim'                         " Chat with GitHub Copilot in Neovim
+
 
 " Quarto
 Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
@@ -247,9 +249,9 @@ end)
 EOF
 """ ollama.nvim configuration
 
-""" Github Copilot
+""" GitHub Copilot
 " Enable Copilot only for Python, JS, TS, sh, and zsh
-let g:copilot_enabled = 1
+let g:copilot_enabled = 0
 let g:copilot_filetypes = {
       \ 'python': v:true,
       \ 'javascript': v:true,
@@ -258,7 +260,29 @@ let g:copilot_filetypes = {
       \ 'zsh': v:true,
       \ "*": v:false,
       \ }
-""" Github Copilot
+""" GitHub Copilot
+
+""" GitHub Copilot Chat
+lua << EOF
+require("CopilotChat").setup({
+-- Custom mappings are in which-key configuration below
+  mappings = {
+    -- Disable default keymaps
+    chat = {
+      open = false,
+      accept = false,
+      close = false,
+    },
+    selection = {
+      select = false,
+    },
+    panel = {
+      open = false,
+    },
+  }
+})
+EOF
+""" GitHub Copilot Chat
 
 """ quarto
 lua << EOF
@@ -1730,32 +1754,56 @@ wk.add({
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
   { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
   { "<F10>", "o# %%<CR>", desc = "Insert Cell Below" },
+
+  -- GitHub CopilotChat
+  { "<leader>c", group = "Code & Copilot" },
+  { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Open Copilot Chat" },
+  { "<leader>cpt", "<cmd>CopilotChatToggle<CR>", desc = "Toggle Copilot Chat" },
+  { "<leader>cpf", "<cmd>CopilotChatFixDiagnostic<CR>", desc = "Fix Diagnostic" },
+  { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
 }, { mode = "n" })
 
 -- Insert mode mappings
 wk.add({
-  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help", mode = "i" },
-  { "<C-x>", group = "Completions", mode = "i" },
-  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word", mode = "i" },
-  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path", mode = "i" },
-  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line", mode = "i" },
-  { "<C-x><C-o>", desc = "Ollama AI completion", mode = "i" },
-  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above", mode = "i" },
-  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below", mode = "i" },
-})
+  -- Signature help
+  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help" },
+
+  -- FZF completions
+  { "<C-x>", group = "Completions" },
+  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word" },
+  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path" },
+  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line" },
+
+  -- Ollama
+  { "<C-x><C-o>", desc = "Ollama AI completion" },
+
+  -- IPython
+  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above" },
+  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below" },
+}, { mode = "i" })
 
 -- Visual mode mappings
 wk.add({
-  { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython", mode = "v" },
-  { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
-  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates", mode = "v" },
-  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates", mode = "v" },
-})
+  -- IPython
+  { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
+
+  -- FZF
+  { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
+
+  -- Rust crates
+  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates" },
+  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates" },
+
+  -- GitHub CopilotChat
+  { "<leader>cp", "<cmd>CopilotChatVisual<CR>", desc = "Copilot Chat Selection" },
+  { "<leader>cpe", "<cmd>CopilotChatExplainVisual<CR>", desc = "Explain Selected Code" },
+  { "<leader>cpt", "<cmd>CopilotChatTests<CR>", desc = "Generate Tests" },
+}, { mode = "v" })
 
 -- Operator pending mode mappings
 wk.add({
-  { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
-})
+  { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
+}, { mode = "o" })
 EOF
 """ which-key configuration
 
