@@ -1336,7 +1336,16 @@ autocmd! FileType fzf set laststatus=0 noshowmode noruler
 
 """ CSV view
 lua << EOF
-require('csvview').setup()
+require('csvview').setup({
+  view = {
+    display_mode = "border", -- Replace delimiters with vertical borders (│)
+    header_lnum = true,  -- Auto-detect header (default)
+    sticky_header = {
+      enabled = true,
+      separator = "─",  -- Separator line character
+    },
+  },
+})
 EOF
 """ CSV view
 
