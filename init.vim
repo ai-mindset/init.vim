@@ -133,8 +133,6 @@ hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cter
 """ Use jq for JSON formatting
 " Makes :Format run `:%!jq .`
 command! Format %!jq .
-" Map <leader>j → :Format
-nnoremap <silent> <leader>j :Format<CR>
 """ Use jq for JSON formatting
 
 """ vim-slime configuration for IPython
@@ -182,14 +180,6 @@ function! FlashCurrentCell()
   redraw
 endfunction
 
-" Your existing cell navigation (keep as-is)
-nnoremap [c :call search("^# %%", "bW")<CR>:call FlashCurrentCell()<CR>
-nnoremap ]c :call search("^# %%", "W")<CR>:call FlashCurrentCell()<CR>
-
-" Simple vim-slime mappings for IPython
-nnoremap <localleader>l :SlimeSendCurrentLine<CR>
-xnoremap <localleader>v :'<,'>SlimeSend<CR>
-nnoremap <localleader>c :call SlimeSendCell()<CR>
 
 " Function to send current cell
 function! SlimeSendCell()
@@ -456,8 +446,6 @@ augroup HighlightOnHover
 augroup END
 "" Highlight on hover
 
-" Toggle paste mode on and off
-map <leader>pp :setlocal paste!<cr>
 
 
 """ Statusline configuration
@@ -623,15 +611,6 @@ let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
                     " <space>tv = SpeakVisualSelection()
 """ piper TTS
 
-" Pressing ,ss will toggle and untoggle spell checking
-map <leader>ss :setlocal spell!<cr>
-
-""" Shortcuts using <leader>
-map <leader>sn ]s " Next spelling mistake
-map <leader>sp [s " Previous spelling mistake
-map <leader>sa zg " Add word to dictionary
-map <leader>s? z= " Get suggestions
-""" Shortcuts using <leader>
 
 """ Spelling mistakes will be coloured up red.
 hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
@@ -641,7 +620,6 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
 """ tagbar
-nmap <F8> :TagbarToggle<CR>
 " https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
 let g:tagbar_left = 1
 let g:tagbar_autoclose = 0
@@ -938,19 +916,6 @@ local on_attach = function(client, bufnr)
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
-  -- Navigation keymaps
-  vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-  vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-
-  -- Information keymaps
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-
-  -- Editing keymaps
-  vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
-  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
 
   -- Programming filetypes where signature help should auto-trigger
   local programming_filetypes = {'python', 'typescript', 'javascript'}
@@ -1302,33 +1267,9 @@ let g:fzf_vim.preview_window = ['right,50%', 'ctrl-/']
 let g:fzf_vim.buffers_jump = 1
 " [[B]Commits] Customize the options used by 'git log':
 let g:fzf_vim.commits_log_options = '--graph --color=always --format="%C(auto)%h%d %s %C(black)%C(bold)%cr"'
+"" Mappings handled by which-key
 "" Mappings
-" Mapping selecting mappings
-nmap <leader>k <plug>(fzf-maps-n)
-xmap <leader>k <plug>(fzf-maps-x)
-omap <leader>k <plug>(fzf-maps-o)
-" Insert mode completion
-imap <c-x><c-k> <plug>(fzf-complete-word)
-imap <c-x><c-f> <plug>(fzf-complete-path)
-imap <c-x><c-l> <plug>(fzf-complete-line)
-" files
-nnoremap <leader>f :Files<cr>
-"" Mappings
-"" Completion
-" Path completion with custom source command
-inoremap <expr> <c-x><c-f> fzf#vim#complete#path('fd')
-inoremap <expr> <c-x><c-f> fzf#vim#complete#path('rg --files')
-" Word completion with custom spec with popup layout option
-inoremap <expr> <c-x><c-k> fzf#vim#complete#word({'window': { 'width': 0.2, 'height': 0.9, 'xoffset': 1 }})
-" Replace the default dictionary completion with fzf-based fuzzy completion
-" inoremap <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/words')
-" Global line completion (not just open buffers. ripgrep required.)
-inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
-  \ 'prefix': '^.*$',
-  \ 'source': 'rg -n ^ --color always',
-  \ 'options': '--ansi --delimiter : --nth 3..',
-  \ 'reducer': { lines -> join(split(lines[0], ':\zs')[2:], '') }}))
-"" Completion
+"" Completion handled by which-key
 " Statusline
 autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
@@ -1436,23 +1377,6 @@ require('gitsigns').setup({
   on_attach = function(bufnr)
     local gs = package.loaded.gitsigns
 
-    -- Navigation between hunks
-    vim.keymap.set('n', '>c', function()
-      if vim.wo.diff then return '>c' end
-      vim.schedule(function() gs.next_hunk() end)
-      return '<Ignore>'
-    end, {expr=true, buffer=bufnr})
-
-    vim.keymap.set('n', '<c', function()
-      if vim.wo.diff then return '<c' end
-      vim.schedule(function() gs.prev_hunk() end)
-      return '<Ignore>'
-    end, {expr=true, buffer=bufnr})
-
-    -- Actions
-    vim.keymap.set('n', '<leader>hs', gs.stage_hunk)
-    vim.keymap.set('n', '<leader>hr', gs.reset_hunk)
-    vim.keymap.set('n', '<leader>hp', gs.preview_hunk)
   end
 })
 
@@ -1487,6 +1411,11 @@ require('diffview').setup({
 EOF
 """ Git
 
+""" FZF key mappings
+" Key mapping for FZF maps browser - needs to be defined outside which-key
+nmap <leader>k <plug>(fzf-maps-n)
+xmap <leader>k <plug>(fzf-maps-x)
+omap <leader>k <plug>(fzf-maps-o)
 """ which-key configuration
 lua << EOF
 -- Which-Key Configuration
@@ -1692,9 +1621,12 @@ wk.add({
   { "<leader>sa", "zg", desc = "Add word to dictionary" },
   { "<leader>s?", "z=", desc = "Suggest corrections" },
 
+  -- Toggle paste mode
+  { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
+
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
-  { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" },
+  -- { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" }, -- Not working with which-key
 
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
@@ -1727,6 +1659,11 @@ wk.add({
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
 
+  -- Git hunk operations
+  { "<leader>hs", "<cmd>lua require('gitsigns').stage_hunk()<CR>", desc = "Stage Hunk" },
+  { "<leader>hr", "<cmd>lua require('gitsigns').reset_hunk()<CR>", desc = "Reset Hunk" },
+  { "<leader>hp", "<cmd>lua require('gitsigns').preview_hunk()<CR>", desc = "Preview Hunk" },
+
   -- Space prefix mappings
   { "<space>t", group = "Text-to-Speech" },
   { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
@@ -1755,6 +1692,10 @@ wk.add({
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
 
+  -- Hunk navigation
+  { "<c", "<cmd>lua require('gitsigns').prev_hunk()<CR>", desc = "Previous Hunk" },
+  { ">c", "<cmd>lua require('gitsigns').next_hunk()<CR>", desc = "Next Hunk" },
+
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
   { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
@@ -1775,9 +1716,9 @@ wk.add({
 
   -- FZF completions
   { "<C-x>", group = "Completions" },
-  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word" },
-  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path" },
-  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line" },
+  { "<C-x><C-k>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#word({\"window\": { \"width\": 0.2, \"height\": 0.9, \"xoffset\": 1 }})<CR>')", desc = "Complete Word" },
+  { "<C-x><C-f>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#path(\"rg --files\")<CR>')", desc = "Complete Path" },
+  { "<C-x><C-l>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete(fzf#wrap({\"prefix\": \"^.*$\", \"source\": \"rg -n ^ --color always\", \"options\": \"--ansi --delimiter : --nth 3..\", \"reducer\": { lines -> join(split(lines[0], \":\\\\zs\")[2:], \"\") }}))<CR>')", desc = "Complete Line" },
 
   -- llama.vim
   { "<C-F>", desc = "Trigger llama AI completion" },
@@ -1795,8 +1736,8 @@ wk.add({
   -- IPython
   { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
 
-  -- FZF
-  { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
+  -- FZF mappings handled outside which-key
+  -- { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
 
   -- Rust crates
   { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates" },
@@ -1810,7 +1751,8 @@ wk.add({
 
 -- Operator pending mode mappings
 wk.add({
-  { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
+  -- FZF mappings handled outside which-key
+  -- { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
 }, { mode = "o" })
 EOF
 """ which-key configuration
