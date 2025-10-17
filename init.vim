@@ -37,7 +37,7 @@ Plug 'rust-lang/rust.vim'                                     " Vim configuratio
 Plug 'jpalardy/vim-slime'
 
 " CSV viewer
-Plug 'cameron-wags/rainbow_csv.nvim'                          " Highlight columns in CSV and TSV files and run queries in SQL-like language
+Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
 
 " Theme
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
@@ -1334,11 +1334,11 @@ autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
 """ Fuzzy finding Configuration
 
-""" CSV viewer
+""" CSV view
 lua << EOF
-require('rainbow_csv').setup()
+require('csvview').setup()
 EOF
-""" CSV viewer
+""" CSV view
 
 """ Align sentences
 lua << EOF
