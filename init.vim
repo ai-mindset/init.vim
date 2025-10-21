@@ -213,37 +213,38 @@ endfunction
 
 """ llama.nvim configuration
 let s:default_config = {
-    \ 'endpoint':           'http://127.0.0.1:8012/infill',
-    \ 'api_key':            '',
-    \ 'n_prefix':           256,
-    \ 'n_suffix':           64,
-    \ 'n_predict':          128,
-    \ 't_max_prompt_ms':    500,
-    \ 't_max_predict_ms':   500,
-    \ 'show_info':          2,
-    \ 'auto_fim':           v:true,
-    \ 'max_line_suffix':    8,
-    \ 'max_cache_keys':     250,
-    \ 'ring_n_chunks':      16,
-    \ 'ring_chunk_size':    64,
-    \ 'ring_scope':         1024,
-    \ 'ring_update_ms':     1000,
-    \ 'keymap_trigger':     "<C-F>",
-    \ 'keymap_accept_full': "<Tab>",
-    \ 'keymap_accept_line': "<S-Tab>",
-    \ 'keymap_accept_word': "<C-B>",
+    \ "endpoint":           "http://127.0.0.1:8012/infill",
+    \ "api_key":            "",
+    \ "n_prefix":           256,
+    \ "n_suffix":           64,
+    \ "n_predict":          128,
+    \ "t_max_prompt_ms":    500,
+    \ "t_max_predict_ms":   500,
+    \ "show_info":          2,
+    \ "auto_fim":           v:true,
+    \ "max_line_suffix":    8,
+    \ "max_cache_keys":     250,
+    \ "ring_n_chunks":      16,
+    \ "ring_chunk_size":    64,
+    \ "ring_scope":         1024,
+    \ "ring_update_ms":     1000,
+    \ "keymap_trigger":     "<C-F>",
+    \ "keymap_accept_full": "<Tab>",
+    \ "keymap_accept_line": "<S-Tab>",
+    \ "keymap_accept_word": "<C-B>",
     \ }
 """ llama.nvim configuration
 
 """ GitHub Copilot
-" Enable Copilot only for Python, JS, TS, sh, and zsh
-let g:copilot_enabled = 0
+" Enable Copilot for specific languages
+let g:copilot_enabled = 1
 let g:copilot_filetypes = {
-      \ 'python': v:true,
-      \ 'javascript': v:true,
-      \ 'typescript': v:true,
-      \ 'sh': v:true,
-      \ 'zsh': v:true,
+      \ "python": v:true,
+      \ "javascript": v:true,
+      \ "rust": v:true,
+      \ "typescript": v:true,
+      \ "sh": v:true,
+      \ "zsh": v:true,
       \ "*": v:false,
       \ }
 """ GitHub Copilot
@@ -273,8 +274,7 @@ EOF
 """ quarto
 lua << EOF
 -- otter
-local otter = require'otter'
-otter.setup{
+require("otter").setup{
   lsp = {
     -- `:h events` that cause the diagnostics to update. Set to:
     -- { "BufWritePost", "InsertLeave", "TextChanged" } for less performant
