@@ -1705,7 +1705,7 @@ wk.add({
   { "<leader>c", group = "Code & Copilot" },
   { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Open Copilot Chat" },
   { "<leader>cpt", "<cmd>CopilotChatToggle<CR>", desc = "Toggle Copilot Chat" },
-  { "<leader>cpf", "<cmd>CopilotChatFixDiagnostic<CR>", desc = "Fix Diagnostic" },
+  { "<leader>cpf", "<cmd>CopilotChatFix<CR>", desc = "Fix Code" },
   { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
 }, { mode = "n" })
 
