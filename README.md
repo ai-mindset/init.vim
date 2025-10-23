@@ -15,6 +15,7 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Rust Analyzer LSP integration
 - Smart completion and diagnostic messages
 - Automatic imports and cargo commands
+- Tagbar support for code navigation
 
 ### Deno (TypeScript/JavaScript)
 - Advanced LSP features for modern JavaScript/TypeScript
@@ -108,3 +109,23 @@ nvim --headless +PlugInstall +qall # Only required on first start, to install pl
 - Formatters: Adjust `formatters_by_ft` in the conform.nvim setup
 - Keybindings: Modify the which-key configuration
 - CSV view: Customize the csvview.nvim configuration
+
+## Rust Tagbar Setup
+For Exuberant Ctags (default in many distros), create `~/.ctags` with:
+
+```
+--langdef=Rust
+--langmap=Rust:.rs
+--regex-Rust=/^[ \t]*(#\[[^\]]\][ \t]*)*(pub[ \t]+)?(extern[ \t]+)?("[^"]+"[ \t]+)?(unsafe[ \t]+)?fn[ \t]+([a-zA-Z0-9_]+)/\6/f,functions,function definitions/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?type[ \t]+([a-zA-Z0-9_]+)/\2/T,types,type definitions/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?enum[ \t]+([a-zA-Z0-9_]+)/\2/g,enumerations,enumeration names/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?struct[ \t]+([a-zA-Z0-9_]+)/\2/s,structure names/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?mod[ \t]+([a-zA-Z0-9_]+)/\2/m,modules,module names/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?(static|const)[ \t]+(mut[ \t]+)?([a-zA-Z0-9_]+)/\4/c,consts,static constants/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?trait[ \t]+([a-zA-Z0-9_]+)/\2/t,traits,traits/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?impl([ \t\n]*<[^>]*>)?[ \t]+(([a-zA-Z0-9_:]+)[ \t]*(<[^>]*>)?[ \t]+(for)[ \t]+)?([a-zA-Z0-9_]+)/\4 \6 \7/i,impls,trait implementations/
+--regex-Rust=/^[ \t]*macro_rules![ \t]+([a-zA-Z0-9_]+)/\1/d,macros,macro definitions/
+--regex-Rust=/^[ \t]*(pub[ \t]+)?impl[ \t]+([a-zA-Z0-9_]+)/\2/r,impls,impl/
+```
+
+This enables tagbar (<F8>) to display Rust code structure.
