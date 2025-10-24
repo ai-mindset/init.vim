@@ -632,6 +632,24 @@ let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▸', '▾']
 " let g:tagbar_iconchars = ['▷', '◢']
+
+" Rust configuration for tagbar (optimized for Exuberant Ctags)
+let g:tagbar_type_rust = {
+  \ 'ctagstype' : 'Rust',
+  \ 'kinds' : [
+    \ 'f:functions',
+    \ 'T:types',
+    \ 'g:enumerations',
+    \ 's:structures',
+    \ 'm:modules',
+    \ 'c:constants',
+    \ 't:traits',
+    \ 'i:implementations',
+    \ 'd:macros',
+    \ 'r:impls'
+  \ ],
+  \ 'sort' : 0,
+  \ }
 """ tagbar
 
 " Autopairs Configuration
