@@ -667,7 +667,7 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "pyright",               -- Python
+    "jedi_language_server",  -- Python LSP
     "rust_analyzer",         -- Rust
     "denols",                -- Deno
     "dockerls",              -- Docker
@@ -678,22 +678,13 @@ require("mason-lspconfig").setup({
   },
   automatic_installation = true,
   handlers = {
-    -- Pyright
-    pyright_ls_type_checker = function()
-      require('lspconfig').pyright.setup({
-        init_options = {
-          settings = {
-            python = {
-              analysis = {
-                autoSearchPaths = true,
-                diagnosticMode = "workspace",
-                useLibraryCodeForTypes = true
-              }
-            }
-          }
-        }
+    -- Jedi for Python LSP features (code intelligence)
+    jedi_language_server = function()
+      require('lspconfig').jedi_language_server.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
       })
-      end,
+    end,
 
       -- Rust Analyzer
       rust_analyzer = function()
@@ -978,8 +969,45 @@ lua << EOF
 local lint = require('lint')
 
 -- Define ruff as the only linter for Python
+-- Register ty as a custom linter
+lint.linters.ty = {
+  cmd = "ty",
+  stdin = false,
+  args = {
+    "--show-error-codes",
+    "--show-column-numbers"
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr)
+    local diagnostics = {}
+    for _, line in ipairs(vim.split(output, '\n')) do
+      -- Parse ty output lines that look like: file.py:line:col: error: message [error-code]
+      local file, line, col, severity, message, code =
+        line:match(".-:(%d+):(%d+): (%w+): (.-) %[(.-)%]")
+
+      if line and col and message then
+        local severity_map = {
+          error = vim.diagnostic.severity.ERROR,
+          warning = vim.diagnostic.severity.WARN,
+          note = vim.diagnostic.severity.INFO,
+          hint = vim.diagnostic.severity.HINT
+        }
+
+        table.insert(diagnostics, {
+          lnum = tonumber(line) - 1,  -- 0-indexed
+          col = tonumber(col) - 1,    -- 0-indexed
+          message = message .. (code and " [" .. code .. "]" or ""),
+          source = "ty",
+          severity = severity_map[severity] or vim.diagnostic.severity.ERROR
+        })
+      end
+    end
+    return diagnostics
+  end
+}
+
 lint.linters_by_ft = {
-  python = {'ruff'},
+  python = {'ruff', 'ty'},
 }
 
 -- Configure ruff to ensure it shows all diagnostics
