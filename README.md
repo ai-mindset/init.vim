@@ -78,9 +78,11 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - [git](https://git-scm.com/)
 - [node.js](https://nodejs.org/) (for copilot.vim)
 - [llama-cpp-server](https://github.com/ggerganov/llama.cpp) (for llama.vim)
-- [ripgrep](https://github.com/BurntSushi/ripgrep) for global search
-- [Deno](https://deno.com/) (for TypeScript/JavaScript)
-- [Python](https://www.python.org/) with [Jupyter](https://jupyter.org/) for notebook support
+- [ripgrep](https://github.com/BurntSushi/ripgrep) for global search (optional)
+- [Deno](https://deno.com/) (TS/JS development)
+- [Python](https://www.python.org/) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
+- [IPython](https://ipython.org/) for Python REPL-driven development
+- [Julia](https://julialang.org/)
 - [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
 - Alba voice model in `/usr/share/piper-voices/`
 
