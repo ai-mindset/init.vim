@@ -1790,8 +1790,8 @@ wk.add({
   { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates" },
 
   -- GitHub CopilotChat
-  { "<leader>cp", "<cmd>CopilotChatVisual<CR>", desc = "Copilot Chat Selection" },
-  { "<leader>cpe", "<cmd>CopilotChatExplainVisual<CR>", desc = "Explain Selected Code" },
+  { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Copilot Chat" },
+  { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
   { "<leader>cpt", "<cmd>CopilotChatTests<CR>", desc = "Generate Tests" },
 }, { mode = "v" })
 
