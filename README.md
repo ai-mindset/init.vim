@@ -21,6 +21,12 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Advanced LSP features for modern JavaScript/TypeScript
 - Built-in linting and formatting
 
+### Julia
+- Full language server support with hover documentation
+- Snippet completion and intelligent code assistance
+- JuliaFormatter integration for code formatting
+- REPL integration via vim-slime
+
 ### Container & Infrastructure
 - Containerfile/Dockerfile LSP support
 - Shell script (Bash/Zsh) language server
@@ -102,6 +108,28 @@ git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 ```bash
 nvim --headless +PlugInstall +qall # Only required on first start, to install plugins
 ```
+
+## Julia Setup
+
+For full Julia language support, set up your environment with these steps:
+
+```bash
+# Install juliaup (cross-platform Julia version manager)
+curl -fsSL https://install.julialang.org | sh
+
+# Add Julia and set as default (v1.12 is the latest stable release at the time of writing)
+juliaup add 1.12  # Replace with your version
+juliaup default 1.12  # Replace with your version
+
+# Install required packages in the global environment
+julia --project=~/.julia/environments/v1.12 -e '
+    using Pkg;
+    Pkg.add(["LanguageServer", "SymbolServer", "StaticLint", "JuliaFormatter"]);
+    Pkg.precompile()
+'
+```
+
+Note: v1.12 is used in this example as it's the latest stable version at the time of writing. Replace with whichever version you have installed.
 
 ## Customization
 - LSP servers: Modify `ensure_installed` in the Mason setup (Python, Rust, JSON, YAML, etc.)

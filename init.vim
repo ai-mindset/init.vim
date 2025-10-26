@@ -135,11 +135,14 @@ hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cter
 command! Format %!jq .
 """ Use jq for JSON formatting
 
-""" vim-slime configuration for IPython
+""" vim-slime configuration for IPython and Julia
 let g:slime_target = "tmux"
 let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
 let g:slime_dont_ask_default = 1
 let g:slime_python_ipython = 1
+let g:slime_bracketed_paste = 1  " Better paste support for Julia REPL
+" Julia-specific settings
+au FileType julia let b:slime_cell_delimiter = "^##"  " Use '##' as cell delimiter in Julia
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
@@ -245,6 +248,7 @@ let g:copilot_filetypes = {
       \ "typescript": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
+      \ "julia": v:true,
       \ "*": v:false,
       \ }
 """ GitHub Copilot
@@ -811,6 +815,99 @@ require("mason-lspconfig").setup({
 EOF
 """ Mason Configuration
 
+
+""" Julia Language Server setup
+lua << EOF
+-- Simple configuration
+local lspconfig = require('lspconfig')
+
+-- Create direct command to launch/restart Julia LSP
+vim.api.nvim_create_user_command('JuliaLspStart', function()
+  local clients = vim.lsp.get_active_clients({name = "julials"})
+
+  -- Stop any existing Julia LSP clients
+  for _, client in ipairs(clients) do
+    vim.lsp.stop_client(client.id, true)
+  end
+
+  -- Wait briefly and restart
+  vim.defer_fn(function()
+    vim.cmd("LspStart julials")
+    print("Julia LSP restarted")
+  end, 200)
+end, {})
+
+-- Julia LSP configuration with proper hover, snippet and formatting support
+lspconfig.julials.setup({
+  on_attach = function(client, bufnr)
+    -- Standard LSP setup without adding keybindings (those are in which-key)
+    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+  end,
+  cmd = {
+    "julia",
+    "--startup-file=no",
+    "--history-file=no",
+    "--project=" .. vim.fn.expand("~/.julia/environments/v1.12"),
+    "-e",
+    "using LanguageServer; using SymbolServer; using StaticLint; runserver()"
+  },
+  filetypes = {"julia"},
+
+  -- Root directory detection (prioritize Project.toml)
+  root_dir = lspconfig.util.root_pattern("Project.toml", ".git"),
+
+  -- Properly define capabilities for hover, snippets and formatting
+  capabilities = {
+    textDocumentSync = {
+      openClose = true,
+      change = 2, -- Incremental sync
+    },
+    hoverProvider = true,
+    completionProvider = {
+      triggerCharacters = { ".", "@" }
+    },
+    signatureHelpProvider = {
+      triggerCharacters = { "(", ",", " " }
+    },
+    definitionProvider = true,
+    documentSymbolProvider = true,
+    workspaceSymbolProvider = true,
+    documentFormattingProvider = true,
+    textDocument = {
+      completion = {
+        completionItem = {
+          snippetSupport = true,
+          commitCharactersSupport = true,
+          documentationFormat = { "markdown", "plaintext" },
+          resolveSupport = {
+            properties = {
+              "documentation",
+              "detail",
+              "additionalTextEdits",
+            }
+          }
+        }
+      }
+    }
+  },
+})
+
+
+-- Create autocommand to ensure Julia LSP starts for Julia files
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "julia",
+  callback = function()
+    -- Try to start LSP automatically
+    vim.cmd("LspStart julials")
+
+        -- Basic omnifunc setup for Julia
+    vim.bo.omnifunc = "v:lua.vim.lsp.omnifunc"
+  end
+})
+EOF
+""" Julia Language Server setup
+
+
 """ Completion setup
 lua << EOF
 -- Completion Setup
@@ -844,6 +941,7 @@ cmp.setup({
     { name = "llama" },
   })
 })
+
 EOF
 """ Completion setup
 
@@ -1165,11 +1263,10 @@ require("conform").setup({
     typescript = { "deno_fmt" },
     json = { "deno_fmt" },
     jsonc = { "deno_fmt" },
-    javascriptreact = { "deno_fmt" },
-    typescriptreact = { "deno_fmt" },
     markdown = { "deno_fmt" },
     json = { "biome" },
     rust = { "rustfmt" },
+    julia = { "juliaformatter" },
     ["*"] = { "trim_whitespace" },
   },
 
@@ -1201,6 +1298,16 @@ require("conform").setup({
                 "--prose-wrap=never",
                 "--line-width=10000",
                 "-" -- For stdin
+            },
+            stdin = true,
+        },
+        juliaformatter = {
+            command = "julia",
+            args = {
+                "--startup-file=no",
+                "--history-file=no",
+                "-e",
+                "using JuliaFormatter; print(format_text(read(stdin, String)))"
             },
             stdin = true,
         },
@@ -1240,6 +1347,7 @@ require("nvim-treesitter.configs").setup {
         "javascript",
         "typescript",
         "rust",
+        "julia",
 
         -- For documentation/markdown files
         "markdown",
@@ -1685,7 +1793,7 @@ wk.add({
 
   -- Format
   { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
-  { "<leader>j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
+  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
@@ -1753,6 +1861,13 @@ wk.add({
   { "<leader>cpt", "<cmd>CopilotChatToggle<CR>", desc = "Toggle Copilot Chat" },
   { "<leader>cpf", "<cmd>CopilotChatFix<CR>", desc = "Fix Code" },
   { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
+
+  -- Julia specific commands
+  { "<leader>j", group = "Julia" },
+  { "<leader>jr", "<cmd>JuliaLspRestart<CR>", desc = "Restart Julia LSP" },
+  { "<leader>ji", "<cmd>JuliaLspInfo<CR>", desc = "Julia LSP Info" },
+  { "<leader>jl", "<cmd>edit " .. vim.fn.stdpath('cache') .. "/lsp.log<CR>", desc = "Open LSP Logs" },
+  { "<leader>jf", "<cmd>lua require('conform').format()<CR>", desc = "Format Julia Code" },
 }, { mode = "n" })
 
 -- Insert mode mappings
