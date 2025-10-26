@@ -11,17 +11,17 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - IPython integration with cell-based execution
 - Jupyter notebook support with automatic conversion
 
-### Rust
+### Rust (Systems programming/AI)
 - Rust Analyzer LSP integration
 - Smart completion and diagnostic messages
 - Automatic imports and cargo commands
 - Tagbar support for code navigation
 
-### Deno (TypeScript/JavaScript)
+### Deno (TS/JS backend development)
 - Advanced LSP features for modern JavaScript/TypeScript
 - Built-in linting and formatting
 
-### Julia
+### Julia (Data Science/AI)
 - Full language server support with hover documentation
 - Snippet completion and intelligent code assistance
 - JuliaFormatter integration for code formatting
