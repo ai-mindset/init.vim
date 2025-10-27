@@ -840,56 +840,56 @@ end, {})
 -- Julia LSP configuration with proper hover, snippet and formatting support
 lspconfig.julials.setup({
   on_attach = function(client, bufnr)
-    -- Standard LSP setup without adding keybindings (those are in which-key)
     vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
   end,
+  -- Static cmd with environment variable that gets evaluated on LSP start
   cmd = {
     "julia",
     "--startup-file=no",
     "--history-file=no",
-    "--project=" .. vim.fn.expand("~/.julia/environments/v1.12"),
+    "--project=${dirname:${find:Project.toml}}",  -- Use Project.toml from current directory
     "-e",
     "using LanguageServer; using SymbolServer; using StaticLint; runserver()"
   },
   filetypes = {"julia"},
-
-  -- Root directory detection (prioritize Project.toml)
   root_dir = lspconfig.util.root_pattern("Project.toml", ".git"),
 
+  capabilities = vim.lsp.protocol.make_client_capabilities(),  -- Use standard capabilities
+
   -- Properly define capabilities for hover, snippets and formatting
-  capabilities = {
-    textDocumentSync = {
-      openClose = true,
-      change = 2, -- Incremental sync
-    },
-    hoverProvider = true,
-    completionProvider = {
-      triggerCharacters = { ".", "@" }
-    },
-    signatureHelpProvider = {
-      triggerCharacters = { "(", ",", " " }
-    },
-    definitionProvider = true,
-    documentSymbolProvider = true,
-    workspaceSymbolProvider = true,
-    documentFormattingProvider = true,
-    textDocument = {
-      completion = {
-        completionItem = {
-          snippetSupport = true,
-          commitCharactersSupport = true,
-          documentationFormat = { "markdown", "plaintext" },
-          resolveSupport = {
-            properties = {
-              "documentation",
-              "detail",
-              "additionalTextEdits",
-            }
-          }
-        }
-      }
-    }
-  },
+--  capabilities = {
+--    textDocumentSync = {
+--      openClose = true,
+--      change = 2, -- Incremental sync
+--    },
+--    hoverProvider = true,
+--    completionProvider = {
+--      triggerCharacters = { ".", "@" }
+--    },
+--    signatureHelpProvider = {
+--      triggerCharacters = { "(", ",", " " }
+--    },
+--    definitionProvider = true,
+--    documentSymbolProvider = true,
+--    workspaceSymbolProvider = true,
+--    documentFormattingProvider = true,
+--    textDocument = {
+--      completion = {
+--        completionItem = {
+--          snippetSupport = true,
+--          commitCharactersSupport = true,
+--          documentationFormat = { "markdown", "plaintext" },
+--          resolveSupport = {
+--            properties = {
+--              "documentation",
+--              "detail",
+--              "additionalTextEdits",
+--            }
+--          }
+--        }
+--      }
+--    }
+--  },
 })
 
 
