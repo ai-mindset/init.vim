@@ -127,6 +127,8 @@ hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
 " Make gutter line numbers more accessible
 hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
 hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
+" Make hover documentation windows more visible
+hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
 """ Catppuccin Theme Configuration with Accessibility Improvements
 
 
