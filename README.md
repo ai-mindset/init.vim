@@ -17,7 +17,7 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Automatic imports and cargo commands
 - Tagbar support for code navigation
 
-### Deno (TS/JS backend development)
+### Deno (TS/JS backend dev./Data Science/AI)
 - Advanced LSP features for modern JavaScript/TypeScript
 - Built-in linting and formatting
 
