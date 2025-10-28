@@ -18,11 +18,20 @@ Plug 'hrsh7th/cmp-buffer'                                     " Buffer completio
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
-" GitHub Copilot
-"Plug 'github/copilot.vim'                                     " GitHub Copilot
-
 " Local LLM completion
-Plug 'nomnivore/ollama.nvim'                                  " LLM completion
+Plug 'ggml-org/llama.vim'                                     " LLM completion
+
+" GitHub Copilot
+Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
+Plug 'CopilotC-Nvim/CopilotChat.nvim'                         " Chat with GitHub Copilot in Neovim
+
+
+" Quarto
+Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
+Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
+
+" Rust
+Plug 'rust-lang/rust.vim'                                     " Vim configuration for Rust
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -58,11 +67,11 @@ Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation line
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
 Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
-Plug 'ellisonleao/glow.nvim'                                  " Markdown preview
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
+Plug 'norcalli/nvim-colorizer.lua'                            " Colour preview
 call plug#end()
 
 """ Catppuccin Theme Configuration with Accessibility Improvements
@@ -118,21 +127,28 @@ hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
 " Make gutter line numbers more accessible
 hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
 hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
+" Make hover documentation windows more visible
+hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
 """ Catppuccin Theme Configuration with Accessibility Improvements
 
 
 """ Use jq for JSON formatting
 " Makes :Format run `:%!jq .`
 command! Format %!jq .
-" Map <leader>j → :Format
-nnoremap <silent> <leader>j :Format<CR>
 """ Use jq for JSON formatting
 
-""" vim-slime configuration for IPython
+""" vim-slime configuration for IPython, Julia and Deno
 let g:slime_target = "tmux"
 let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
 let g:slime_dont_ask_default = 1
 let g:slime_python_ipython = 1
+let g:slime_bracketed_paste = 1  " Better paste support for REPLs
+let g:slime_send_as_block = 1    " Global setting for proper multi-line selection sending in all REPLs
+
+" Language-specific settings
+au FileType julia let b:slime_cell_delimiter = "^##"  " Use '##' as cell delimiter in Julia
+au FileType typescript,javascript let b:slime_cell_delimiter = "^// %%"  " Use '// %%' for TypeScript/JavaScript
+au FileType typescript,javascript let b:slime_preserve_curly_braces = 1  " JS/TS-specific setting to preserve curly braces
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
@@ -173,23 +189,25 @@ function! FlashCurrentCell()
   redraw
 endfunction
 
-" Your existing cell navigation (keep as-is)
-nnoremap [c :call search("^# %%", "bW")<CR>:call FlashCurrentCell()<CR>
-nnoremap ]c :call search("^# %%", "W")<CR>:call FlashCurrentCell()<CR>
-
-" Simple vim-slime mappings for IPython
-nnoremap <localleader>l :SlimeSendCurrentLine<CR>
-vnoremap <localleader>v :SlimeSend<CR>
-nnoremap <localleader>c :call SlimeSendCell()<CR>
 
 " Function to send current cell
 function! SlimeSendCell()
   " Save cursor position
   let save_pos = getpos('.')
 
-  " Find cell boundaries
-  let cell_start = search("^# %%", "bcnW")
-  let cell_end = search("^# %%", "nW")
+  " Get the appropriate cell delimiter pattern based on filetype
+  let cell_pattern = "^# %%"  " Default for Python
+
+  " Use filetype-specific cell patterns
+  if &filetype == 'typescript' || &filetype == 'javascript'
+    let cell_pattern = "^// %%"
+  elseif &filetype == 'julia'
+    let cell_pattern = "^##"
+  endif
+
+  " Find cell boundaries using the appropriate pattern
+  let cell_start = search(cell_pattern, "bcnW")
+  let cell_end = search(cell_pattern, "nW")
 
   if cell_start == 0
     let cell_start = 1
@@ -212,45 +230,150 @@ function! SlimeSendCell()
 endfunction
 """ vim-slime configuration
 
-""" GitHub Copilot -- leaving in, in case I reactivate Copilot
-let g:copilot_enabled = v:false
-let g:copilot_telemetry = v:false
+""" llama.nvim configuration
+let s:default_config = {
+    \ "endpoint":           "http://127.0.0.1:8012/infill",
+    \ "api_key":            "",
+    \ "n_prefix":           256,
+    \ "n_suffix":           64,
+    \ "n_predict":          128,
+    \ "t_max_prompt_ms":    500,
+    \ "t_max_predict_ms":   500,
+    \ "show_info":          2,
+    \ "auto_fim":           v:true,
+    \ "max_line_suffix":    8,
+    \ "max_cache_keys":     250,
+    \ "ring_n_chunks":      16,
+    \ "ring_chunk_size":    64,
+    \ "ring_scope":         1024,
+    \ "ring_update_ms":     1000,
+    \ "keymap_trigger":     "<C-F>",
+    \ "keymap_accept_full": "<Tab>",
+    \ "keymap_accept_line": "<S-Tab>",
+    \ "keymap_accept_word": "<C-B>",
+    \ }
+""" llama.nvim configuration
+
+""" GitHub Copilot
+" Enable Copilot for specific languages
+let g:copilot_enabled = 1
 let g:copilot_filetypes = {
-            \ "*": v:false,
-            \ "python": v:true,
-            \ "javascript": v:true,
-            \ "typescript": v:true,
-            \ }
-let g:copilot_model = "claude3.7-sonnet" " or "gpt-4o"
+      \ "python": v:true,
+      \ "javascript": v:true,
+      \ "rust": v:true,
+      \ "typescript": v:true,
+      \ "sh": v:true,
+      \ "zsh": v:true,
+      \ "julia": v:true,
+      \ "*": v:false,
+      \ }
 """ GitHub Copilot
 
-""" ollama.nvim configuration
+""" GitHub Copilot Chat
 lua << EOF
-local opts = {
-  model = "gemma3n:latest",
-  url = "http://127.0.0.1:11434",
-  serve = {
-    on_start = false,
-    command = "ollama",
-    args = { "serve" },
-    stop_command = "pkill",
-    stop_args = { "-SIGTERM", "ollama" },
+require("CopilotChat").setup({
+-- Custom mappings are in which-key configuration below
+  mappings = {
+    -- Disable default keymaps
+    chat = {
+      open = false,
+      accept = false,
+      close = false,
+    },
+    selection = {
+      select = false,
+    },
+    panel = {
+      open = false,
+    },
   }
-}
-require("ollama").setup(opts)
-
-vim.keymap.set("i", "<C-x><C-o>", function()
-    require("cmp").complete({
-        config = {
-            sources = {
-                { name = "ollama" },
-                { name = "path"},
-            }
-        }
-    })
-end)
+})
 EOF
-""" ollama.nvim configuration
+""" GitHub Copilot Chat
+
+""" quarto
+lua << EOF
+-- otter
+require("otter").setup{
+  lsp = {
+    -- `:h events` that cause the diagnostics to update. Set to:
+    -- { "BufWritePost", "InsertLeave", "TextChanged" } for less performant
+    -- but more instant diagnostic updates
+    diagnostic_update_events = { "BufWritePost" },
+    -- function to find the root dir where the otter-ls is started
+    root_dir = function(_, bufnr)
+      return vim.fs.root(bufnr or 0, {
+        ".git",
+        "_quarto.yml",
+        "package.json",
+      }) or vim.fn.getcwd(0)
+    end,
+  },
+  -- options related to the otter buffers
+  buffers = {
+    -- if set to true, the filetype of the otterbuffers will be set.
+    -- otherwise only the autocommand of lspconfig that attaches
+    -- the language server will be executed without setting the filetype
+    --- this setting is deprecated and will default to true in the future
+    set_filetype = true,
+    -- write <path>.otter.<embedded language extension> files
+    -- to disk on save of main buffer.
+    -- usefule for some linters that require actual files.
+    -- otter files are deleted on quit or main buffer close
+    write_to_disk = false,
+    -- a table of preambles for each language. The key is the language and the value is a table of strings that will be written to the otter buffer starting on the first line.
+    preambles = {},
+    -- a table of postambles for each language. The key is the language and the value is a table of strings that will be written to the end of the otter buffer.
+    postambles = {},
+    -- A table of patterns to ignore for each language. The key is the language and the value is a lua match pattern to ignore.
+    -- lua patterns: https://www.lua.org/pil/20.2.html
+    ignore_pattern = {
+      -- ipython cell magic (lines starting with %) and shell commands (lines starting with !)
+      python = "^(%s*[%%!].*)",
+    },
+  },
+  -- list of characters that should be stripped from the beginning and end of the code chunks
+  strip_wrapping_quote_characters = { "'", '"', "`" },
+  -- remove whitespace from the beginning of the code chunks when writing to the ottter buffers
+  -- and calculate it back in when handling lsp requests
+  handle_leading_whitespace = true,
+  -- mapping of filetypes to extensions for those not already included in otter.tools.extensions
+  -- e.g. ["bash"] = "sh"
+  extensions = {
+  },
+  -- add event listeners for LSP events for debugging
+  debug = false,
+  verbose = { -- set to false to disable all verbose messages
+    no_code_found = false -- warn if otter.activate is called, but no injected code was found
+  },
+}
+
+-- quarto
+require('quarto').setup{
+  debug = false,
+  closePreviewOnExit = true,
+  lspFeatures = {
+    enabled = true,
+    chunks = "curly",
+    languages = { "r", "python", "julia", "bash", "html" },
+    diagnostics = {
+      enabled = true,
+      triggers = { "BufWritePost" },
+    },
+    completion = {
+      enabled = true,
+    },
+  },
+  codeRunner = {
+    enabled = true,
+    default_method = "slime", -- "molten", "slime", "iron" or <function>
+    ft_runners = {}, -- filetype to runner, ie. `{ python = "molten" }`.
+    -- Takes precedence over `default_method`
+    never_run = { 'yaml' }, -- filetypes which are never sent to a code runner
+  },
+}
+EOF
+""" quarto
 
 """ journal.nvim
 lua << EOF
@@ -325,7 +448,7 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard+=unnamedplus            " Clipboard Settings
+set clipboard=unnamedplus            " Clipboard Settings
 set background=dark                   " Set dark background
 if $COLORTERM == 'gnome-terminal'
   set t_Co=256                        " 256 colours
@@ -343,11 +466,6 @@ augroup HighlightOnHover
 augroup END
 "" Highlight on hover
 
-" Disable highlight when <leader><cr> is pressed
-map <silent> <leader><cr> :noh<cr>
-"
-" Toggle paste mode on and off
-map <leader>pp :setlocal paste!<cr>
 
 
 """ Statusline configuration
@@ -513,15 +631,6 @@ let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
                     " <space>tv = SpeakVisualSelection()
 """ piper TTS
 
-" Pressing ,ss will toggle and untoggle spell checking
-map <leader>ss :setlocal spell!<cr>
-
-""" Shortcuts using <leader>
-map <leader>sn ]s " Next spelling mistake
-map <leader>sp [s " Previous spelling mistake
-map <leader>sa zg " Add word to dictionary
-map <leader>s? z= " Get suggestions
-""" Shortcuts using <leader>
 
 """ Spelling mistakes will be coloured up red.
 hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
@@ -530,24 +639,7 @@ hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
-""" Glow configurations
-lua << EOF
-require('glow').setup({
-  glow_path = "/usr/bin/glow", -- will be filled automatically with your glow bin in $PATH, if any
-  install_path = "/usr/bin", -- default path for installing glow binary
-  border = "shadow", -- floating window border config
-  style = "dark", -- filled automatically with your current editor background, you can override using glow json style
-  pager = false,
-  width = 80,
-  height = 100,
-  width_ratio = 0.7, -- maximum width of the Glow window compared to the nvim window size (overrides `width`)
-  height_ratio = 0.7,
-})
-EOF
-""" Glow configurations
-
 """ tagbar
-nmap <F8> :TagbarToggle<CR>
 " https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
 let g:tagbar_left = 1
 let g:tagbar_autoclose = 0
@@ -560,6 +652,24 @@ let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▸', '▾']
 " let g:tagbar_iconchars = ['▷', '◢']
+
+" Rust configuration for tagbar (optimized for Exuberant Ctags)
+let g:tagbar_type_rust = {
+  \ 'ctagstype' : 'Rust',
+  \ 'kinds' : [
+    \ 'f:functions',
+    \ 'T:types',
+    \ 'g:enumerations',
+    \ 's:structures',
+    \ 'm:modules',
+    \ 'c:constants',
+    \ 't:traits',
+    \ 'i:implementations',
+    \ 'd:macros',
+    \ 'r:impls'
+  \ ],
+  \ 'sort' : 0,
+  \ }
 """ tagbar
 
 " Autopairs Configuration
@@ -577,7 +687,8 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "pyright",               -- Python
+    "jedi_language_server",  -- Python LSP
+    "rust_analyzer",         -- Rust
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
@@ -587,47 +698,35 @@ require("mason-lspconfig").setup({
   },
   automatic_installation = true,
   handlers = {
-    -- Jedi Language Server (Python)
+    -- Jedi for Python LSP features (code intelligence)
     jedi_language_server = function()
-      require("lspconfig").jedi_language_server.setup({
+      require('lspconfig').jedi_language_server.setup({
         on_attach = on_attach,
         capabilities = capabilities,
-        init_options = {
-          diagnostics = {
-            enable = true,
-            didOpen = true,
-            didChange = true,
-            didSave = true,
-          },
-          completion = {
-            disableSnippets = false,
-            resolveEagerly = true,
-          },
-          hover = {
-            enable = true,
-          },
-          jediSettings = {
-            autoImportModules = {},
-            caseInsensitiveCompletion = true,
-            debug = false,
-          },
-        }
       })
     end,
 
-    -- Pyright
-    pyright_ls_type_checker = function()
-      require('lspconfig').pyright.setup({
-        init_options = {
-          settings = {
-            python = {
-              analysis = {
-                autoSearchPaths = true,
-                diagnosticMode = "workspace",
-                useLibraryCodeForTypes = true
-              }
+      -- Rust Analyzer
+      rust_analyzer = function()
+      require('lspconfig').rust_analyzer.setup({
+        on_attach = on_attach,
+        settings = {
+            ["rust-analyzer"] = {
+                imports = {
+                    granularity = {
+                        group = "module",
+                    },
+                    prefix = "self",
+                },
+                cargo = {
+                    buildScripts = {
+                        enable = true,
+                    },
+                },
+                procMacro = {
+                    enable = true
+                },
             }
-          }
         }
       })
       end,
@@ -732,6 +831,97 @@ require("mason-lspconfig").setup({
 EOF
 """ Mason Configuration
 
+
+""" Julia Language Server setup
+lua << EOF
+-- Simple configuration
+local lspconfig = require('lspconfig')
+
+-- Create direct command to launch/restart Julia LSP
+vim.api.nvim_create_user_command('JuliaLspStart', function()
+  local clients = vim.lsp.get_active_clients({name = "julials"})
+
+  -- Stop any existing Julia LSP clients
+  for _, client in ipairs(clients) do
+    vim.lsp.stop_client(client.id, true)
+  end
+
+  -- Wait briefly and restart
+  vim.defer_fn(function()
+    vim.cmd("LspStart julials")
+    print("Julia LSP restarted")
+  end, 200)
+end, {})
+
+-- Julia LSP configuration with proper hover, snippet and formatting support
+lspconfig.julials.setup({
+  on_attach = function(client, bufnr)
+    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+  end,
+  -- Static cmd with environment variable that gets evaluated on LSP start
+  cmd = {
+    "julia",
+    "--startup-file=no",
+    "--history-file=no",
+    "--project=${dirname:${find:Project.toml}}",  -- Use Project.toml from current directory
+    "-e",
+    "using LanguageServer; using SymbolServer; using StaticLint; runserver()"
+  },
+  filetypes = {"julia"},
+  root_dir = lspconfig.util.root_pattern("Project.toml", ".git"),
+
+  -- Properly define capabilities for hover, snippets and formatting
+  capabilities = {
+    textDocumentSync = {
+      openClose = true,
+      change = 2, -- Incremental sync
+    },
+    hoverProvider = true,
+    completionProvider = {
+      triggerCharacters = { ".", "@" }
+    },
+    signatureHelpProvider = {
+      triggerCharacters = { "(", ",", " " }
+    },
+    definitionProvider = true,
+    documentSymbolProvider = true,
+    workspaceSymbolProvider = true,
+    documentFormattingProvider = true,
+    textDocument = {
+      completion = {
+        completionItem = {
+          snippetSupport = true,
+          commitCharactersSupport = true,
+          documentationFormat = { "markdown", "plaintext" },
+          resolveSupport = {
+            properties = {
+              "documentation",
+              "detail",
+              "additionalTextEdits",
+            }
+          }
+        }
+      }
+    }
+  },
+})
+
+
+-- Create autocommand to ensure Julia LSP starts for Julia files
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "julia",
+  callback = function()
+    -- Try to start LSP automatically
+    vim.cmd("LspStart julials")
+
+        -- Basic omnifunc setup for Julia
+    vim.bo.omnifunc = "v:lua.vim.lsp.omnifunc"
+  end
+})
+EOF
+""" Julia Language Server setup
+
+
 """ Completion setup
 lua << EOF
 -- Completion Setup
@@ -762,9 +952,10 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
-    { name = "crates" },
+    { name = "llama" },
   })
 })
+
 EOF
 """ Completion setup
 
@@ -795,7 +986,7 @@ vim.diagnostic.config({
     severity_sort = false,
 })
 -- Show diagnostics when pressing 'gh'
-vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=false})<CR>', { silent = true })
+vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
 
 -- Proper file type detection
 vim.cmd([[
@@ -819,7 +1010,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
             local winid = require('vim.lsp.util').open_floating_preview(
                 {'Fetching documentation...'}, 'markdown', {
                     border = 'rounded',
-                    focusable = false,
+                    focusable = true,
                 })
             vim.lsp.buf.hover()
         end, opts)
@@ -831,7 +1022,7 @@ vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
   vim.lsp.handlers.signature_help, {
     border = 'rounded',
     close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
-    focusable = false,
+    focusable = true,
   }
 )
 
@@ -846,19 +1037,6 @@ local on_attach = function(client, bufnr)
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
-  -- Navigation keymaps
-  vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-  vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-
-  -- Information keymaps
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-
-  -- Editing keymaps
-  vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
-  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
 
   -- Programming filetypes where signature help should auto-trigger
   local programming_filetypes = {'python', 'typescript', 'javascript'}
@@ -903,8 +1081,45 @@ lua << EOF
 local lint = require('lint')
 
 -- Define ruff as the only linter for Python
+-- Register ty as a custom linter
+lint.linters.ty = {
+  cmd = "ty",
+  stdin = false,
+  args = {
+    "--show-error-codes",
+    "--show-column-numbers"
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr)
+    local diagnostics = {}
+    for _, line in ipairs(vim.split(output, '\n')) do
+      -- Parse ty output lines that look like: file.py:line:col: error: message [error-code]
+      local file, line, col, severity, message, code =
+        line:match(".-:(%d+):(%d+): (%w+): (.-) %[(.-)%]")
+
+      if line and col and message then
+        local severity_map = {
+          error = vim.diagnostic.severity.ERROR,
+          warning = vim.diagnostic.severity.WARN,
+          note = vim.diagnostic.severity.INFO,
+          hint = vim.diagnostic.severity.HINT
+        }
+
+        table.insert(diagnostics, {
+          lnum = tonumber(line) - 1,  -- 0-indexed
+          col = tonumber(col) - 1,    -- 0-indexed
+          message = message .. (code and " [" .. code .. "]" or ""),
+          source = "ty",
+          severity = severity_map[severity] or vim.diagnostic.severity.ERROR
+        })
+      end
+    end
+    return diagnostics
+  end
+}
+
 lint.linters_by_ft = {
-  python = {'ruff'},
+  python = {'ruff', 'ty'},
 }
 
 -- Configure ruff to ensure it shows all diagnostics
@@ -998,7 +1213,7 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   float = {
-    focusable = false,
+    focusable = true,
     style = "minimal",
     border = "rounded",
     source = "always",
@@ -1010,7 +1225,7 @@ vim.diagnostic.config({
 -- Set up keymapping to show diagnostics on hover
 vim.api.nvim_create_autocmd("CursorHold", {
   callback = function()
-    vim.diagnostic.open_float(nil, {focus=false})
+    vim.diagnostic.open_float(nil, {focus=true})
   end
 })
 
@@ -1051,41 +1266,71 @@ end, {})
 
 
 -- Formatting Configuration
+-- https://questions.deno.com/m/1233267429656891495
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    deno = { "deno_fmt" },
+    css = { "deno_fmt" },
+    html = { "deno_fmt" },
+    javascript = { "deno_fmt" },
+    typescript = { "deno_fmt" },
+    json = { "deno_fmt" },
+    jsonc = { "deno_fmt" },
+    markdown = { "deno_fmt" },
     json = { "biome" },
+    rust = { "rustfmt" },
+    julia = { "juliaformatter" },
     ["*"] = { "trim_whitespace" },
   },
 
   -- Organise Python imports
     formatters = {
         ruff_organise_imports = {
-          command = 'ruff',
+          command = "ruff",
           args = {
-            'check',
-            '--force-exclude',
-            '--select=I001',
-            '--fix',
-            '--exit-zero',
-            '--stdin-filename',
-            '$FILENAME',
-            '-',
+            "check",
+            "--force-exclude",
+            "--select=I001",
+            "--fix",
+            "--exit-zero",
+            "--stdin-filename",
+            "$FILENAME",
+            "-",
           },
           stdin = true,
-          cwd = require('conform.util').root_file {
-            'pyproject.toml',
-            'ruff.toml',
-            '.ruff.toml',
+          cwd = require("conform.util").root_file {
+            "pyproject.toml",
+            "ruff.toml",
+            ".ruff.toml",
           },
+        },
+        deno_fmt = {
+            command = "deno",
+            args = {
+                "fmt",
+                "--prose-wrap=never",
+                "--line-width=10000",
+                "-" -- For stdin
+            },
+            stdin = true,
+        },
+        juliaformatter = {
+            command = "julia",
+            args = {
+                "--startup-file=no",
+                "--history-file=no",
+                "-e",
+                "using JuliaFormatter; print(format_text(read(stdin, String)))"
+            },
+            stdin = true,
         },
       },
   -- Format on save
 
   format_on_save = {
     -- These options will be passed to conform.format()
+    enabled = true,
     timeout_ms = 500,
     lsp_fallback = true,
   },
@@ -1115,6 +1360,8 @@ require("nvim-treesitter.configs").setup {
         "python",
         "javascript",
         "typescript",
+        "rust",
+        "julia",
 
         -- For documentation/markdown files
         "markdown",
@@ -1188,43 +1435,28 @@ let g:fzf_vim.preview_window = ['right,50%', 'ctrl-/']
 let g:fzf_vim.buffers_jump = 1
 " [[B]Commits] Customize the options used by 'git log':
 let g:fzf_vim.commits_log_options = '--graph --color=always --format="%C(auto)%h%d %s %C(black)%C(bold)%cr"'
+"" Mappings handled by which-key
 "" Mappings
-" Mapping selecting mappings
-nmap <leader>k <plug>(fzf-maps-n)
-xmap <leader>k <plug>(fzf-maps-x)
-omap <leader>k <plug>(fzf-maps-o)
-" Insert mode completion
-imap <c-x><c-k> <plug>(fzf-complete-word)
-imap <c-x><c-f> <plug>(fzf-complete-path)
-imap <c-x><c-l> <plug>(fzf-complete-line)
-" files
-nnoremap <leader>f :Files<cr>
-"" Mappings
-"" Completion
-" Path completion with custom source command
-inoremap <expr> <c-x><c-f> fzf#vim#complete#path('fd')
-inoremap <expr> <c-x><c-f> fzf#vim#complete#path('rg --files')
-" Word completion with custom spec with popup layout option
-inoremap <expr> <c-x><c-k> fzf#vim#complete#word({'window': { 'width': 0.2, 'height': 0.9, 'xoffset': 1 }})
-" Replace the default dictionary completion with fzf-based fuzzy completion
-" inoremap <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/words')
-" Global line completion (not just open buffers. ripgrep required.)
-inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
-  \ 'prefix': '^.*$',
-  \ 'source': 'rg -n ^ --color always',
-  \ 'options': '--ansi --delimiter : --nth 3..',
-  \ 'reducer': { lines -> join(split(lines[0], ':\zs')[2:], '') }}))
-"" Completion
+"" Completion handled by which-key
 " Statusline
 autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
 """ Fuzzy finding Configuration
 
-""" CSV viewer
+""" CSV view
 lua << EOF
-require('csvview').setup()
+require('csvview').setup({
+  view = {
+    display_mode = "border", -- Replace delimiters with vertical borders (│)
+    header_lnum = true,  -- Auto-detect header (default)
+    sticky_header = {
+      enabled = true,
+      separator = "─",  -- Separator line character
+    },
+  },
+})
 EOF
-""" CSV viewer
+""" CSV view
 
 """ Align sentences
 lua << EOF
@@ -1313,23 +1545,6 @@ require('gitsigns').setup({
   on_attach = function(bufnr)
     local gs = package.loaded.gitsigns
 
-    -- Navigation between hunks
-    vim.keymap.set('n', '>c', function()
-      if vim.wo.diff then return '>c' end
-      vim.schedule(function() gs.next_hunk() end)
-      return '<Ignore>'
-    end, {expr=true, buffer=bufnr})
-
-    vim.keymap.set('n', '<c', function()
-      if vim.wo.diff then return '<c' end
-      vim.schedule(function() gs.prev_hunk() end)
-      return '<Ignore>'
-    end, {expr=true, buffer=bufnr})
-
-    -- Actions
-    vim.keymap.set('n', '<leader>hs', gs.stage_hunk)
-    vim.keymap.set('n', '<leader>hr', gs.reset_hunk)
-    vim.keymap.set('n', '<leader>hp', gs.preview_hunk)
   end
 })
 
@@ -1364,6 +1579,11 @@ require('diffview').setup({
 EOF
 """ Git
 
+""" FZF key mappings
+" Key mapping for FZF maps browser - needs to be defined outside which-key
+nmap <leader>k <plug>(fzf-maps-n)
+xmap <leader>k <plug>(fzf-maps-x)
+omap <leader>k <plug>(fzf-maps-o)
 """ which-key configuration
 lua << EOF
 -- Which-Key Configuration
@@ -1555,6 +1775,12 @@ end
 
 -- Normal mode mappings using new API format
 wk.add({
+  -- Copy path
+  { "<leader>Y", group = "Copy path" },
+  { "<leader>Yf", "<cmd>let @+=expand('%:p')<cr>", desc = "Copy full path" },
+  { "<leader>Yr", "<cmd>let @+=expand('%')<cr>", desc = "Copy relative path" },
+  { "<leader>Yn", "<cmd>let @+=expand('%:t')<cr>", desc = "Copy filename only" },
+
   -- Spelling
   { "<leader>s", group = "Spelling" },
   { "<leader>ss", "<cmd>setlocal spell!<cr>", desc = "Toggle spell checking" },
@@ -1563,9 +1789,12 @@ wk.add({
   { "<leader>sa", "zg", desc = "Add word to dictionary" },
   { "<leader>s?", "z=", desc = "Suggest corrections" },
 
+  -- Toggle paste mode
+  { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
+
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
-  { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" },
+  -- { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" }, -- Not working with which-key
 
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
@@ -1578,7 +1807,7 @@ wk.add({
 
   -- Format
   { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
-  { "<leader>j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
+  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
@@ -1598,6 +1827,11 @@ wk.add({
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
 
+  -- Git hunk operations
+  { "<leader>hs", "<cmd>lua require('gitsigns').stage_hunk()<CR>", desc = "Stage Hunk" },
+  { "<leader>hr", "<cmd>lua require('gitsigns').reset_hunk()<CR>", desc = "Reset Hunk" },
+  { "<leader>hp", "<cmd>lua require('gitsigns').preview_hunk()<CR>", desc = "Preview Hunk" },
+
   -- Space prefix mappings
   { "<space>t", group = "Text-to-Speech" },
   { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
@@ -1611,51 +1845,90 @@ wk.add({
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
   { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
   { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
-  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=false})<CR>", desc = "Show Diagnostics" },
+  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=true})<CR>", desc = "Show Diagnostics" },
   { "gnn", "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
   { "[c",
-    "<cmd>call search('^# %%', 'bW')<CR><cmd>call FlashCurrentCell()<CR>",
+    "<cmd>lua require('navigation_helper').prev_cell()<CR>",
     desc = "Previous Cell (highlighted)"
   },
   { "]c",
-    "<cmd>call search('^# %%', 'W')<CR><cmd>call FlashCurrentCell()<CR>",
+    "<cmd>lua require('navigation_helper').next_cell()<CR>",
     desc = "Next Cell (highlighted)"
   },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
 
+  -- Hunk navigation
+  { "<c", "<cmd>lua require('gitsigns').prev_hunk()<CR>", desc = "Previous Hunk" },
+  { ">c", "<cmd>lua require('gitsigns').next_hunk()<CR>", desc = "Next Hunk" },
+
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
   { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
   { "<F10>", "o# %%<CR>", desc = "Insert Cell Below" },
+
+  -- GitHub CopilotChat
+  { "<leader>c", group = "Code & Copilot" },
+  { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Open Copilot Chat" },
+  { "<leader>cpt", "<cmd>CopilotChatToggle<CR>", desc = "Toggle Copilot Chat" },
+  { "<leader>cpf", "<cmd>CopilotChatFix<CR>", desc = "Fix Code" },
+  { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
+
+  -- Julia specific commands
+  { "<leader>j", group = "Julia" },
+  { "<leader>jr", "<cmd>JuliaLspRestart<CR>", desc = "Restart Julia LSP" },
+  { "<leader>ji", "<cmd>JuliaLspInfo<CR>", desc = "Julia LSP Info" },
+  { "<leader>jl", "<cmd>edit " .. vim.fn.stdpath('cache') .. "/lsp.log<CR>", desc = "Open LSP Logs" },
+  { "<leader>jf", "<cmd>lua require('conform').format()<CR>", desc = "Format Julia Code" },
 }, { mode = "n" })
 
 -- Insert mode mappings
 wk.add({
-  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help", mode = "i" },
-  { "<C-x>", group = "Completions", mode = "i" },
-  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word", mode = "i" },
-  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path", mode = "i" },
-  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line", mode = "i" },
-  { "<C-x><C-o>", desc = "Ollama AI completion", mode = "i" },
-  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above", mode = "i" },
-  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below", mode = "i" },
-})
+  -- Signature help
+  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help" },
+
+  -- FZF completions
+  { "<C-x>", group = "Completions" },
+  { "<C-x><C-k>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#word({\"window\": { \"width\": 0.2, \"height\": 0.9, \"xoffset\": 1 }})<CR>')", desc = "Complete Word" },
+  { "<C-x><C-f>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#path(\"rg --files\")<CR>')", desc = "Complete Path" },
+  { "<C-x><C-l>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete(fzf#wrap({\"prefix\": \"^.*$\", \"source\": \"rg -n ^ --color always\", \"options\": \"--ansi --delimiter : --nth 3..\", \"reducer\": { lines -> join(split(lines[0], \":\\\\zs\")[2:], \"\") }}))<CR>')", desc = "Complete Line" },
+
+  -- llama.vim
+  { "<C-F>", desc = "Trigger llama AI completion" },
+  { "<Tab>", desc = "Accept full llama AI completion" },
+  { "<S-Tab>", desc = "Accept line llama AI completion" },
+  { "<C-B>", desc = "Accept word llama AI completion" },
+
+  -- IPython
+  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above" },
+  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below" },
+}, { mode = "i" })
 
 -- Visual mode mappings
 wk.add({
-  { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send Selection to IPython", mode = "v" },
-  { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
-  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates", mode = "v" },
-  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates", mode = "v" },
-})
+  -- IPython
+  { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
+
+  -- FZF mappings handled outside which-key
+  -- { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
+
+  -- Rust crates
+  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates" },
+  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates" },
+
+  -- GitHub CopilotChat
+  { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Copilot Chat" },
+  { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
+  { "<leader>cpt", "<cmd>CopilotChatTests<CR>", desc = "Generate Tests" },
+}, { mode = "v" })
 
 -- Operator pending mode mappings
 wk.add({
-  { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
-})
+  -- FZF mappings handled outside which-key
+  -- { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
+}, { mode = "o" })
 EOF
 """ which-key configuration
 
@@ -1704,3 +1977,9 @@ function! s:SaveNotebook() abort
   setlocal nomodified
 endfunction
 """ Jupyter notebook
+
+""" nvim-colorizer
+lua << EOF
+require("colorizer").setup()
+EOF
+""" nvim-colorizer
