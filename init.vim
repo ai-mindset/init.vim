@@ -143,10 +143,12 @@ let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_
 let g:slime_dont_ask_default = 1
 let g:slime_python_ipython = 1
 let g:slime_bracketed_paste = 1  " Better paste support for REPLs
+let g:slime_send_as_block = 1    " Global setting for proper multi-line selection sending in all REPLs
 
 " Language-specific settings
 au FileType julia let b:slime_cell_delimiter = "^##"  " Use '##' as cell delimiter in Julia
 au FileType typescript,javascript let b:slime_cell_delimiter = "^// %%"  " Use '// %%' for TypeScript/JavaScript
+au FileType typescript,javascript let b:slime_preserve_curly_braces = 1  " JS/TS-specific setting to preserve curly braces
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
