@@ -267,11 +267,13 @@ let g:copilot_filetypes = {
       \ "julia": v:true,
       \ "*": v:false,
       \ }
+let g:copilot_model = "claude-4-sonnet"
 """ GitHub Copilot
 
 """ GitHub Copilot Chat
 lua << EOF
 require("CopilotChat").setup({
+  model = "claude-4-sonnet",
 -- Custom mappings are in which-key configuration below
   mappings = {
     -- Disable default keymaps
