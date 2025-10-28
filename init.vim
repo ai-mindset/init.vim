@@ -856,42 +856,40 @@ lspconfig.julials.setup({
   filetypes = {"julia"},
   root_dir = lspconfig.util.root_pattern("Project.toml", ".git"),
 
-  capabilities = vim.lsp.protocol.make_client_capabilities(),  -- Use standard capabilities
-
   -- Properly define capabilities for hover, snippets and formatting
---  capabilities = {
---    textDocumentSync = {
---      openClose = true,
---      change = 2, -- Incremental sync
---    },
---    hoverProvider = true,
---    completionProvider = {
---      triggerCharacters = { ".", "@" }
---    },
---    signatureHelpProvider = {
---      triggerCharacters = { "(", ",", " " }
---    },
---    definitionProvider = true,
---    documentSymbolProvider = true,
---    workspaceSymbolProvider = true,
---    documentFormattingProvider = true,
---    textDocument = {
---      completion = {
---        completionItem = {
---          snippetSupport = true,
---          commitCharactersSupport = true,
---          documentationFormat = { "markdown", "plaintext" },
---          resolveSupport = {
---            properties = {
---              "documentation",
---              "detail",
---              "additionalTextEdits",
---            }
---          }
---        }
---      }
---    }
---  },
+  capabilities = {
+    textDocumentSync = {
+      openClose = true,
+      change = 2, -- Incremental sync
+    },
+    hoverProvider = true,
+    completionProvider = {
+      triggerCharacters = { ".", "@" }
+    },
+    signatureHelpProvider = {
+      triggerCharacters = { "(", ",", " " }
+    },
+    definitionProvider = true,
+    documentSymbolProvider = true,
+    workspaceSymbolProvider = true,
+    documentFormattingProvider = true,
+    textDocument = {
+      completion = {
+        completionItem = {
+          snippetSupport = true,
+          commitCharactersSupport = true,
+          documentationFormat = { "markdown", "plaintext" },
+          resolveSupport = {
+            properties = {
+              "documentation",
+              "detail",
+              "additionalTextEdits",
+            }
+          }
+        }
+      }
+    }
+  },
 })
 
 
