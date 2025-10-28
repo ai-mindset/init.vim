@@ -137,14 +137,16 @@ hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
 command! Format %!jq .
 """ Use jq for JSON formatting
 
-""" vim-slime configuration for IPython and Julia
+""" vim-slime configuration for IPython, Julia and Deno
 let g:slime_target = "tmux"
 let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
 let g:slime_dont_ask_default = 1
 let g:slime_python_ipython = 1
-let g:slime_bracketed_paste = 1  " Better paste support for Julia REPL
-" Julia-specific settings
+let g:slime_bracketed_paste = 1  " Better paste support for REPLs
+
+" Language-specific settings
 au FileType julia let b:slime_cell_delimiter = "^##"  " Use '##' as cell delimiter in Julia
+au FileType typescript,javascript let b:slime_cell_delimiter = "^// %%"  " Use '// %%' for TypeScript/JavaScript
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
@@ -191,9 +193,19 @@ function! SlimeSendCell()
   " Save cursor position
   let save_pos = getpos('.')
 
-  " Find cell boundaries
-  let cell_start = search("^# %%", "bcnW")
-  let cell_end = search("^# %%", "nW")
+  " Get the appropriate cell delimiter pattern based on filetype
+  let cell_pattern = "^# %%"  " Default for Python
+
+  " Use filetype-specific cell patterns
+  if &filetype == 'typescript' || &filetype == 'javascript'
+    let cell_pattern = "^// %%"
+  elseif &filetype == 'julia'
+    let cell_pattern = "^##"
+  endif
+
+  " Find cell boundaries using the appropriate pattern
+  let cell_start = search(cell_pattern, "bcnW")
+  let cell_end = search(cell_pattern, "nW")
 
   if cell_start == 0
     let cell_start = 1
@@ -1836,11 +1848,11 @@ wk.add({
 
   -- [ and ] mappings
   { "[c",
-    "<cmd>call search('^# %%', 'bW')<CR><cmd>call FlashCurrentCell()<CR>",
+    "<cmd>lua require('navigation_helper').prev_cell()<CR>",
     desc = "Previous Cell (highlighted)"
   },
   { "]c",
-    "<cmd>call search('^# %%', 'W')<CR><cmd>call FlashCurrentCell()<CR>",
+    "<cmd>lua require('navigation_helper').next_cell()<CR>",
     desc = "Next Cell (highlighted)"
   },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
