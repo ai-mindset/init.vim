@@ -1123,7 +1123,7 @@ lint.linters.ty = {
 }
 
 lint.linters_by_ft = {
-  python = {'ruff', 'ty'},
+  python = {'ruff'}, -- Removed 'ty' to avoid duplicate hover windows
 }
 
 -- Configure ruff to ensure it shows all diagnostics
