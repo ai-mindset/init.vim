@@ -259,9 +259,11 @@ let s:default_config = {
 let g:copilot_enabled = 1
 let g:copilot_filetypes = {
       \ "python": v:true,
+      \ "toml": v:true,
+      \ "yaml": v:true,
       \ "javascript": v:true,
-      \ "rust": v:true,
       \ "typescript": v:true,
+      \ "rust": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "julia": v:true,
