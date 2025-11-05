@@ -258,6 +258,7 @@ let s:default_config = {
 " Enable Copilot for specific languages
 let g:copilot_enabled = 1
 let g:copilot_filetypes = {
+      \ "vim": v:true,
       \ "python": v:true,
       \ "toml": v:true,
       \ "yaml": v:true,
@@ -269,13 +270,13 @@ let g:copilot_filetypes = {
       \ "julia": v:true,
       \ "*": v:false,
       \ }
-let g:copilot_model = "claude-4-sonnet"
+let g:copilot_model = "gemini-2.5-pro"
 """ GitHub Copilot
 
 """ GitHub Copilot Chat
 lua << EOF
 require("CopilotChat").setup({
-  model = "claude-4-sonnet",
+  model = "gemini-2.5-pro",
 -- Custom mappings are in which-key configuration below
   mappings = {
     -- Disable default keymaps
@@ -988,6 +989,7 @@ vim.diagnostic.config({
     underline = true,
     update_in_insert = false,
     severity_sort = false,
+    show_on_hover = false,
 })
 -- Show diagnostics when pressing 'gh'
 vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
@@ -1084,7 +1086,6 @@ lua << EOF
 -- Linting Configuration
 local lint = require('lint')
 
--- Define ruff as the only linter for Python
 -- Register ty as a custom linter
 lint.linters.ty = {
   cmd = "ty",
@@ -1123,7 +1124,11 @@ lint.linters.ty = {
 }
 
 lint.linters_by_ft = {
-  python = {'ruff'}, -- Removed 'ty' to avoid duplicate hover windows
+  python = {'ruff'},
+  javascript = {'deno'},
+  typescript = {'deno'},
+  rust = {'cargo'},
+  julia = {'julialint'},
 }
 
 -- Configure ruff to ensure it shows all diagnostics
