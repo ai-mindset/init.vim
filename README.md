@@ -133,29 +133,21 @@ julia --project=~/.julia/environments/v1.12 -e '
 
 Note: v1.12 is used in this example as it's the latest stable version at the time of writing. Replace with whichever version you have installed.
 
-## Customization
+## Customisation
 - LSP servers: Modify `ensure_installed` in the Mason setup (Python, Rust, JSON, YAML, etc.)
 - Colour scheme: Change `colorscheme catppuccin` to your preferred theme
 - Formatters: Adjust `formatters_by_ft` in the conform.nvim setup
 - Keybindings: Modify the which-key configuration
 - CSV view: Customize the csvview.nvim configuration
 
-## Rust Tagbar Setup
-For Exuberant Ctags (default in many distros), create `~/.ctags` with:
+## Tagbar Setup
 
-```
---langdef=Rust
---langmap=Rust:.rs
---regex-Rust=/^[ \t]*(#\[[^\]]\][ \t]*)*(pub[ \t]+)?(extern[ \t]+)?("[^"]+"[ \t]+)?(unsafe[ \t]+)?fn[ \t]+([a-zA-Z0-9_]+)/\6/f,functions,function definitions/
---regex-Rust=/^[ \t]*(pub[ \t]+)?type[ \t]+([a-zA-Z0-9_]+)/\2/T,types,type definitions/
---regex-Rust=/^[ \t]*(pub[ \t]+)?enum[ \t]+([a-zA-Z0-9_]+)/\2/g,enumerations,enumeration names/
---regex-Rust=/^[ \t]*(pub[ \t]+)?struct[ \t]+([a-zA-Z0-9_]+)/\2/s,structure names/
---regex-Rust=/^[ \t]*(pub[ \t]+)?mod[ \t]+([a-zA-Z0-9_]+)/\2/m,modules,module names/
---regex-Rust=/^[ \t]*(pub[ \t]+)?(static|const)[ \t]+(mut[ \t]+)?([a-zA-Z0-9_]+)/\4/c,consts,static constants/
---regex-Rust=/^[ \t]*(pub[ \t]+)?trait[ \t]+([a-zA-Z0-9_]+)/\2/t,traits,traits/
---regex-Rust=/^[ \t]*(pub[ \t]+)?impl([ \t\n]*<[^>]*>)?[ \t]+(([a-zA-Z0-9_:]+)[ \t]*(<[^>]*>)?[ \t]+(for)[ \t]+)?([a-zA-Z0-9_]+)/\4 \6 \7/i,impls,trait implementations/
---regex-Rust=/^[ \t]*macro_rules![ \t]+([a-zA-Z0-9_]+)/\1/d,macros,macro definitions/
---regex-Rust=/^[ \t]*(pub[ \t]+)?impl[ \t]+([a-zA-Z0-9_]+)/\2/r,impls,impl/
-```
+### Rust & TypeScript Tagbar Setup
+For Exuberant Ctags (default in many distros), a `.ctags` file is provided in this repo with support for:
+- Rust (classes, functions, types, etc.)
+- TypeScript (classes, modules, functions, interfaces, etc.)
 
-This enables tagbar (<F8>) to display Rust code structure.
+Save the file in `$HOME/.ctags`.
+Press `<F8>` to toggle Tagbar for code navigation in supported languages.
+
+TypeScript support requires the TypeScript patterns in `.ctags`. The configuration is already included in this repo.
