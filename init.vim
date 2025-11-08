@@ -655,7 +655,7 @@ let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▸', '▾']
 " let g:tagbar_iconchars = ['▷', '◢']
 
-" Rust configuration for tagbar (optimized for Exuberant Ctags)
+" Rust configuration for tagbar (Exuberant Ctags)
 let g:tagbar_type_rust = {
   \ 'ctagstype' : 'Rust',
   \ 'kinds' : [
@@ -671,6 +671,21 @@ let g:tagbar_type_rust = {
     \ 'r:impls'
   \ ],
   \ 'sort' : 0,
+  \ }
+
+" TypeScript configuration for tagbar (Exuberant Ctags)
+let g:tagbar_type_typescript = {
+  \ 'ctagstype': 'typescript',
+  \ 'kinds': [
+    \ 'c:classes',
+    \ 'n:modules',
+    \ 'f:functions',
+    \ 'v:variables',
+    \ 'm:members',
+    \ 'i:interfaces',
+    \ 'e:enums',
+  \ ],
+  \ 'sort': 0
   \ }
 """ tagbar
 
