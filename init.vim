@@ -19,7 +19,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Local LLM completion
-Plug 'ggml-org/llama.vim'                                     " LLM completion
+Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ollama AI completion
 
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
@@ -230,29 +230,33 @@ function! SlimeSendCell()
 endfunction
 """ vim-slime configuration
 
-""" llama.nvim configuration
-let s:default_config = {
-    \ "endpoint":           "http://127.0.0.1:8012/infill",
-    \ "api_key":            "",
-    \ "n_prefix":           256,
-    \ "n_suffix":           64,
-    \ "n_predict":          128,
-    \ "t_max_prompt_ms":    500,
-    \ "t_max_predict_ms":   500,
-    \ "show_info":          2,
-    \ "auto_fim":           v:true,
-    \ "max_line_suffix":    8,
-    \ "max_cache_keys":     250,
-    \ "ring_n_chunks":      16,
-    \ "ring_chunk_size":    64,
-    \ "ring_scope":         1024,
-    \ "ring_update_ms":     1000,
-    \ "keymap_trigger":     "<C-F>",
-    \ "keymap_accept_full": "<Tab>",
-    \ "keymap_accept_line": "<S-Tab>",
-    \ "keymap_accept_word": "<C-B>",
-    \ }
-""" llama.nvim configuration
+""" ollama.nvim configuration
+lua << EOF
+local opts = {
+  model = "mistral",
+  url = "http://127.0.0.1:11434",
+  serve = {
+    on_start = false,
+    command = "ollama",
+    args = { "serve" },
+    stop_command = "pkill",
+    stop_args = { "-SIGTERM", "ollama" },
+  }
+}
+require("ollama").setup(opts)
+
+vim.keymap.set("i", "<C-x><C-o>", function()
+    require("cmp").complete({
+        config = {
+            sources = {
+                { name = "ollama" },
+                { name = "path"},
+            }
+        }
+    })
+end)
+EOF
+""" ollama.nvim configuration
 
 """ GitHub Copilot
 " Enable Copilot for specific languages
@@ -972,7 +976,7 @@ cmp.setup({
     { name = "nvim_lsp" },
     { name = "buffer" },
     { name = "path"},
-    { name = "llama" },
+    { name = "ollama" },
   })
 })
 
@@ -1900,6 +1904,11 @@ wk.add({
   { "<leader>cpf", "<cmd>CopilotChatFix<CR>", desc = "Fix Code" },
   { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
 
+  -- Ollama commands
+  { "<leader>o", group = "Ollama" },
+  { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
+  { "<leader>ox", "<cmd>lua require('ollama').serve_stop()<CR>", desc = "Stop Ollama Server" },
+
   -- Julia specific commands
   { "<leader>j", group = "Julia" },
   { "<leader>jr", "<cmd>JuliaLspRestart<CR>", desc = "Restart Julia LSP" },
@@ -1919,11 +1928,8 @@ wk.add({
   { "<C-x><C-f>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#path(\"rg --files\")<CR>')", desc = "Complete Path" },
   { "<C-x><C-l>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete(fzf#wrap({\"prefix\": \"^.*$\", \"source\": \"rg -n ^ --color always\", \"options\": \"--ansi --delimiter : --nth 3..\", \"reducer\": { lines -> join(split(lines[0], \":\\\\zs\")[2:], \"\") }}))<CR>')", desc = "Complete Line" },
 
-  -- llama.vim
-  { "<C-F>", desc = "Trigger llama AI completion" },
-  { "<Tab>", desc = "Accept full llama AI completion" },
-  { "<S-Tab>", desc = "Accept line llama AI completion" },
-  { "<C-B>", desc = "Accept word llama AI completion" },
+  -- Ollama keybindings
+  { "<C-x><C-o>", desc = "Ollama AI completion" },
 
   -- IPython
   { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above" },

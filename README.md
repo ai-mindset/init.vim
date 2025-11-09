@@ -3,7 +3,7 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 
 ## Development Environments
 - GitHub Copilot with Copilot Chat integration
-- Local LLM assistance with llama.vim
+- Local LLM assistance with Ollama integration
 
 ### Python (Data Science/AI)
 - Full LSP support via Pyright
@@ -72,12 +72,15 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Toggle Chat: `<leader>cpt`
 - Fix diagnostic: `<leader>cpf`
 - Explain code: `<leader>cpe`
+- Start Ollama Server: `<leader>os`
+- Stop Ollama Server: `<leader>ox`
+- Trigger Ollama completion: `<C-x><C-o>` (insert mode)
 
 ## Requirements
 - [Neovim](https://neovim.io/)
 - [git](https://git-scm.com/)
 - [node.js](https://nodejs.org/) (for copilot.vim)
-- [llama-cpp-server](https://github.com/ggerganov/llama.cpp) (for llama.vim)
+- [ollama](https://ollama.com/) (for local LLM capabilities)
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for global search (optional)
 - [Deno](https://deno.com/) (TS/JS development)
 - [Python](https://www.python.org/) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
@@ -110,6 +113,25 @@ git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 ```bash
 nvim --headless +PlugInstall +qall # Only required on first start, to install plugins
 ```
+
+## Ollama Setup
+
+For local LLM capabilities, you need to install and set up Ollama:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Start the Ollama server
+ollama serve
+
+# In another terminal, pull the mistral model
+ollama pull mistral
+```
+
+You can also start and stop the Ollama server directly from Neovim using:
+- `<leader>os` - Start Ollama Server
+- `<leader>ox` - Stop Ollama Server
 
 ## Julia Setup
 
