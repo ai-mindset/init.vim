@@ -83,11 +83,11 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - [ollama](https://ollama.com/) (for local LLM capabilities)
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for global search (optional)
 - [Deno](https://deno.com/) (TS/JS development)
-- [Python](https://www.python.org/) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
+- [Python](https://www.python.org/) with [uv](https://github.com/astral-sh/uv) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
 - [IPython](https://ipython.org/) for Python REPL-driven development
 - [Julia](https://julialang.org/)
-- [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
-- Alba voice model in `/usr/share/piper-voices/`
+- [Piper](https://github.com/OHF-Voice/piper1-gpl) (for text-to-speech, previously rhasspy/piper)
+- Voice model for text-to-speech capabilities
 
 ## Installation
 1. Backup your existing config:
@@ -132,6 +132,31 @@ ollama pull mistral
 You can also start and stop the Ollama server directly from Neovim using:
 - `<leader>os` - Start Ollama Server
 - `<leader>ox` - Stop Ollama Server
+
+## Piper TTS Setup
+
+For text-to-speech capabilities, install Piper using `uv` (a faster, more reliable Python package installer):
+
+```bash
+# Install uv if you don't have it already
+curl -fsSL https://astral.sh/uv/install.sh | bash
+
+# Install Piper using uv
+uv pip install piper-tts
+
+# Download a voice model
+mkdir -p ~/.local/share/piper-voices/
+# You can choose any voice model from https://huggingface.co/rhasspy/piper-voices/
+# For example:
+wget -P ~/.local/share/piper-voices/ https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium/en_GB-alba-medium.onnx
+```
+
+Use text-to-speech in Neovim with these commands:
+- `<space>tw` - Speak Word
+- `<space>tc` - Speak Current Line
+- `<space>tp` - Speak Current Paragraph
+- `<space>tf` - Speak Current File
+- `<space>tv` - Speak Visual Selection
 
 ## Julia Setup
 
