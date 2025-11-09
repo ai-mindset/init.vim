@@ -631,7 +631,7 @@ call SetupStatusline()
 """ Statusline Configuration
 
 """ piper TTS
-let g:piper_bin = 'piperTTS'
+let g:piper_bin = '~/.venv/bin/piper'
 let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
                     " <space>tw = SpeakWord()
                     " <space>tc = SpeakCurrentLine()
