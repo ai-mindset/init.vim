@@ -1216,7 +1216,7 @@ require("conform").setup({
     typescript = { "deno_fmt" },
     json = { "deno_fmt" },
     jsonc = { "deno_fmt" },
-    markdown = { "deno_fmt" },
+    -- markdown = { "deno_fmt" },
     json = { "biome" },
     rust = { "rustfmt" },
     julia = { "juliaformatter" },
