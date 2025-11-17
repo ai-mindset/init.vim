@@ -261,12 +261,13 @@ let g:copilot_filetypes = {
       \ "python": v:true,
       \ "toml": v:true,
       \ "yaml": v:true,
+      \ "json": v:true,
+      \ "markdown": v:true,
       \ "javascript": v:true,
       \ "typescript": v:true,
       \ "rust": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
-      \ "julia": v:true,
       \ "*": v:false,
       \ }
 let g:copilot_model = "gemini-2.5-pro"
@@ -1220,7 +1221,6 @@ require("conform").setup({
     json = { "biome" },
     rust = { "rustfmt" },
     julia = { "juliaformatter" },
-    ["*"] = { "trim_whitespace" },
   },
 
   -- Organise Python imports
