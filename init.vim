@@ -23,7 +23,6 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
-Plug 'CopilotC-Nvim/CopilotChat.nvim'                         " Chat with GitHub Copilot in Neovim
 
 " Rust
 Plug 'rust-lang/rust.vim'                                     " Vim configuration for Rust
@@ -272,29 +271,6 @@ let g:copilot_filetypes = {
       \ }
 let g:copilot_model = "gemini-2.5-pro"
 """ GitHub Copilot
-
-""" GitHub Copilot Chat
-lua << EOF
-require("CopilotChat").setup({
-  model = "gemini-2.5-pro",
--- Custom mappings are in which-key configuration below
-  mappings = {
-    -- Disable default keymaps
-    chat = {
-      open = false,
-      accept = false,
-      close = false,
-    },
-    selection = {
-      select = false,
-    },
-    panel = {
-      open = false,
-    },
-  }
-})
-EOF
-""" GitHub Copilot Chat
 
 """ journal.nvim
 lua << EOF
@@ -1244,6 +1220,21 @@ require("conform").setup({
             ".ruff.toml",
           },
         },
+        ruff_format = {
+          command = "ruff",
+          args = {
+            "format",
+            "--stdin-filename",
+            "$FILENAME",
+            "-",
+          },
+          stdin = true,
+          cwd = require("conform.util").root_file {
+            "pyproject.toml",
+            "ruff.toml",
+            ".ruff.toml",
+          },
+        },
         deno_fmt = {
             command = "deno",
             args = {
@@ -1808,13 +1799,6 @@ wk.add({
   { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
   { "<F10>", "o# %%<CR>", desc = "Insert Cell Below" },
 
-  -- GitHub CopilotChat
-  { "<leader>c", group = "Code & Copilot" },
-  { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Open Copilot Chat" },
-  { "<leader>cpt", "<cmd>CopilotChatToggle<CR>", desc = "Toggle Copilot Chat" },
-  { "<leader>cpf", "<cmd>CopilotChatFix<CR>", desc = "Fix Code" },
-  { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
-
   -- Ollama commands
   { "<leader>o", group = "Ollama" },
   { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
@@ -1858,11 +1842,6 @@ wk.add({
   -- Rust crates
   { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates" },
   { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates" },
-
-  -- GitHub CopilotChat
-  { "<leader>cp", "<cmd>CopilotChat<CR>", desc = "Copilot Chat" },
-  { "<leader>cpe", "<cmd>CopilotChatExplain<CR>", desc = "Explain Code" },
-  { "<leader>cpt", "<cmd>CopilotChatTests<CR>", desc = "Generate Tests" },
 }, { mode = "v" })
 
 -- Operator pending mode mappings
