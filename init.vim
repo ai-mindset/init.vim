@@ -608,7 +608,7 @@ require("mason-lspconfig").setup({
     "biome",                 -- JSON
     "yamlls",                -- YAML
   },
-  automatic_installation = true,
+  automatic_installation = false,
   handlers = {
     -- Jedi for Python LSP features (code intelligence)
     jedi_language_server = function()
@@ -618,30 +618,30 @@ require("mason-lspconfig").setup({
       })
     end,
 
-      -- Rust Analyzer
-      rust_analyzer = function()
-      require('lspconfig').rust_analyzer.setup({
-        on_attach = on_attach,
-        settings = {
-            ["rust-analyzer"] = {
-                imports = {
-                    granularity = {
-                        group = "module",
-                    },
-                    prefix = "self",
-                },
-                cargo = {
-                    buildScripts = {
-                        enable = true,
-                    },
-                },
-                procMacro = {
-                    enable = true
-                },
-            }
-        }
-      })
-      end,
+    -- Rust Analyzer
+    rust_analyzer = function()
+    require('lspconfig').rust_analyzer.setup({
+      on_attach = on_attach,
+      settings = {
+          ["rust-analyzer"] = {
+              imports = {
+                  granularity = {
+                      group = "module",
+                  },
+                  prefix = "self",
+              },
+              cargo = {
+                  buildScripts = {
+                      enable = true,
+                  },
+              },
+              procMacro = {
+                  enable = true
+              },
+          }
+      }
+    })
+    end,
 
     -- Deno Language Server
     denols = function()
