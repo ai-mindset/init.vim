@@ -882,22 +882,8 @@ function _G.dump_lsp_client()
     end
 end
 
--- New way - define signs directly in diagnostic config
-vim.diagnostic.config({
-    virtual_text = false,
-    signs = {
-      text = {
-        [vim.diagnostic.severity.ERROR] = "✖",
-        [vim.diagnostic.severity.WARN] = "⚠",
-        [vim.diagnostic.severity.HINT] = "💡",
-        [vim.diagnostic.severity.INFO] = "ℹ",
-      }
-    },
-    underline = true,
-    update_in_insert = false,
-    severity_sort = false,
-    show_on_hover = false,
-})
+-- Configure diagnostics once (remove duplicate config)
+-- This config is moved and consolidated below with the main diagnostic config
 -- Show diagnostics when pressing 'gh'
 vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
 
@@ -1031,20 +1017,51 @@ lint.linters.ty = {
 }
 
 lint.linters_by_ft = {
-  python = {'ruff'},
+  python = {'ruff', 'ty'},
   javascript = {'deno'},
   typescript = {'deno'},
+  zig = {'zig'},
   rust = {'cargo'},
   julia = {'julialint'},
 }
 
--- Configure ruff to ensure it shows all diagnostics
-if lint.linters.ruff then
-  -- Keep original settings but add --exit-zero
-  local original_args = lint.linters.ruff.args or {}
-  table.insert(original_args, 2, "--exit-zero")
-  lint.linters.ruff.args = original_args
-end
+-- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
+lint.linters.ruff = {
+  cmd = "ruff",
+  stdin = false,
+  args = {
+    "check",
+    "--output-format=json",
+    function() return vim.api.nvim_buf_get_name(0) end
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr, cwd)
+    local ok, decoded = pcall(vim.json.decode, output)
+    if not ok then return {} end
+
+    local diagnostics = {}
+    if decoded and type(decoded) == "table" then
+      for _, item in ipairs(decoded) do
+        if item.location then
+          table.insert(diagnostics, {
+            lnum = (item.location.row or 1) - 1,
+            col = (item.location.column or 1) - 1,
+            message = item.message or "Ruff error",
+            severity = vim.diagnostic.severity.WARN,
+            source = "ruff",
+            code = item.code
+          })
+        end
+      end
+    end
+    return diagnostics
+  end
+}
+
+-- Simple command to show diagnostics in popup
+vim.api.nvim_create_user_command("ShowDiagnostics", function()
+  vim.diagnostic.open_float()
+end, {})
 
 -- Function to count diagnostics and update status line
 local function update_diagnostics_status()
@@ -1106,18 +1123,29 @@ end
 
 -- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py" },
+  pattern = { "*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.zig" },
   callback = function()
     require("lint").try_lint()
-    -- Update status after a short delay to ensure diagnostics are processed
     vim.defer_fn(update_diagnostics_status, 100)
   end,
 })
 
--- Define visible diagnostic signs in the gutter
--- New way - define signs directly in diagnostic config
+-- Set up on-the-fly linting while typing/pausing
+vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
+  pattern = { "*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.zig" },
+  callback = function()
+    require("lint").try_lint()
+    vim.defer_fn(update_diagnostics_status, 50)
+  end,
+})
+
+-- Define visible diagnostic signs in the gutter and enable virtual text
 vim.diagnostic.config({
-  virtual_text = false,
+  virtual_text = {
+    spacing = 4,
+    prefix = "●",
+    source = "always",
+  },
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = "✖",
@@ -1128,6 +1156,7 @@ vim.diagnostic.config({
   },
   underline = true,
   severity_sort = true,
+  update_in_insert = false,
   float = {
     focusable = true,
     style = "minimal",
