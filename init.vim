@@ -1139,13 +1139,9 @@ vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
   end,
 })
 
--- Define visible diagnostic signs in the gutter and enable virtual text
+-- Clean diagnostics: signs + hover popup only
 vim.diagnostic.config({
-  virtual_text = {
-    spacing = 4,
-    prefix = "●",
-    source = "always",
-  },
+  virtual_text = false,  -- No inline text
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = "✖",
@@ -1157,20 +1153,13 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   update_in_insert = false,
-  float = {
-    focusable = true,
-    style = "minimal",
-    border = "rounded",
-    source = "always",
-    header = "",
-    prefix = "",
-  },
+  float = false,  -- No automatic popups (we handle this manually)
 })
 
--- Set up keymapping to show diagnostics on hover
+-- Show diagnostics popup on hover (same as :ShowDiagnostics)
 vim.api.nvim_create_autocmd("CursorHold", {
   callback = function()
-    vim.diagnostic.open_float(nil, {focus=true})
+    vim.diagnostic.open_float()
   end
 })
 
