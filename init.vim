@@ -563,6 +563,21 @@ let g:tagbar_type_typescript = {
   \ ],
   \ 'sort': 0
   \ }
+
+" Zig configuration for tagbar (Exuberant Ctags)
+let g:tagbar_type_zig = {
+  \ 'ctagstype': 'Zig',
+  \ 'kinds': [
+    \ 'f:functions',
+    \ 's:structs',
+    \ 'e:enums',
+    \ 'u:unions',
+    \ 'c:constants',
+    \ 'v:variables',
+    \ 't:tests',
+  \ ],
+  \ 'sort': 0
+  \ }
 """ tagbar
 
 " Autopairs Configuration
