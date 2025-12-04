@@ -3,7 +3,7 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 
 ## Development Environments
 - GitHub Copilot with Copilot Chat integration
-- Local LLM assistance with llama.vim
+- Local LLM assistance with Ollama integration
 
 ### Python (Data Science/AI)
 - Full LSP support via Pyright
@@ -17,7 +17,7 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Automatic imports and cargo commands
 - Tagbar support for code navigation
 
-### Deno (TS/JS backend development)
+### Deno (TS/JS backend dev./Data Science/AI)
 - Advanced LSP features for modern JavaScript/TypeScript
 - Built-in linting and formatting
 
@@ -72,19 +72,22 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Toggle Chat: `<leader>cpt`
 - Fix diagnostic: `<leader>cpf`
 - Explain code: `<leader>cpe`
+- Start Ollama Server: `<leader>os`
+- Stop Ollama Server: `<leader>ox`
+- Trigger Ollama completion: `<C-x><C-o>` (insert mode)
 
 ## Requirements
 - [Neovim](https://neovim.io/)
 - [git](https://git-scm.com/)
 - [node.js](https://nodejs.org/) (for copilot.vim)
-- [llama-cpp-server](https://github.com/ggerganov/llama.cpp) (for llama.vim)
+- [ollama](https://ollama.com/) (for local LLM capabilities)
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for global search (optional)
 - [Deno](https://deno.com/) (TS/JS development)
-- [Python](https://www.python.org/) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
+- [Python](https://www.python.org/) with [uv](https://github.com/astral-sh/uv) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
 - [IPython](https://ipython.org/) for Python REPL-driven development
 - [Julia](https://julialang.org/)
-- [PiperTTS](https://github.com/rhasspy/piper) (for text-to-speech)
-- Alba voice model in `/usr/share/piper-voices/`
+- [Piper](https://github.com/OHF-Voice/piper1-gpl) (for text-to-speech, previously rhasspy/piper)
+- Voice model for text-to-speech capabilities
 
 ## Installation
 1. Backup your existing config:
@@ -111,6 +114,50 @@ git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 nvim --headless +PlugInstall +qall # Only required on first start, to install plugins
 ```
 
+## Ollama Setup
+
+For local LLM capabilities, you need to install and set up Ollama:
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Start the Ollama server
+ollama serve
+
+# In another terminal, pull the mistral model
+ollama pull mistral
+```
+
+You can also start and stop the Ollama server directly from Neovim using:
+- `<leader>os` - Start Ollama Server
+- `<leader>ox` - Stop Ollama Server
+
+## Piper TTS Setup
+
+For text-to-speech capabilities, install Piper using `uv` (a faster, more reliable Python package installer):
+
+```bash
+# Install uv if you don't have it already
+curl -fsSL https://astral.sh/uv/install.sh | bash
+
+# Install Piper using uv
+uv pip install piper-tts
+
+# Download a voice model
+mkdir -p ~/.local/share/piper-voices/
+# You can choose any voice model from https://huggingface.co/rhasspy/piper-voices/
+# For example:
+wget -P ~/.local/share/piper-voices/ https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium/en_GB-alba-medium.onnx
+```
+
+Use text-to-speech in Neovim with these commands:
+- `<space>tw` - Speak Word
+- `<space>tc` - Speak Current Line
+- `<space>tp` - Speak Current Paragraph
+- `<space>tf` - Speak Current File
+- `<space>tv` - Speak Visual Selection
+
 ## Julia Setup
 
 For full Julia language support, set up your environment with these steps:
@@ -133,29 +180,21 @@ julia --project=~/.julia/environments/v1.12 -e '
 
 Note: v1.12 is used in this example as it's the latest stable version at the time of writing. Replace with whichever version you have installed.
 
-## Customization
+## Customisation
 - LSP servers: Modify `ensure_installed` in the Mason setup (Python, Rust, JSON, YAML, etc.)
 - Colour scheme: Change `colorscheme catppuccin` to your preferred theme
 - Formatters: Adjust `formatters_by_ft` in the conform.nvim setup
 - Keybindings: Modify the which-key configuration
 - CSV view: Customize the csvview.nvim configuration
 
-## Rust Tagbar Setup
-For Exuberant Ctags (default in many distros), create `~/.ctags` with:
+## Tagbar Setup
 
-```
---langdef=Rust
---langmap=Rust:.rs
---regex-Rust=/^[ \t]*(#\[[^\]]\][ \t]*)*(pub[ \t]+)?(extern[ \t]+)?("[^"]+"[ \t]+)?(unsafe[ \t]+)?fn[ \t]+([a-zA-Z0-9_]+)/\6/f,functions,function definitions/
---regex-Rust=/^[ \t]*(pub[ \t]+)?type[ \t]+([a-zA-Z0-9_]+)/\2/T,types,type definitions/
---regex-Rust=/^[ \t]*(pub[ \t]+)?enum[ \t]+([a-zA-Z0-9_]+)/\2/g,enumerations,enumeration names/
---regex-Rust=/^[ \t]*(pub[ \t]+)?struct[ \t]+([a-zA-Z0-9_]+)/\2/s,structure names/
---regex-Rust=/^[ \t]*(pub[ \t]+)?mod[ \t]+([a-zA-Z0-9_]+)/\2/m,modules,module names/
---regex-Rust=/^[ \t]*(pub[ \t]+)?(static|const)[ \t]+(mut[ \t]+)?([a-zA-Z0-9_]+)/\4/c,consts,static constants/
---regex-Rust=/^[ \t]*(pub[ \t]+)?trait[ \t]+([a-zA-Z0-9_]+)/\2/t,traits,traits/
---regex-Rust=/^[ \t]*(pub[ \t]+)?impl([ \t\n]*<[^>]*>)?[ \t]+(([a-zA-Z0-9_:]+)[ \t]*(<[^>]*>)?[ \t]+(for)[ \t]+)?([a-zA-Z0-9_]+)/\4 \6 \7/i,impls,trait implementations/
---regex-Rust=/^[ \t]*macro_rules![ \t]+([a-zA-Z0-9_]+)/\1/d,macros,macro definitions/
---regex-Rust=/^[ \t]*(pub[ \t]+)?impl[ \t]+([a-zA-Z0-9_]+)/\2/r,impls,impl/
-```
+### Rust & TypeScript Tagbar Setup
+For Exuberant Ctags (default in many distros), a `.ctags` file is provided in this repo with support for:
+- Rust (classes, functions, types, etc.)
+- TypeScript (classes, modules, functions, interfaces, etc.)
 
-This enables tagbar (<F8>) to display Rust code structure.
+Save the file in `$HOME/.ctags`.
+Press `<F8>` to toggle Tagbar for code navigation in supported languages.
+
+TypeScript support requires the TypeScript patterns in `.ctags`. The configuration is already included in this repo.
