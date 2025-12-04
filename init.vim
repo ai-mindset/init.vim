@@ -24,8 +24,6 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
-" Rust
-Plug 'rust-lang/rust.vim'                                     " Vim configuration for Rust
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -550,23 +548,6 @@ let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▸', '▾']
 " let g:tagbar_iconchars = ['▷', '◢']
 
-" Rust configuration for tagbar (Exuberant Ctags)
-let g:tagbar_type_rust = {
-  \ 'ctagstype' : 'Rust',
-  \ 'kinds' : [
-    \ 'f:functions',
-    \ 'T:types',
-    \ 'g:enumerations',
-    \ 's:structures',
-    \ 'm:modules',
-    \ 'c:constants',
-    \ 't:traits',
-    \ 'i:implementations',
-    \ 'd:macros',
-    \ 'r:impls'
-  \ ],
-  \ 'sort' : 0,
-  \ }
 
 " TypeScript configuration for tagbar (Exuberant Ctags)
 let g:tagbar_type_typescript = {
@@ -600,13 +581,13 @@ require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
     "jedi_language_server",  -- Python LSP
-    "rust_analyzer",         -- Rust
     "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
     "biome",                 -- JSON
     "yamlls",                -- YAML
+    "zls",                   -- Zig Language Server
   },
   automatic_installation = false,
   handlers = {
@@ -618,29 +599,22 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Rust Analyzer
-    rust_analyzer = function()
-    require('lspconfig').rust_analyzer.setup({
-      on_attach = on_attach,
-      settings = {
-          ["rust-analyzer"] = {
-              imports = {
-                  granularity = {
-                      group = "module",
-                  },
-                  prefix = "self",
-              },
-              cargo = {
-                  buildScripts = {
-                      enable = true,
-                  },
-              },
-              procMacro = {
-                  enable = true
-              },
+    -- Zig Language Server
+    zls = function()
+      require("lspconfig").zls.setup({
+        cmd = { vim.fn.expand("$HOME/.zig/zls") },
+        on_attach = on_attach,
+        capabilities = capabilities,
+        settings = {
+          zls = {
+            enable_build_on_save = true,
+            enable_autofix = true,
+            enable_inlay_hints = true,
+            inlay_hints_hide_redundant_param_names = true,
+            inlay_hints_hide_redundant_param_names_last_token = true,
           }
-      }
-    })
+        }
+      })
     end,
 
     -- Deno Language Server
@@ -1021,7 +995,6 @@ lint.linters_by_ft = {
   javascript = {'deno'},
   typescript = {'deno'},
   zig = {'zig'},
-  rust = {'cargo'},
   julia = {'julialint'},
 }
 
@@ -1213,7 +1186,7 @@ require("conform").setup({
     jsonc = { "deno_fmt" },
     -- markdown = { "deno_fmt" },
     json = { "biome" },
-    rust = { "rustfmt" },
+    zig = { "zig_fmt" },
     julia = { "juliaformatter" },
   },
 
@@ -1273,6 +1246,11 @@ require("conform").setup({
             },
             stdin = true,
         },
+        zig_fmt = {
+            command = vim.fn.expand("$HOME/.zig/zig"),
+            args = { "fmt", "--stdin" },
+            stdin = true,
+        },
       },
   -- Format on save
 
@@ -1308,7 +1286,7 @@ require("nvim-treesitter.configs").setup {
         "python",
         "javascript",
         "typescript",
-        "rust",
+        "zig",
         "julia",
 
         -- For documentation/markdown files
