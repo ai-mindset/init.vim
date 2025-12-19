@@ -262,7 +262,7 @@ let g:copilot_filetypes = {
       \ "markdown": v:true,
       \ "javascript": v:true,
       \ "typescript": v:true,
-      \ "rust": v:true,
+      \ "zig": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
