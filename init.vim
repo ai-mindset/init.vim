@@ -1192,7 +1192,7 @@ end, {})
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
-    python = { "ruff_organise_imports", "ruff_format" },
+    python = { "ruff_organise_imports", "ruff_format", "ruff_fix" },
     css = { "deno_fmt" },
     html = { "deno_fmt" },
     javascript = { "deno_fmt" },
@@ -1230,6 +1230,24 @@ require("conform").setup({
           command = "ruff",
           args = {
             "format",
+            "--stdin-filename",
+            "$FILENAME",
+            "-",
+          },
+          stdin = true,
+          cwd = require("conform.util").root_file {
+            "pyproject.toml",
+            "ruff.toml",
+            ".ruff.toml",
+          },
+        },
+        ruff_fix = {
+          command = "ruff",
+          args = {
+            "check",
+            "--force-exclude",
+            "--fix",
+            "--exit-zero",
             "--stdin-filename",
             "$FILENAME",
             "-",
