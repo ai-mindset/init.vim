@@ -24,6 +24,8 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
+" Go Development
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development plugin
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -856,7 +858,6 @@ lint.linters.ty = {
 lint.linters_by_ft = {
   python = {'ruff', 'ty'},
   zig = {'zig'},
-  go = {'golangcilint'},
 }
 
 -- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
@@ -891,6 +892,7 @@ lint.linters.ruff = {
     return diagnostics
   end
 }
+
 
 -- Simple command to show diagnostics in popup
 vim.api.nvim_create_user_command("ShowDiagnostics", function()
@@ -957,7 +959,7 @@ end
 
 -- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.zig", "*.go" },
+  pattern = { "*.py", "*.zig" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 100)
@@ -966,7 +968,7 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 
 -- Set up on-the-fly linting while typing/pausing
 vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
-  pattern = { "*.py", "*.zig", "*.go" },
+  pattern = { "*.py", "*.zig" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 50)
@@ -1041,7 +1043,6 @@ require("conform").setup({
     python = { "ruff_organise_imports", "ruff_format" },
     json = { "biome" },
     zig = { "zig_fmt" },
-    go = { "gofmt", "goimports" },
   },
 
   -- Organise Python imports
@@ -1085,15 +1086,6 @@ require("conform").setup({
             args = { "fmt", "--stdin" },
             stdin = true,
         },
-        gofmt = {
-            command = "gofmt",
-            args = { "-s" },
-            stdin = true,
-        },
-        goimports = {
-            command = "goimports",
-            stdin = true,
-        },
       },
   -- Format on save
 
@@ -1110,7 +1102,7 @@ EOF
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter.configs").setup {
+require("nvim-treesitter.config").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
