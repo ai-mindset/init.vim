@@ -24,6 +24,8 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
+" Go Development
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }            " Go development plugin
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -252,7 +254,7 @@ let g:copilot_filetypes = {
       \ "yaml": v:true,
       \ "json": v:true,
       \ "markdown": v:true,
-      \ "nim": v:true,
+      \ "go": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
@@ -555,26 +557,6 @@ let g:tagbar_type_zig = {
   \ 'sort': 0
   \ }
 
-" Nim configuration for tagbar (Exuberant Ctags)
-let g:tagbar_type_nim = {
-  \ 'ctagstype': 'nim',
-  \ 'kinds': [
-    \ 'f:procedures',
-    \ 'm:methods',
-    \ 'o:operators',
-    \ 't:objects',
-    \ 'e:enums',
-    \ 'u:tuples',
-    \ 'r:subranges',
-    \ 'p:proctypes',
-    \ 'T:templates',
-    \ 'M:macros',
-    \ 'c:constants',
-    \ 'l:variables',
-    \ 'v:variables',
-  \ ],
-  \ 'sort': 0
-  \ }
 """ tagbar
 
 " Autopairs Configuration
@@ -599,7 +581,7 @@ require("mason-lspconfig").setup({
     "biome",                 -- JSON
     "yamlls",                -- YAML
     "zls",                   -- Zig Language Server
-    "nimlangserver",         -- Nim Language Server
+    "gopls",                 -- Go Language Server
   },
   automatic_installation = false,
   handlers = {
@@ -677,13 +659,21 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Nim Language Server
-    nimls = function()
-      require("lspconfig").nimls.setup({
+    -- Go Language Server
+    gopls = function()
+      require("lspconfig").gopls.setup({
         on_attach = on_attach,
         capabilities = capabilities,
-        filetypes = { "nim" },
-        root_dir = require("lspconfig").util.root_pattern("*.nimble", ".git"),
+        filetypes = { "go", "gomod", "gowork", "gotmpl" },
+        root_dir = require("lspconfig").util.root_pattern("go.mod", "go.work", ".git"),
+        settings = {
+          gopls = {
+            analyses = {
+              unusedparams = true,
+            },
+            staticcheck = true,
+          },
+        },
       })
     end,
   }
@@ -787,7 +777,7 @@ local on_attach = function(client, bufnr)
 
 
   -- Programming filetypes where signature help should auto-trigger
-  local programming_filetypes = {'python', 'nim'}
+  local programming_filetypes = {'python', 'go'}
 
   -- Set up signature help auto-trigger only for programming files
   if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
@@ -868,7 +858,6 @@ lint.linters.ty = {
 lint.linters_by_ft = {
   python = {'ruff', 'ty'},
   zig = {'zig'},
-  nim = {'nim'},
 }
 
 -- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
@@ -903,6 +892,7 @@ lint.linters.ruff = {
     return diagnostics
   end
 }
+
 
 -- Simple command to show diagnostics in popup
 vim.api.nvim_create_user_command("ShowDiagnostics", function()
@@ -969,7 +959,7 @@ end
 
 -- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.zig", "*.nim" },
+  pattern = { "*.py", "*.zig" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 100)
@@ -978,7 +968,7 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 
 -- Set up on-the-fly linting while typing/pausing
 vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
-  pattern = { "*.py", "*.zig", "*.nim" },
+  pattern = { "*.py", "*.zig" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 50)
@@ -1053,7 +1043,6 @@ require("conform").setup({
     python = { "ruff_organise_imports", "ruff_format" },
     json = { "biome" },
     zig = { "zig_fmt" },
-    nim = { "nimpretty" },
   },
 
   -- Organise Python imports
@@ -1097,11 +1086,6 @@ require("conform").setup({
             args = { "fmt", "--stdin" },
             stdin = true,
         },
-        nimpretty = {
-            command = "nimpretty",
-            args = { "--stdin" },
-            stdin = true,
-        },
       },
   -- Format on save
 
@@ -1118,7 +1102,7 @@ EOF
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter.configs").setup {
+require("nvim-treesitter.config").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -1128,7 +1112,7 @@ require("nvim-treesitter.configs").setup {
         -- Languages you use
         "python",
         "zig",
-        "nim",
+        "go",
 
         -- For documentation/markdown files
         "markdown",
