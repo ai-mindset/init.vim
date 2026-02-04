@@ -24,6 +24,8 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
+" Elixir Development
+Plug 'elixir-tools/elixir-tools.nvim', { 'tag': 'stable' }    " Elixir language support
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -252,6 +254,7 @@ let g:copilot_filetypes = {
       \ "yaml": v:true,
       \ "json": v:true,
       \ "markdown": v:true,
+      \ "elixir": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
@@ -578,6 +581,7 @@ require("mason-lspconfig").setup({
     "biome",                 -- JSON
     "yamlls",                -- YAML
     "zls",                   -- Zig Language Server
+    "elixirls",              -- Elixir Language Server
   },
   automatic_installation = false,
   handlers = {
@@ -655,6 +659,14 @@ require("mason-lspconfig").setup({
       })
     end,
 
+    -- Elixir Language Server
+    elixirls = function()
+      require("lspconfig").elixirls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+    end,
+  }
 })
 EOF
 """ Mason Configuration
@@ -698,6 +710,16 @@ cmp.setup({
 
 EOF
 """ Completion setup
+
+""" Elixir Configuration
+lua << EOF
+require("elixir").setup({
+  nextls = {enable = false},
+  elixirls = {enable = true, tag = "v0.30.0"},
+  projectionist = {enable = true}
+})
+EOF
+""" Elixir Configuration
 
 """ LSP Configuration
 lua << EOF
@@ -1089,6 +1111,7 @@ require("nvim-treesitter.config").setup {
         -- Languages you use
         "python",
         "zig",
+        "elixir",
 
         -- For documentation/markdown files
         "markdown",
@@ -1587,6 +1610,13 @@ wk.add({
   { "<leader>o", group = "Ollama" },
   { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
   { "<leader>ox", "<cmd>lua require('ollama').serve_stop()<CR>", desc = "Stop Ollama Server" },
+
+  -- Elixir commands
+  { "<leader>e", group = "Elixir" },
+  { "<leader>ef", "<cmd>!mix format %<CR>", desc = "Format current file" },
+  { "<leader>et", "<cmd>!mix test<CR>", desc = "Run all tests" },
+  { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
+  { "<leader>er", "<cmd>ElixirRestart<CR>", desc = "Restart Elixir LS" },
 
 }, { mode = "n" })
 
