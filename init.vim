@@ -129,7 +129,7 @@ hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
 command! Format %!jq .
 """ Use jq for JSON formatting
 
-""" vim-slime configuration for IPython, Julia and Deno
+""" vim-slime configuration for IPython
 let g:slime_target = "tmux"
 let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
 let g:slime_dont_ask_default = 1
@@ -138,9 +138,6 @@ let g:slime_bracketed_paste = 1  " Better paste support for REPLs
 let g:slime_send_as_block = 1    " Global setting for proper multi-line selection sending in all REPLs
 
 " Language-specific settings
-au FileType julia let b:slime_cell_delimiter = "^##"  " Use '##' as cell delimiter in Julia
-au FileType typescript,javascript let b:slime_cell_delimiter = "^// %%"  " Use '// %%' for TypeScript/JavaScript
-au FileType typescript,javascript let b:slime_preserve_curly_braces = 1  " JS/TS-specific setting to preserve curly braces
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
@@ -191,11 +188,6 @@ function! SlimeSendCell()
   let cell_pattern = "^# %%"  " Default for Python
 
   " Use filetype-specific cell patterns
-  if &filetype == 'typescript' || &filetype == 'javascript'
-    let cell_pattern = "^// %%"
-  elseif &filetype == 'julia'
-    let cell_pattern = "^##"
-  endif
 
   " Find cell boundaries using the appropriate pattern
   let cell_start = search(cell_pattern, "bcnW")
@@ -260,9 +252,6 @@ let g:copilot_filetypes = {
       \ "yaml": v:true,
       \ "json": v:true,
       \ "markdown": v:true,
-      \ "javascript": v:true,
-      \ "typescript": v:true,
-      \ "rust": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
@@ -324,7 +313,7 @@ set relativenumber
 set expandtab                         " Use spaces instead of tabs
 set tabstop=4                         " Tab = 4 spaces
 set shiftwidth=4                      " Tab = 4 spaces
-set softtabstop=2                     " Number of spaces for a tab in insert mode
+set softtabstop=4                     " Number of spaces for a tab in insert mode
 set autoindent                        " Auto indent
 set smartindent                       " Smart autoindenting when starting a new line
 set cindent                           " Stricter indenting rules for C-like languages
@@ -549,20 +538,22 @@ let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▷', '◢']
 
 
-" TypeScript configuration for tagbar (Exuberant Ctags)
-let g:tagbar_type_typescript = {
-  \ 'ctagstype': 'typescript',
+
+" Zig configuration for tagbar (Exuberant Ctags)
+let g:tagbar_type_zig = {
+  \ 'ctagstype': 'Zig',
   \ 'kinds': [
-    \ 'c:classes',
-    \ 'n:modules',
     \ 'f:functions',
-    \ 'v:variables',
-    \ 'm:members',
-    \ 'i:interfaces',
+    \ 's:structs',
     \ 'e:enums',
+    \ 'u:unions',
+    \ 'c:constants',
+    \ 'v:variables',
+    \ 't:tests',
   \ ],
   \ 'sort': 0
   \ }
+
 """ tagbar
 
 " Autopairs Configuration
@@ -581,7 +572,6 @@ require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
     "jedi_language_server",  -- Python LSP
-    "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
@@ -617,53 +607,6 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Deno Language Server
-    denols = function()
-      require("lspconfig").denols.setup({
-        root_dir = require("lspconfig.util").root_pattern(
-          "deno.json",
-          "deno.jsonc"
-        ),
-        single_file_support = false,
-
-        init_options = {
-          lint = true,
-          unstable = true,
-          suggest = {
-            imports = {
-              hosts = {
-                ["https://deno.land"] = true,
-                ["https://cdn.nest.land"] = true,
-                ["https://crux.land"] = true,
-              },
-            },
-          },
-        },
-
-        settings = {
-          deno = {
-            enable = true,
-            lint = true,
-            unstable = true,
-            codeLens = {
-              references = true,
-              referencesAllFunctions = true,
-              test = true,
-            },
-            suggest = {
-              imports = {
-                hosts = {
-                  ["https://deno.land"] = true,
-                },
-              },
-            },
-          },
-        },
-
-        on_attach = on_attach,
-        capabilities = capabilities,
-      })
-    end,
 
     -- Docker Language Server
     dockerls = function()
@@ -711,101 +654,12 @@ require("mason-lspconfig").setup({
         capabilities = capabilities,
       })
     end,
-  }
 
 })
 EOF
 """ Mason Configuration
 
 
-""" Julia Language Server setup
-lua << EOF
--- Simple configuration
-local lspconfig = require('lspconfig')
-
--- Create direct command to launch/restart Julia LSP
-vim.api.nvim_create_user_command('JuliaLspStart', function()
-  local clients = vim.lsp.get_active_clients({name = "julials"})
-
-  -- Stop any existing Julia LSP clients
-  for _, client in ipairs(clients) do
-    vim.lsp.stop_client(client.id, true)
-  end
-
-  -- Wait briefly and restart
-  vim.defer_fn(function()
-    vim.cmd("LspStart julials")
-    print("Julia LSP restarted")
-  end, 200)
-end, {})
-
--- Julia LSP configuration with proper hover, snippet and formatting support
-lspconfig.julials.setup({
-  on_attach = function(client, bufnr)
-    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-  end,
-  -- Static cmd with environment variable that gets evaluated on LSP start
-  cmd = {
-    "julia",
-    "--startup-file=no",
-    "--history-file=no",
-    "--project=${dirname:${find:Project.toml}}",  -- Use Project.toml from current directory
-    "-e",
-    "using LanguageServer; using SymbolServer; using StaticLint; runserver()"
-  },
-  filetypes = {"julia"},
-  root_dir = lspconfig.util.root_pattern("Project.toml", ".git"),
-
-  -- Properly define capabilities for hover, snippets and formatting
-  capabilities = {
-    textDocumentSync = {
-      openClose = true,
-      change = 2, -- Incremental sync
-    },
-    hoverProvider = true,
-    completionProvider = {
-      triggerCharacters = { ".", "@" }
-    },
-    signatureHelpProvider = {
-      triggerCharacters = { "(", ",", " " }
-    },
-    definitionProvider = true,
-    documentSymbolProvider = true,
-    workspaceSymbolProvider = true,
-    documentFormattingProvider = true,
-    textDocument = {
-      completion = {
-        completionItem = {
-          snippetSupport = true,
-          commitCharactersSupport = true,
-          documentationFormat = { "markdown", "plaintext" },
-          resolveSupport = {
-            properties = {
-              "documentation",
-              "detail",
-              "additionalTextEdits",
-            }
-          }
-        }
-      }
-    }
-  },
-})
-
-
--- Create autocommand to ensure Julia LSP starts for Julia files
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "julia",
-  callback = function()
-    -- Try to start LSP automatically
-    vim.cmd("LspStart julials")
-
-        -- Basic omnifunc setup for Julia
-    vim.bo.omnifunc = "v:lua.vim.lsp.omnifunc"
-  end
-})
-EOF
-""" Julia Language Server setup
 
 
 """ Completion setup
@@ -847,19 +701,9 @@ EOF
 
 """ LSP Configuration
 lua << EOF
-vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
-function _G.dump_lsp_client()
-    local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
-    for _, client in pairs(buf_clients) do
-        print(string.format("Client: %s, Server capabilities:", client.name))
-        print(vim.inspect(client.server_capabilities))
-    end
-end
 
 -- Configure diagnostics once (remove duplicate config)
 -- This config is moved and consolidated below with the main diagnostic config
--- Show diagnostics when pressing 'gh'
-vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
 
 -- Proper file type detection
 vim.cmd([[
@@ -904,15 +748,13 @@ local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
-  -- Debug print
-  print("LSP attached:", client.name)
 
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
 
   -- Programming filetypes where signature help should auto-trigger
-  local programming_filetypes = {'python', 'typescript', 'javascript'}
+  local programming_filetypes = {'python'}
 
   -- Set up signature help auto-trigger only for programming files
   if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
@@ -992,10 +834,7 @@ lint.linters.ty = {
 
 lint.linters_by_ft = {
   python = {'ruff', 'ty'},
-  javascript = {'deno'},
-  typescript = {'deno'},
   zig = {'zig'},
-  julia = {'julialint'},
 }
 
 -- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
@@ -1030,6 +869,7 @@ lint.linters.ruff = {
     return diagnostics
   end
 }
+
 
 -- Simple command to show diagnostics in popup
 vim.api.nvim_create_user_command("ShowDiagnostics", function()
@@ -1096,7 +936,7 @@ end
 
 -- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.zig" },
+  pattern = { "*.py", "*.zig" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 100)
@@ -1105,7 +945,7 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 
 -- Set up on-the-fly linting while typing/pausing
 vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
-  pattern = { "*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.zig" },
+  pattern = { "*.py", "*.zig" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 50)
@@ -1178,16 +1018,8 @@ require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    css = { "deno_fmt" },
-    html = { "deno_fmt" },
-    javascript = { "deno_fmt" },
-    typescript = { "deno_fmt" },
-    json = { "deno_fmt" },
-    jsonc = { "deno_fmt" },
-    -- markdown = { "deno_fmt" },
     json = { "biome" },
     zig = { "zig_fmt" },
-    julia = { "juliaformatter" },
   },
 
   -- Organise Python imports
@@ -1226,26 +1058,6 @@ require("conform").setup({
             ".ruff.toml",
           },
         },
-        deno_fmt = {
-            command = "deno",
-            args = {
-                "fmt",
-                "--prose-wrap=never",
-                "--line-width=10000",
-                "-" -- For stdin
-            },
-            stdin = true,
-        },
-        juliaformatter = {
-            command = "julia",
-            args = {
-                "--startup-file=no",
-                "--history-file=no",
-                "-e",
-                "using JuliaFormatter; print(format_text(read(stdin, String)))"
-            },
-            stdin = true,
-        },
         zig_fmt = {
             command = vim.fn.expand("$HOME/.zig/zig"),
             args = { "fmt", "--stdin" },
@@ -1262,20 +1074,12 @@ require("conform").setup({
   },
 })
 
-  -- For format on key mapping (optional, if you want manual formatting)
-  vim.keymap.set({ "n", "v" }, "==", function()
-    require("conform").format({
-      lsp_fallback = true,
-      async = false,
-      timeout_ms = 500,
-    })
-  end, { desc = "Format file or range" })
 EOF
 """ Linting, formatting configuration
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter.configs").setup {
+require("nvim-treesitter.config").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -1284,10 +1088,7 @@ require("nvim-treesitter.configs").setup {
 
         -- Languages you use
         "python",
-        "javascript",
-        "typescript",
         "zig",
-        "julia",
 
         -- For documentation/markdown files
         "markdown",
@@ -1336,7 +1137,7 @@ vim.opt.foldmethod = "expr"
 vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 
 
--- Start with all folds closed
+-- Start with all folds open (foldlevel 99 = show all levels)
 vim.opt.foldenable = true
 vim.opt.foldlevel = 99
 
@@ -1758,13 +1559,6 @@ wk.add({
   { "<leader>hr", "<cmd>lua require('gitsigns').reset_hunk()<CR>", desc = "Reset Hunk" },
   { "<leader>hp", "<cmd>lua require('gitsigns').preview_hunk()<CR>", desc = "Preview Hunk" },
 
-  -- Space prefix mappings
-  { "<space>t", group = "Text-to-Speech" },
-  { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
-  { "<space>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
-  { "<space>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
-  { "<space>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
-  { "<space>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
 
   -- g prefix mappings
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
@@ -1775,14 +1569,8 @@ wk.add({
   { "gnn", "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
-  { "[c",
-    "<cmd>lua require('navigation_helper').prev_cell()<CR>",
-    desc = "Previous Cell (highlighted)"
-  },
-  { "]c",
-    "<cmd>lua require('navigation_helper').next_cell()<CR>",
-    desc = "Next Cell (highlighted)"
-  },
+  { "[c", "<cmd>?^# %%<CR>", desc = "Previous Cell" },
+  { "]c", "<cmd>/^# %%<CR>", desc = "Next Cell" },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
 
@@ -1800,12 +1588,6 @@ wk.add({
   { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
   { "<leader>ox", "<cmd>lua require('ollama').serve_stop()<CR>", desc = "Stop Ollama Server" },
 
-  -- Julia specific commands
-  { "<leader>j", group = "Julia" },
-  { "<leader>jr", "<cmd>JuliaLspRestart<CR>", desc = "Restart Julia LSP" },
-  { "<leader>ji", "<cmd>JuliaLspInfo<CR>", desc = "Julia LSP Info" },
-  { "<leader>jl", "<cmd>edit " .. vim.fn.stdpath('cache') .. "/lsp.log<CR>", desc = "Open LSP Logs" },
-  { "<leader>jf", "<cmd>lua require('conform').format()<CR>", desc = "Format Julia Code" },
 }, { mode = "n" })
 
 -- Insert mode mappings
@@ -1835,9 +1617,6 @@ wk.add({
   -- FZF mappings handled outside which-key
   -- { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
 
-  -- Rust crates
-  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates" },
-  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates" },
 }, { mode = "v" })
 
 -- Operator pending mode mappings

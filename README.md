@@ -6,16 +6,16 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - Local LLM assistance with Ollama integration
 
 ### Python (Data Science/AI)
-- Full LSP support via Pyright
+- Full LSP support via Jedi Language Server
 - Automatic linting and formatting with Ruff
 - IPython integration with cell-based execution
 - Jupyter notebook support with automatic conversion
 
-### Rust (Systems programming/AI)
-- Rust Analyzer LSP integration
+### Zig (Systems programming)
+- Zig Language Server (ZLS) integration
+- Real-time error checking with zig compiler
+- Automatic code formatting with zig fmt
 - Smart completion and diagnostic messages
-- Automatic imports and cargo commands
-- Tagbar support for code navigation
 
 ### Deno (TS/JS backend dev./Data Science/AI)
 - Advanced LSP features for modern JavaScript/TypeScript
@@ -83,6 +83,7 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - [ollama](https://ollama.com/) (for local LLM capabilities)
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for global search (optional)
 - [Deno](https://deno.com/) (TS/JS development)
+- [Zig](https://ziglang.org/) (Systems programming)
 - [Python](https://www.python.org/) with [uv](https://github.com/astral-sh/uv) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
 - [IPython](https://ipython.org/) for Python REPL-driven development
 - [Julia](https://julialang.org/)
@@ -181,7 +182,7 @@ julia --project=~/.julia/environments/v1.12 -e '
 Note: v1.12 is used in this example as it's the latest stable version at the time of writing. Replace with whichever version you have installed.
 
 ## Customisation
-- LSP servers: Modify `ensure_installed` in the Mason setup (Python, Rust, JSON, YAML, etc.)
+- LSP servers: Modify `ensure_installed` in the Mason setup (Python, Zig, Deno, JSON, YAML, etc.)
 - Colour scheme: Change `colorscheme catppuccin` to your preferred theme
 - Formatters: Adjust `formatters_by_ft` in the conform.nvim setup
 - Keybindings: Modify the which-key configuration
@@ -189,12 +190,12 @@ Note: v1.12 is used in this example as it's the latest stable version at the tim
 
 ## Tagbar Setup
 
-### Rust & TypeScript Tagbar Setup
+### Zig & TypeScript Tagbar Setup
 For Exuberant Ctags (default in many distros), a `.ctags` file is provided in this repo with support for:
-- Rust (classes, functions, types, etc.)
+- Zig (functions, structs, enums, unions, constants, variables, tests)
 - TypeScript (classes, modules, functions, interfaces, etc.)
 
 Save the file in `$HOME/.ctags`.
 Press `<F8>` to toggle Tagbar for code navigation in supported languages.
 
-TypeScript support requires the TypeScript patterns in `.ctags`. The configuration is already included in this repo.
+Both Zig and TypeScript support requires the language patterns in `.ctags`. The configuration is already included in this repo.
