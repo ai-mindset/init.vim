@@ -1616,7 +1616,7 @@ wk.add({
   { "<leader>ef", "<cmd>!mix format %<CR>", desc = "Format current file" },
   { "<leader>et", "<cmd>!mix test<CR>", desc = "Run all tests" },
   { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
-  { "<leader>er", "<cmd>ElixirRestart<CR>", desc = "Restart Elixir LS" },
+  { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
 
 }, { mode = "n" })
 
