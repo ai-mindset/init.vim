@@ -1112,6 +1112,8 @@ require("nvim-treesitter.config").setup {
         "python",
         "zig",
         "elixir",
+        "eex", 
+        "heex",
 
         -- For documentation/markdown files
         "markdown",
@@ -1121,11 +1123,10 @@ require("nvim-treesitter.config").setup {
         "yaml"
         },
 
-  sync_install = false,
+  sync_install = true,
   auto_install = true,
 
-  highlight = {
-    enable = true,
+  highlight = { enable = true,
     disable = function(lang, buf)
       local max_filesize = 100 * 1024 -- 100 KB
       local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
@@ -1135,14 +1136,10 @@ require("nvim-treesitter.config").setup {
     end,
     additional_vim_regex_highlighting = false,
   },
-  fold = {
-      enable = true
-  },
+  fold = { enable = true },
 
   -- Optional but recommended
-  indent = {
-    enable = true,
-  },
+  indent = { enable = true },
 
   incremental_selection = {
     enable = true,
