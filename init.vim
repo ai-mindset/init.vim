@@ -857,6 +857,7 @@ lint.linters.ty = {
 lint.linters_by_ft = {
   python = {'ruff', 'ty'},
   zig = {'zig'},
+  elixir = {'credo'},
 }
 
 -- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
@@ -892,6 +893,49 @@ lint.linters.ruff = {
   end
 }
 
+
+-- Credo linter for Elixir
+lint.linters.credo = {
+  cmd = "mix",
+  stdin = false,
+  args = {
+    "credo",
+    "suggest",
+    "--format",
+    "json",
+    "--read-from-stdin",
+    function() return vim.api.nvim_buf_get_name(0) end
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr, cwd)
+    local ok, decoded = pcall(vim.json.decode, output)
+    if not ok then return {} end
+
+    local diagnostics = {}
+    if decoded and type(decoded) == "table" and decoded.issues then
+      for _, issue in ipairs(decoded.issues) do
+        table.insert(diagnostics, {
+          lnum = (issue.line_no or 1) - 1,
+          col = (issue.column or 1) - 1,
+          message = issue.message or "Credo issue",
+          severity = vim.diagnostic.severity.WARN,
+          source = "credo",
+          code = issue.check
+        })
+      end
+    end
+    return diagnostics
+  end,
+  -- Check if Credo is available in the current Mix project
+  condition = function(ctx)
+    local handle = io.popen("mix help | grep -q credo")
+    if handle then
+      local result = handle:close()
+      return result == 0
+    end
+    return false
+  end
+}
 
 -- Simple command to show diagnostics in popup
 vim.api.nvim_create_user_command("ShowDiagnostics", function()
@@ -958,7 +1002,7 @@ end
 
 -- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.zig" },
+  pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 100)
@@ -967,7 +1011,7 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 
 -- Set up on-the-fly linting while typing/pausing
 vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
-  pattern = { "*.py", "*.zig" },
+  pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 50)
@@ -1042,6 +1086,7 @@ require("conform").setup({
     python = { "ruff_organise_imports", "ruff_format" },
     json = { "biome" },
     zig = { "zig_fmt" },
+    elixir = { "mix_format" },
   },
 
   -- Organise Python imports
@@ -1084,6 +1129,14 @@ require("conform").setup({
             command = vim.fn.expand("$HOME/.zig/zig"),
             args = { "fmt", "--stdin" },
             stdin = true,
+        },
+        mix_format = {
+            command = "mix",
+            args = { "format", "--stdin-filename", "$FILENAME" },
+            stdin = true,
+            cwd = require("conform.util").root_file {
+              "mix.exs",
+            },
         },
       },
   -- Format on save
@@ -1614,6 +1667,7 @@ wk.add({
   { "<leader>et", "<cmd>!mix test<CR>", desc = "Run all tests" },
   { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
   { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
+  { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
 
 }, { mode = "n" })
 
