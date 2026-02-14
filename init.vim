@@ -255,6 +255,7 @@ let g:copilot_filetypes = {
       \ "json": v:true,
       \ "markdown": v:true,
       \ "elixir": v:true,
+      \ "zig": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
