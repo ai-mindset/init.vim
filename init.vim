@@ -25,7 +25,7 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
 " Elixir Development
-Plug 'elixir-tools/elixir-tools.nvim', { 'tag': 'stable' }    " Elixir language support
+Plug 'elixir-editors/vim-elixir', { 'tag': 'stable' }         "  Vim configuration files for Elixir 
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -60,7 +60,7 @@ Plug 'windwp/nvim-autopairs'                                  " Autopairs for au
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
-Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
+
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
@@ -507,6 +507,8 @@ augroup END
 
 " Call setup immediately
 call SetupStatusline()
+
+
 """ Statusline Configuration
 
 """ piper TTS
@@ -712,15 +714,7 @@ cmp.setup({
 EOF
 """ Completion setup
 
-""" Elixir Configuration
-lua << EOF
-require("elixir").setup({
-  nextls = {enable = false},
-  elixirls = {enable = true, tag = "v0.30.0"},
-  projectionist = {enable = true}
-})
-EOF
-""" Elixir Configuration
+
 
 """ LSP Configuration
 lua << EOF
@@ -1385,6 +1379,8 @@ EOF
 nmap <leader>k <plug>(fzf-maps-n)
 xmap <leader>k <plug>(fzf-maps-x)
 omap <leader>k <plug>(fzf-maps-o)
+
+
 """ which-key configuration
 lua << EOF
 -- Which-Key Configuration
