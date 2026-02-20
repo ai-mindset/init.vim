@@ -19,20 +19,19 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Local LLM completion
-Plug 'nomnivore/ollama.nvim'                                  " LLM completion
+Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ollama AI completion
 
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
-" Quarto
-Plug 'quarto-dev/quarto-nvim'                                 " Quarto mode for Neovim
-Plug 'jmbuhr/otter.nvim'                                      " provides lsp features and a code completion source for code embedded in other documents
+" Elixir Development
+Plug 'elixir-editors/vim-elixir', { 'tag': 'stable' }         "  Vim configuration files for Elixir 
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
 
 " CSV viewer
-Plug 'cameron-wags/rainbow_csv.nvim'                          " Highlight columns in CSV and TSV files and run queries in SQL-like language
+Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
 
 " Theme
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
@@ -61,7 +60,7 @@ Plug 'windwp/nvim-autopairs'                                  " Autopairs for au
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
-Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
+
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
@@ -122,14 +121,14 @@ hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
 " Make gutter line numbers more accessible
 hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
 hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
+" Make hover documentation windows more visible
+hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
 """ Catppuccin Theme Configuration with Accessibility Improvements
 
 
 """ Use jq for JSON formatting
 " Makes :Format run `:%!jq .`
 command! Format %!jq .
-" Map <leader>j → :Format
-nnoremap <silent> <leader>j :Format<CR>
 """ Use jq for JSON formatting
 
 """ vim-slime configuration for IPython
@@ -137,6 +136,10 @@ let g:slime_target = "tmux"
 let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
 let g:slime_dont_ask_default = 1
 let g:slime_python_ipython = 1
+let g:slime_bracketed_paste = 1  " Better paste support for REPLs
+let g:slime_send_as_block = 1    " Global setting for proper multi-line selection sending in all REPLs
+
+" Language-specific settings
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
@@ -177,23 +180,20 @@ function! FlashCurrentCell()
   redraw
 endfunction
 
-" Your existing cell navigation (keep as-is)
-nnoremap [c :call search("^# %%", "bW")<CR>:call FlashCurrentCell()<CR>
-nnoremap ]c :call search("^# %%", "W")<CR>:call FlashCurrentCell()<CR>
-
-" Simple vim-slime mappings for IPython
-nnoremap <localleader>l :SlimeSendCurrentLine<CR>
-vnoremap <localleader>v :SlimeSend<CR>
-nnoremap <localleader>c :call SlimeSendCell()<CR>
 
 " Function to send current cell
 function! SlimeSendCell()
   " Save cursor position
   let save_pos = getpos('.')
 
-  " Find cell boundaries
-  let cell_start = search("^# %%", "bcnW")
-  let cell_end = search("^# %%", "nW")
+  " Get the appropriate cell delimiter pattern based on filetype
+  let cell_pattern = "^# %%"  " Default for Python
+
+  " Use filetype-specific cell patterns
+
+  " Find cell boundaries using the appropriate pattern
+  let cell_start = search(cell_pattern, "bcnW")
+  let cell_end = search(cell_pattern, "nW")
 
   if cell_start == 0
     let cell_start = 1
@@ -219,7 +219,7 @@ endfunction
 """ ollama.nvim configuration
 lua << EOF
 local opts = {
-  model = "codestral:latest",
+  model = "mistral",
   url = "http://127.0.0.1:11434",
   serve = {
     on_start = false,
@@ -244,103 +244,24 @@ end)
 EOF
 """ ollama.nvim configuration
 
-""" Github Copilot
-" Enable Copilot only for Python, JS, TS, sh, and zsh
+""" GitHub Copilot
+" Enable Copilot for specific languages
 let g:copilot_enabled = 1
 let g:copilot_filetypes = {
-      \ 'python': v:true,
-      \ 'javascript': v:true,
-      \ 'typescript': v:true,
-      \ 'sh': v:true,
-      \ 'zsh': v:true,
+      \ "vim": v:true,
+      \ "python": v:true,
+      \ "toml": v:true,
+      \ "yaml": v:true,
+      \ "json": v:true,
+      \ "markdown": v:true,
+      \ "elixir": v:true,
+      \ "zig": v:true,
+      \ "sh": v:true,
+      \ "zsh": v:true,
       \ "*": v:false,
       \ }
-""" Github Copilot
-
-""" quarto
-lua << EOF
--- otter
-local otter = require'otter'
-otter.setup{
-  lsp = {
-    -- `:h events` that cause the diagnostics to update. Set to:
-    -- { "BufWritePost", "InsertLeave", "TextChanged" } for less performant
-    -- but more instant diagnostic updates
-    diagnostic_update_events = { "BufWritePost" },
-    -- function to find the root dir where the otter-ls is started
-    root_dir = function(_, bufnr)
-      return vim.fs.root(bufnr or 0, {
-        ".git",
-        "_quarto.yml",
-        "package.json",
-      }) or vim.fn.getcwd(0)
-    end,
-  },
-  -- options related to the otter buffers
-  buffers = {
-    -- if set to true, the filetype of the otterbuffers will be set.
-    -- otherwise only the autocommand of lspconfig that attaches
-    -- the language server will be executed without setting the filetype
-    --- this setting is deprecated and will default to true in the future
-    set_filetype = true,
-    -- write <path>.otter.<embedded language extension> files
-    -- to disk on save of main buffer.
-    -- usefule for some linters that require actual files.
-    -- otter files are deleted on quit or main buffer close
-    write_to_disk = false,
-    -- a table of preambles for each language. The key is the language and the value is a table of strings that will be written to the otter buffer starting on the first line.
-    preambles = {},
-    -- a table of postambles for each language. The key is the language and the value is a table of strings that will be written to the end of the otter buffer.
-    postambles = {},
-    -- A table of patterns to ignore for each language. The key is the language and the value is a lua match pattern to ignore.
-    -- lua patterns: https://www.lua.org/pil/20.2.html
-    ignore_pattern = {
-      -- ipython cell magic (lines starting with %) and shell commands (lines starting with !)
-      python = "^(%s*[%%!].*)",
-    },
-  },
-  -- list of characters that should be stripped from the beginning and end of the code chunks
-  strip_wrapping_quote_characters = { "'", '"', "`" },
-  -- remove whitespace from the beginning of the code chunks when writing to the ottter buffers
-  -- and calculate it back in when handling lsp requests
-  handle_leading_whitespace = true,
-  -- mapping of filetypes to extensions for those not already included in otter.tools.extensions
-  -- e.g. ["bash"] = "sh"
-  extensions = {
-  },
-  -- add event listeners for LSP events for debugging
-  debug = false,
-  verbose = { -- set to false to disable all verbose messages
-    no_code_found = false -- warn if otter.activate is called, but no injected code was found
-  },
-}
-
--- quarto
-require('quarto').setup{
-  debug = false,
-  closePreviewOnExit = true,
-  lspFeatures = {
-    enabled = true,
-    chunks = "curly",
-    languages = { "r", "python", "julia", "bash", "html" },
-    diagnostics = {
-      enabled = true,
-      triggers = { "BufWritePost" },
-    },
-    completion = {
-      enabled = true,
-    },
-  },
-  codeRunner = {
-    enabled = true,
-    default_method = "slime", -- "molten", "slime", "iron" or <function>
-    ft_runners = {}, -- filetype to runner, ie. `{ python = "molten" }`.
-    -- Takes precedence over `default_method`
-    never_run = { 'yaml' }, -- filetypes which are never sent to a code runner
-  },
-}
-EOF
-""" quarto
+let g:copilot_model = "gemini-2.5-pro"
+""" GitHub Copilot
 
 """ journal.nvim
 lua << EOF
@@ -396,7 +317,7 @@ set relativenumber
 set expandtab                         " Use spaces instead of tabs
 set tabstop=4                         " Tab = 4 spaces
 set shiftwidth=4                      " Tab = 4 spaces
-set softtabstop=2                     " Number of spaces for a tab in insert mode
+set softtabstop=4                     " Number of spaces for a tab in insert mode
 set autoindent                        " Auto indent
 set smartindent                       " Smart autoindenting when starting a new line
 set cindent                           " Stricter indenting rules for C-like languages
@@ -415,7 +336,7 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard+=unnamedplus            " Clipboard Settings
+set clipboard=unnamedplus            " Clipboard Settings
 set background=dark                   " Set dark background
 if $COLORTERM == 'gnome-terminal'
   set t_Co=256                        " 256 colours
@@ -433,8 +354,6 @@ augroup HighlightOnHover
 augroup END
 "" Highlight on hover
 
-" Toggle paste mode on and off
-map <leader>pp :setlocal paste!<cr>
 
 
 """ Statusline configuration
@@ -588,10 +507,12 @@ augroup END
 
 " Call setup immediately
 call SetupStatusline()
+
+
 """ Statusline Configuration
 
 """ piper TTS
-let g:piper_bin = 'piperTTS'
+let g:piper_bin = '~/.venv/bin/piper'
 let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
                     " <space>tw = SpeakWord()
                     " <space>tc = SpeakCurrentLine()
@@ -600,15 +521,6 @@ let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
                     " <space>tv = SpeakVisualSelection()
 """ piper TTS
 
-" Pressing ,ss will toggle and untoggle spell checking
-map <leader>ss :setlocal spell!<cr>
-
-""" Shortcuts using <leader>
-map <leader>sn ]s " Next spelling mistake
-map <leader>sp [s " Previous spelling mistake
-map <leader>sa zg " Add word to dictionary
-map <leader>s? z= " Get suggestions
-""" Shortcuts using <leader>
 
 """ Spelling mistakes will be coloured up red.
 hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
@@ -618,7 +530,6 @@ hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
 """ tagbar
-nmap <F8> :TagbarToggle<CR>
 " https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
 let g:tagbar_left = 1
 let g:tagbar_autoclose = 0
@@ -631,6 +542,24 @@ let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 " let g:tagbar_iconchars = ['▸', '▾']
 " let g:tagbar_iconchars = ['▷', '◢']
+
+
+
+" Zig configuration for tagbar (Exuberant Ctags)
+let g:tagbar_type_zig = {
+  \ 'ctagstype': 'Zig',
+  \ 'kinds': [
+    \ 'f:functions',
+    \ 's:structs',
+    \ 'e:enums',
+    \ 'u:unions',
+    \ 'c:constants',
+    \ 'v:variables',
+    \ 't:tests',
+  \ ],
+  \ 'sort': 0
+  \ }
+
 """ tagbar
 
 " Autopairs Configuration
@@ -648,80 +577,43 @@ lua << EOF
 require("mason").setup()
 require("mason-lspconfig").setup({
   ensure_installed = {
-    "pyright",               -- Python
-    "denols",                -- Deno
+    "jedi_language_server",  -- Python LSP
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
     "biome",                 -- JSON
     "yamlls",                -- YAML
+    "zls",                   -- Zig Language Server
+    "elixirls",              -- Elixir Language Server
   },
-  automatic_installation = true,
+  automatic_installation = false,
   handlers = {
-    -- Pyright
-    pyright_ls_type_checker = function()
-      require('lspconfig').pyright.setup({
-        init_options = {
-          settings = {
-            python = {
-              analysis = {
-                autoSearchPaths = true,
-                diagnosticMode = "workspace",
-                useLibraryCodeForTypes = true
-              }
-            }
-          }
-        }
-      })
-      end,
-
-    -- Deno Language Server
-    denols = function()
-      require("lspconfig").denols.setup({
-        root_dir = require("lspconfig.util").root_pattern(
-          "deno.json",
-          "deno.jsonc"
-        ),
-        single_file_support = false,
-
-        init_options = {
-          lint = true,
-          unstable = true,
-          suggest = {
-            imports = {
-              hosts = {
-                ["https://deno.land"] = true,
-                ["https://cdn.nest.land"] = true,
-                ["https://crux.land"] = true,
-              },
-            },
-          },
-        },
-
-        settings = {
-          deno = {
-            enable = true,
-            lint = true,
-            unstable = true,
-            codeLens = {
-              references = true,
-              referencesAllFunctions = true,
-              test = true,
-            },
-            suggest = {
-              imports = {
-                hosts = {
-                  ["https://deno.land"] = true,
-                },
-              },
-            },
-          },
-        },
-
+    -- Jedi for Python LSP features (code intelligence)
+    jedi_language_server = function()
+      require('lspconfig').jedi_language_server.setup({
         on_attach = on_attach,
         capabilities = capabilities,
       })
     end,
+
+    -- Zig Language Server
+    zls = function()
+      require("lspconfig").zls.setup({
+        cmd = { vim.fn.expand("$HOME/.zig/zls") },
+        on_attach = on_attach,
+        capabilities = capabilities,
+        settings = {
+          zls = {
+            enable_build_on_save = true,
+            enable_autofix = true,
+            enable_inlay_hints = true,
+            inlay_hints_hide_redundant_param_names = true,
+            inlay_hints_hide_redundant_param_names_last_token = true,
+          }
+        }
+      })
+    end,
+
 
     -- Docker Language Server
     dockerls = function()
@@ -769,11 +661,21 @@ require("mason-lspconfig").setup({
         capabilities = capabilities,
       })
     end,
-  }
 
+    -- Elixir Language Server
+    elixirls = function()
+      require("lspconfig").elixirls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+    end,
+  }
 })
 EOF
 """ Mason Configuration
+
+
+
 
 """ Completion setup
 lua << EOF
@@ -808,37 +710,17 @@ cmp.setup({
     { name = "ollama" },
   })
 })
+
 EOF
 """ Completion setup
 
+
+
 """ LSP Configuration
 lua << EOF
-vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
-function _G.dump_lsp_client()
-    local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
-    for _, client in pairs(buf_clients) do
-        print(string.format("Client: %s, Server capabilities:", client.name))
-        print(vim.inspect(client.server_capabilities))
-    end
-end
 
--- New way - define signs directly in diagnostic config
-vim.diagnostic.config({
-    virtual_text = false,
-    signs = {
-      text = {
-        [vim.diagnostic.severity.ERROR] = "✖",
-        [vim.diagnostic.severity.WARN] = "⚠",
-        [vim.diagnostic.severity.HINT] = "💡",
-        [vim.diagnostic.severity.INFO] = "ℹ",
-      }
-    },
-    underline = true,
-    update_in_insert = false,
-    severity_sort = false,
-})
--- Show diagnostics when pressing 'gh'
-vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
+-- Configure diagnostics once (remove duplicate config)
+-- This config is moved and consolidated below with the main diagnostic config
 
 -- Proper file type detection
 vim.cmd([[
@@ -883,28 +765,13 @@ local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
-  -- Debug print
-  print("LSP attached:", client.name)
 
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
-  -- Navigation keymaps
-  vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-  vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-
-  -- Information keymaps
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-  vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-
-  -- Editing keymaps
-  vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
-  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
 
   -- Programming filetypes where signature help should auto-trigger
-  local programming_filetypes = {'python', 'typescript', 'javascript'}
+  local programming_filetypes = {'python'}
 
   -- Set up signature help auto-trigger only for programming files
   if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
@@ -945,18 +812,130 @@ lua << EOF
 -- Linting Configuration
 local lint = require('lint')
 
--- Define ruff as the only linter for Python
-lint.linters_by_ft = {
-  python = {'ruff'},
+-- Register ty as a custom linter
+lint.linters.ty = {
+  cmd = "ty",
+  stdin = false,
+  args = {
+    "--show-error-codes",
+    "--show-column-numbers"
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr)
+    local diagnostics = {}
+    for _, line in ipairs(vim.split(output, '\n')) do
+      -- Parse ty output lines that look like: file.py:line:col: error: message [error-code]
+      local file, line, col, severity, message, code =
+        line:match(".-:(%d+):(%d+): (%w+): (.-) %[(.-)%]")
+
+      if line and col and message then
+        local severity_map = {
+          error = vim.diagnostic.severity.ERROR,
+          warning = vim.diagnostic.severity.WARN,
+          note = vim.diagnostic.severity.INFO,
+          hint = vim.diagnostic.severity.HINT
+        }
+
+        table.insert(diagnostics, {
+          lnum = tonumber(line) - 1,  -- 0-indexed
+          col = tonumber(col) - 1,    -- 0-indexed
+          message = message .. (code and " [" .. code .. "]" or ""),
+          source = "ty",
+          severity = severity_map[severity] or vim.diagnostic.severity.ERROR
+        })
+      end
+    end
+    return diagnostics
+  end
 }
 
--- Configure ruff to ensure it shows all diagnostics
-if lint.linters.ruff then
-  -- Keep original settings but add --exit-zero
-  local original_args = lint.linters.ruff.args or {}
-  table.insert(original_args, 2, "--exit-zero")
-  lint.linters.ruff.args = original_args
-end
+lint.linters_by_ft = {
+  python = {'ruff', 'ty'},
+  zig = {'zig'},
+  elixir = {'credo'},
+}
+
+-- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
+lint.linters.ruff = {
+  cmd = "ruff",
+  stdin = false,
+  args = {
+    "check",
+    "--output-format=json",
+    function() return vim.api.nvim_buf_get_name(0) end
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr, cwd)
+    local ok, decoded = pcall(vim.json.decode, output)
+    if not ok then return {} end
+
+    local diagnostics = {}
+    if decoded and type(decoded) == "table" then
+      for _, item in ipairs(decoded) do
+        if item.location then
+          table.insert(diagnostics, {
+            lnum = (item.location.row or 1) - 1,
+            col = (item.location.column or 1) - 1,
+            message = item.message or "Ruff error",
+            severity = vim.diagnostic.severity.WARN,
+            source = "ruff",
+            code = item.code
+          })
+        end
+      end
+    end
+    return diagnostics
+  end
+}
+
+
+-- Credo linter for Elixir
+lint.linters.credo = {
+  cmd = "mix",
+  stdin = false,
+  args = {
+    "credo",
+    "suggest",
+    "--format",
+    "json",
+    "--read-from-stdin",
+    function() return vim.api.nvim_buf_get_name(0) end
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr, cwd)
+    local ok, decoded = pcall(vim.json.decode, output)
+    if not ok then return {} end
+
+    local diagnostics = {}
+    if decoded and type(decoded) == "table" and decoded.issues then
+      for _, issue in ipairs(decoded.issues) do
+        table.insert(diagnostics, {
+          lnum = (issue.line_no or 1) - 1,
+          col = (issue.column or 1) - 1,
+          message = issue.message or "Credo issue",
+          severity = vim.diagnostic.severity.WARN,
+          source = "credo",
+          code = issue.check
+        })
+      end
+    end
+    return diagnostics
+  end,
+  -- Check if Credo is available in the current Mix project
+  condition = function(ctx)
+    local handle = io.popen("mix help | grep -q credo")
+    if handle then
+      local result = handle:close()
+      return result == 0
+    end
+    return false
+  end
+}
+
+-- Simple command to show diagnostics in popup
+vim.api.nvim_create_user_command("ShowDiagnostics", function()
+  vim.diagnostic.open_float()
+end, {})
 
 -- Function to count diagnostics and update status line
 local function update_diagnostics_status()
@@ -1018,18 +997,25 @@ end
 
 -- Set up linting on file save
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py" },
+  pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
   callback = function()
     require("lint").try_lint()
-    -- Update status after a short delay to ensure diagnostics are processed
     vim.defer_fn(update_diagnostics_status, 100)
   end,
 })
 
--- Define visible diagnostic signs in the gutter
--- New way - define signs directly in diagnostic config
+-- Set up on-the-fly linting while typing/pausing
+vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
+  pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
+  callback = function()
+    require("lint").try_lint()
+    vim.defer_fn(update_diagnostics_status, 50)
+  end,
+})
+
+-- Clean diagnostics: signs + hover popup only
 vim.diagnostic.config({
-  virtual_text = false,
+  virtual_text = false,  -- No inline text
   signs = {
     text = {
       [vim.diagnostic.severity.ERROR] = "✖",
@@ -1040,20 +1026,14 @@ vim.diagnostic.config({
   },
   underline = true,
   severity_sort = true,
-  float = {
-    focusable = true,
-    style = "minimal",
-    border = "rounded",
-    source = "always",
-    header = "",
-    prefix = "",
-  },
+  update_in_insert = false,
+  float = false,  -- No automatic popups (we handle this manually)
 })
 
--- Set up keymapping to show diagnostics on hover
+-- Show diagnostics popup on hover (same as :ShowDiagnostics)
 vim.api.nvim_create_autocmd("CursorHold", {
   callback = function()
-    vim.diagnostic.open_float(nil, {focus=true})
+    vim.diagnostic.open_float()
   end
 })
 
@@ -1099,39 +1079,59 @@ require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
     python = { "ruff_organise_imports", "ruff_format" },
-    css = { "deno_fmt" },
-    html = { "deno_fmt" },
-    javascript = { "deno_fmt" },
-    typescript = { "deno_fmt" },
-    json = { "deno_fmt" },
-    jsonc = { "deno_fmt" },
-    javascriptreact = { "deno_fmt" },
-    typescriptreact = { "deno_fmt" },
-    markdown = { "deno_fmt" },
     json = { "biome" },
-    ["*"] = { "trim_whitespace" },
+    zig = { "zig_fmt" },
+    elixir = { "mix_format" },
   },
 
   -- Organise Python imports
     formatters = {
         ruff_organise_imports = {
-          command = 'ruff',
+          command = "ruff",
           args = {
-            'check',
-            '--force-exclude',
-            '--select=I001',
-            '--fix',
-            '--exit-zero',
-            '--stdin-filename',
-            '$FILENAME',
-            '-',
+            "check",
+            "--force-exclude",
+            "--select=I001",
+            "--fix",
+            "--exit-zero",
+            "--stdin-filename",
+            "$FILENAME",
+            "-",
           },
           stdin = true,
-          cwd = require('conform.util').root_file {
-            'pyproject.toml',
-            'ruff.toml',
-            '.ruff.toml',
+          cwd = require("conform.util").root_file {
+            "pyproject.toml",
+            "ruff.toml",
+            ".ruff.toml",
           },
+        },
+        ruff_format = {
+          command = "ruff",
+          args = {
+            "format",
+            "--stdin-filename",
+            "$FILENAME",
+            "-",
+          },
+          stdin = true,
+          cwd = require("conform.util").root_file {
+            "pyproject.toml",
+            "ruff.toml",
+            ".ruff.toml",
+          },
+        },
+        zig_fmt = {
+            command = vim.fn.expand("$HOME/.zig/zig"),
+            args = { "fmt", "--stdin" },
+            stdin = true,
+        },
+        mix_format = {
+            command = "mix",
+            args = { "format", "--stdin-filename", "$FILENAME" },
+            stdin = true,
+            cwd = require("conform.util").root_file {
+              "mix.exs",
+            },
         },
       },
   -- Format on save
@@ -1144,20 +1144,12 @@ require("conform").setup({
   },
 })
 
-  -- For format on key mapping (optional, if you want manual formatting)
-  vim.keymap.set({ "n", "v" }, "==", function()
-    require("conform").format({
-      lsp_fallback = true,
-      async = false,
-      timeout_ms = 500,
-    })
-  end, { desc = "Format file or range" })
 EOF
 """ Linting, formatting configuration
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter.configs").setup {
+require("nvim-treesitter.config").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -1166,8 +1158,10 @@ require("nvim-treesitter.configs").setup {
 
         -- Languages you use
         "python",
-        "javascript",
-        "typescript",
+        "zig",
+        "elixir",
+        "eex", 
+        "heex",
 
         -- For documentation/markdown files
         "markdown",
@@ -1177,11 +1171,10 @@ require("nvim-treesitter.configs").setup {
         "yaml"
         },
 
-  sync_install = false,
+  sync_install = true,
   auto_install = true,
 
-  highlight = {
-    enable = true,
+  highlight = { enable = true,
     disable = function(lang, buf)
       local max_filesize = 100 * 1024 -- 100 KB
       local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
@@ -1191,14 +1184,10 @@ require("nvim-treesitter.configs").setup {
     end,
     additional_vim_regex_highlighting = false,
   },
-  fold = {
-      enable = true
-  },
+  fold = { enable = true },
 
   -- Optional but recommended
-  indent = {
-    enable = true,
-  },
+  indent = { enable = true },
 
   incremental_selection = {
     enable = true,
@@ -1216,7 +1205,7 @@ vim.opt.foldmethod = "expr"
 vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 
 
--- Start with all folds closed
+-- Start with all folds open (foldlevel 99 = show all levels)
 vim.opt.foldenable = true
 vim.opt.foldlevel = 99
 
@@ -1241,43 +1230,28 @@ let g:fzf_vim.preview_window = ['right,50%', 'ctrl-/']
 let g:fzf_vim.buffers_jump = 1
 " [[B]Commits] Customize the options used by 'git log':
 let g:fzf_vim.commits_log_options = '--graph --color=always --format="%C(auto)%h%d %s %C(black)%C(bold)%cr"'
+"" Mappings handled by which-key
 "" Mappings
-" Mapping selecting mappings
-nmap <leader>k <plug>(fzf-maps-n)
-xmap <leader>k <plug>(fzf-maps-x)
-omap <leader>k <plug>(fzf-maps-o)
-" Insert mode completion
-imap <c-x><c-k> <plug>(fzf-complete-word)
-imap <c-x><c-f> <plug>(fzf-complete-path)
-imap <c-x><c-l> <plug>(fzf-complete-line)
-" files
-nnoremap <leader>f :Files<cr>
-"" Mappings
-"" Completion
-" Path completion with custom source command
-inoremap <expr> <c-x><c-f> fzf#vim#complete#path('fd')
-inoremap <expr> <c-x><c-f> fzf#vim#complete#path('rg --files')
-" Word completion with custom spec with popup layout option
-inoremap <expr> <c-x><c-k> fzf#vim#complete#word({'window': { 'width': 0.2, 'height': 0.9, 'xoffset': 1 }})
-" Replace the default dictionary completion with fzf-based fuzzy completion
-" inoremap <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/words')
-" Global line completion (not just open buffers. ripgrep required.)
-inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
-  \ 'prefix': '^.*$',
-  \ 'source': 'rg -n ^ --color always',
-  \ 'options': '--ansi --delimiter : --nth 3..',
-  \ 'reducer': { lines -> join(split(lines[0], ':\zs')[2:], '') }}))
-"" Completion
+"" Completion handled by which-key
 " Statusline
 autocmd! FileType fzf set laststatus=0 noshowmode noruler
   \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
 """ Fuzzy finding Configuration
 
-""" CSV viewer
+""" CSV view
 lua << EOF
-require('rainbow_csv').setup()
+require('csvview').setup({
+  view = {
+    display_mode = "border", -- Replace delimiters with vertical borders (│)
+    header_lnum = true,  -- Auto-detect header (default)
+    sticky_header = {
+      enabled = true,
+      separator = "─",  -- Separator line character
+    },
+  },
+})
 EOF
-""" CSV viewer
+""" CSV view
 
 """ Align sentences
 lua << EOF
@@ -1366,23 +1340,6 @@ require('gitsigns').setup({
   on_attach = function(bufnr)
     local gs = package.loaded.gitsigns
 
-    -- Navigation between hunks
-    vim.keymap.set('n', '>c', function()
-      if vim.wo.diff then return '>c' end
-      vim.schedule(function() gs.next_hunk() end)
-      return '<Ignore>'
-    end, {expr=true, buffer=bufnr})
-
-    vim.keymap.set('n', '<c', function()
-      if vim.wo.diff then return '<c' end
-      vim.schedule(function() gs.prev_hunk() end)
-      return '<Ignore>'
-    end, {expr=true, buffer=bufnr})
-
-    -- Actions
-    vim.keymap.set('n', '<leader>hs', gs.stage_hunk)
-    vim.keymap.set('n', '<leader>hr', gs.reset_hunk)
-    vim.keymap.set('n', '<leader>hp', gs.preview_hunk)
   end
 })
 
@@ -1416,6 +1373,13 @@ require('diffview').setup({
 })
 EOF
 """ Git
+
+""" FZF key mappings
+" Key mapping for FZF maps browser - needs to be defined outside which-key
+nmap <leader>k <plug>(fzf-maps-n)
+xmap <leader>k <plug>(fzf-maps-x)
+omap <leader>k <plug>(fzf-maps-o)
+
 
 """ which-key configuration
 lua << EOF
@@ -1622,9 +1586,12 @@ wk.add({
   { "<leader>sa", "zg", desc = "Add word to dictionary" },
   { "<leader>s?", "z=", desc = "Suggest corrections" },
 
+  -- Toggle paste mode
+  { "<leader>pp", "<cmd>setlocal paste!<cr>", desc = "Toggle paste mode" },
+
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
-  { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" },
+  -- { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" }, -- Not working with which-key
 
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
@@ -1637,7 +1604,7 @@ wk.add({
 
   -- Format
   { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
-  { "<leader>j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
+  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
@@ -1657,13 +1624,11 @@ wk.add({
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
 
-  -- Space prefix mappings
-  { "<space>t", group = "Text-to-Speech" },
-  { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
-  { "<space>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
-  { "<space>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
-  { "<space>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
-  { "<space>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
+  -- Git hunk operations
+  { "<leader>hs", "<cmd>lua require('gitsigns').stage_hunk()<CR>", desc = "Stage Hunk" },
+  { "<leader>hr", "<cmd>lua require('gitsigns').reset_hunk()<CR>", desc = "Reset Hunk" },
+  { "<leader>hp", "<cmd>lua require('gitsigns').preview_hunk()<CR>", desc = "Preview Hunk" },
+
 
   -- g prefix mappings
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
@@ -1674,47 +1639,69 @@ wk.add({
   { "gnn", "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
-  { "[c",
-    "<cmd>call search('^# %%', 'bW')<CR><cmd>call FlashCurrentCell()<CR>",
-    desc = "Previous Cell (highlighted)"
-  },
-  { "]c",
-    "<cmd>call search('^# %%', 'W')<CR><cmd>call FlashCurrentCell()<CR>",
-    desc = "Next Cell (highlighted)"
-  },
+  { "[c", "<cmd>?^# %%<CR>", desc = "Previous Cell" },
+  { "]c", "<cmd>/^# %%<CR>", desc = "Next Cell" },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
+
+  -- Hunk navigation
+  { "<c", "<cmd>lua require('gitsigns').prev_hunk()<CR>", desc = "Previous Hunk" },
+  { ">c", "<cmd>lua require('gitsigns').next_hunk()<CR>", desc = "Next Hunk" },
 
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
   { "<F9>", "i# %%<CR><ESC>", desc = "Insert Cell Above" },
   { "<F10>", "o# %%<CR>", desc = "Insert Cell Below" },
+
+  -- Ollama commands
+  { "<leader>o", group = "Ollama" },
+  { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
+  { "<leader>ox", "<cmd>lua require('ollama').serve_stop()<CR>", desc = "Stop Ollama Server" },
+
+  -- Elixir commands
+  { "<leader>e", group = "Elixir" },
+  { "<leader>ef", "<cmd>!mix format %<CR>", desc = "Format current file" },
+  { "<leader>et", "<cmd>!mix test<CR>", desc = "Run all tests" },
+  { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
+  { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
+  { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
+
 }, { mode = "n" })
 
 -- Insert mode mappings
 wk.add({
-  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help", mode = "i" },
-  { "<C-x>", group = "Completions", mode = "i" },
-  { "<C-x><C-k>", "<Plug>(fzf-complete-word)", desc = "Complete Word", mode = "i" },
-  { "<C-x><C-f>", "<Plug>(fzf-complete-path)", desc = "Complete Path", mode = "i" },
-  { "<C-x><C-l>", "<Plug>(fzf-complete-line)", desc = "Complete Line", mode = "i" },
-  { "<C-x><C-o>", desc = "Ollama AI completion", mode = "i" },
-  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above", mode = "i" },
-  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below", mode = "i" },
-})
+  -- Signature help
+  { "<C-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", desc = "Show Signature Help" },
+
+  -- FZF completions
+  { "<C-x>", group = "Completions" },
+  { "<C-x><C-k>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#word({\"window\": { \"width\": 0.2, \"height\": 0.9, \"xoffset\": 1 }})<CR>')", desc = "Complete Word" },
+  { "<C-x><C-f>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete#path(\"rg --files\")<CR>')", desc = "Complete Path" },
+  { "<C-x><C-l>", "<Cmd>lua vim.api.nvim_input('<C-r>=fzf#vim#complete(fzf#wrap({\"prefix\": \"^.*$\", \"source\": \"rg -n ^ --color always\", \"options\": \"--ansi --delimiter : --nth 3..\", \"reducer\": { lines -> join(split(lines[0], \":\\\\zs\")[2:], \"\") }}))<CR>')", desc = "Complete Line" },
+
+  -- Ollama keybindings
+  { "<C-x><C-o>", desc = "Ollama AI completion" },
+
+  -- IPython
+  { "<F9>", "<C-o>i# %%<CR>", desc = "Insert Cell Above" },
+  { "<F10>", "<C-o>o# %%<CR>", desc = "Insert Cell Below" },
+}, { mode = "i" })
 
 -- Visual mode mappings
 wk.add({
-  { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send Selection to IPython", mode = "v" },
-  { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings", mode = "v" },
-  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates", mode = "v" },
-  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates", mode = "v" },
-})
+  -- IPython
+  { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
+
+  -- FZF mappings handled outside which-key
+  -- { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
+
+}, { mode = "v" })
 
 -- Operator pending mode mappings
 wk.add({
-  { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings", mode = "o" },
-})
+  -- FZF mappings handled outside which-key
+  -- { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
+}, { mode = "o" })
 EOF
 """ which-key configuration
 
