@@ -25,7 +25,11 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
 " Elixir Development
-Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir 
+Plug 'elixir-editors/vim-elixir', { 'tag': 'stable' }         "  Vim configuration files for Elixir 
+
+" Common Lisp Development
+Plug 'vlime/vlime', {'rtp': 'vim/'}                           " Vim plugin for Common Lisp Development
+Plug 'hrsh7th/cmp-omni'                                        
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -60,7 +64,7 @@ Plug 'windwp/nvim-autopairs'                                  " Autopairs for au
 Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
 Plug 'wolandark/vim-piper'                                    " Text to speech
 Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
-
+Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
@@ -231,16 +235,17 @@ local opts = {
 }
 require("ollama").setup(opts)
 
-vim.keymap.set("i", "<C-x><C-o>", function()
-    require("cmp").complete({
-        config = {
-            sources = {
-                { name = "ollama" },
-                { name = "path"},
-            }
-        }
-    })
-end)
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "python", "zig", "elixir" },
+  callback = function()
+    vim.keymap.set("i", "<C-x><C-o>", function()
+      require("cmp").complete({
+        config = { sources = { { name = "ollama" }, { name = "path" } } }
+      })
+    end, { buffer = true })
+  end,
+})
+
 EOF
 """ ollama.nvim configuration
 
@@ -507,8 +512,6 @@ augroup END
 
 " Call setup immediately
 call SetupStatusline()
-
-
 """ Statusline Configuration
 
 """ piper TTS
@@ -711,10 +714,17 @@ cmp.setup({
   })
 })
 
+-- Common Lisp: use Vlime's omni completion via cmp-omni
+cmp.setup.filetype('lisp', {
+  sources = cmp.config.sources({
+    { name = "omni" },
+    { name = "buffer" },
+    { name = "path" },
+  })
+})
+
 EOF
 """ Completion setup
-
-
 
 """ LSP Configuration
 lua << EOF
@@ -735,6 +745,8 @@ vim.cmd([[
 vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('UserLspConfig', {}),
     callback = function(ev)
+        -- Don't override omnifunc for Common Lisp (Vlime handles it)
+        if vim.bo[ev.buf].filetype == 'lisp' then return end
         -- Enable completion triggered by <c-x><c-o>
         vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 
@@ -806,6 +818,11 @@ local on_attach = function(client, bufnr)
 end
 EOF
 """ LSP Configuration
+
+augroup lisp_vlime
+  autocmd!
+  autocmd FileType lisp setlocal omnifunc=vlime#plugin#CompleteFunc
+augroup END
 
 """ Linting and Formatting Configuration
 lua << EOF
@@ -1139,7 +1156,7 @@ require("conform").setup({
   format_on_save = {
     -- These options will be passed to conform.format()
     enabled = true,
-    timeout_ms = 5000,
+    timeout_ms = 500,
     lsp_fallback = true,
   },
 })
@@ -1159,6 +1176,7 @@ require("nvim-treesitter.config").setup {
         -- Languages you use
         "python",
         "zig",
+        "commonlisp",
         "elixir",
         "eex", 
         "heex",
@@ -1379,8 +1397,6 @@ EOF
 nmap <leader>k <plug>(fzf-maps-n)
 xmap <leader>k <plug>(fzf-maps-x)
 omap <leader>k <plug>(fzf-maps-o)
-
-
 """ which-key configuration
 lua << EOF
 -- Which-Key Configuration
@@ -1665,6 +1681,13 @@ wk.add({
   { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
   { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
   { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
+
+  -- Common Lisp / Vlime
+  { "<localleader>r", group = "SWANK Server" },
+  { "<localleader>s", group = "Eval / Send" },
+  { "<localleader>d", group = "Describe / Doc" },
+  { "<localleader>w", group = "Window" },
+  { "<localleader>I", group = "Inspect" },
 
 }, { mode = "n" })
 
