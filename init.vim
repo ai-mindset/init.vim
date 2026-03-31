@@ -25,7 +25,7 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
 " Elixir Development
-Plug 'elixir-editors/vim-elixir', { 'tag': 'stable' }         "  Vim configuration files for Elixir 
+Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir 
 
 " Common Lisp Development
 Plug 'vlime/vlime', {'rtp': 'vim/'}                           " Vim plugin for Common Lisp Development
