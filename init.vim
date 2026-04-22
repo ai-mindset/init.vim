@@ -1095,7 +1095,7 @@ end, {})
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
-    python = { "ruff_organise_imports", "ruff_format" },
+    python = { "ruff_organize_imports", "ruff_format" },
     json = { "biome" },
     zig = { "zig_fmt" },
     elixir = { "mix_format" },
@@ -1103,11 +1103,11 @@ require("conform").setup({
 
   -- Organise Python imports
     formatters = {
-        ruff_organise_imports = {
+        ruff_organize_imports = {
           command = "ruff",
           args = {
             "check",
-            "--force-exclude",
+            "--no-force-exclude",
             "--select=I001",
             "--fix",
             "--exit-zero",
@@ -1154,8 +1154,6 @@ require("conform").setup({
   -- Format on save
 
   format_on_save = {
-    -- These options will be passed to conform.format()
-    enabled = true,
     timeout_ms = 5000,
     lsp_fallback = true,
   },
