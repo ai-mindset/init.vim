@@ -740,7 +740,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         vim.keymap.set('n', 'K', function()
             local winid = require('vim.lsp.util').open_floating_preview(
                 {'Fetching documentation...'}, 'markdown', {
-                    border = 'rounded',
+                    border = "shadow",
                     focusable = true,
                 })
             vim.lsp.buf.hover()
@@ -751,7 +751,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 -- Configure signature help handler once (globally, outside on_attach)
 vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
   vim.lsp.handlers.signature_help, {
-    border = 'rounded',
+    border = "shadow",
     close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
     focusable = true,
   }
@@ -1020,7 +1020,13 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   update_in_insert = false,
-  float = false,  -- No automatic popups (use manual :ShowDiagnostics or gh)
+  float = { border = "shadow" },
+})
+
+vim.api.nvim_create_autocmd("CursorHold", {
+  callback = function()
+    vim.diagnostic.open_float(nil, { focusable = false })
+  end,
 })
 
 -- Add linting status to your statusline
@@ -1368,7 +1374,7 @@ wk.setup({
   },
 
   win = {
-    border = "single",
+    border = "shadow",
     padding = { 2, 2, 2, 2 },
   },
   layout = {
