@@ -16,7 +16,6 @@ Plug 'hrsh7th/nvim-cmp'                                       " Completion Engin
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
 Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
-Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ollama AI completion
@@ -28,7 +27,7 @@ Plug 'github/copilot.vim'                                     " Neovim plugin fo
 Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir 
 
 " Common Lisp Development
-Plug 'vlime/vlime', {'rtp': 'vim/'}                           " Vim plugin for Common Lisp Development
+Plug 'vlime/vlime', { 'rtp': 'vim/', 'for': 'lisp' }           " Vim plugin for Common Lisp (lazy-load)
 Plug 'hrsh7th/cmp-omni'                                        
 
 " Neovim <-> IPython
@@ -42,7 +41,7 @@ Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
-Plug 'nvim-tree/nvim-web-devicons'                            " optional for icons
+" Plug 'nvim-tree/nvim-web-devicons'                            " optional for icons - removed for performance
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }           " optional for the 'fzf' command
 Plug 'junegunn/fzf.vim'                                       " fzf vim bindings
 
@@ -54,18 +53,15 @@ Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugi
 
 " Git
 Plug 'tpope/vim-fugitive'                                     " Git integration
-Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
-Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents
-Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
-Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
-Plug 'wolandark/vim-piper'                                    " Text to speech
-Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
-Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }    " Treesitter for syntax highlighting (lazy-loaded)
+Plug 'wellle/context.vim', { 'on': 'ContextEnable' }             " Shows context (lazy-loaded)
+Plug 'windwp/nvim-autopairs'                                     " Autopairs for auto closing brackets
+Plug 'wolandark/vim-piper'                                       " Text to speech
+Plug 'machakann/vim-highlightedyank', { 'on': 'TextYankPost' }   " Highlight yanked text (lazy-event)
+Plug 'm00qek/baleia.nvim'                                        " Colourful log messages
 Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                              " Keep notes
 Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
@@ -250,8 +246,8 @@ EOF
 """ ollama.nvim configuration
 
 """ GitHub Copilot
-" Enable Copilot for specific languages
-let g:copilot_enabled = 1
+" Disable Copilot on startup - toggle manually with <Leader>cp
+let g:copilot_enabled = 0
 let g:copilot_filetypes = {
       \ "vim": v:true,
       \ "python": v:true,
@@ -331,7 +327,7 @@ set wrap                              " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=90                   " Column indicating 90 characters
+set colorcolumn=90                    " Column indicating 90 characters
 set cursorcolumn                      " Indentation guide
 set cursorline
 set ruler                             " Always show current position
@@ -341,13 +337,12 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard=unnamedplus            " Clipboard Settings
+set clipboard=unnamedplus             " Clipboard Settings
 set background=dark                   " Set dark background
 if $COLORTERM == 'gnome-terminal'
   set t_Co=256                        " 256 colours
 endif
 set termguicolors                     " True colour support
-
 """ Basic Settings
 
 "" Highlight on hover
@@ -570,11 +565,6 @@ lua << EOF
 require("nvim-autopairs").setup({})
 EOF
 
-" Indent Blankline Configuration
-lua << EOF
-require("ibl").setup()
-EOF
-
 """ Mason Configuration
 lua << EOF
 require("mason").setup()
@@ -678,8 +668,6 @@ EOF
 """ Mason Configuration
 
 
-
-
 """ Completion setup
 lua << EOF
 -- Completion Setup
@@ -709,8 +697,6 @@ cmp.setup({
   sources = cmp.config.sources({
     { name = "nvim_lsp" },
     { name = "buffer" },
-    { name = "path"},
-    { name = "ollama" },
   })
 })
 
@@ -719,7 +705,6 @@ cmp.setup.filetype('lisp', {
   sources = cmp.config.sources({
     { name = "omni" },
     { name = "buffer" },
-    { name = "path" },
   })
 })
 
@@ -1012,21 +997,12 @@ local function update_diagnostics_status()
   end
 end
 
--- Set up linting on file save
+-- Set up linting on file save only (reduced frequency)
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
   pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
   callback = function()
     require("lint").try_lint()
     vim.defer_fn(update_diagnostics_status, 100)
-  end,
-})
-
--- Set up on-the-fly linting while typing/pausing
-vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
-  pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
-  callback = function()
-    require("lint").try_lint()
-    vim.defer_fn(update_diagnostics_status, 50)
   end,
 })
 
@@ -1044,14 +1020,7 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   update_in_insert = false,
-  float = false,  -- No automatic popups (we handle this manually)
-})
-
--- Show diagnostics popup on hover (same as :ShowDiagnostics)
-vim.api.nvim_create_autocmd("CursorHold", {
-  callback = function()
-    vim.diagnostic.open_float()
-  end
+  float = false,  -- No automatic popups (use manual :ShowDiagnostics or gh)
 })
 
 -- Add linting status to your statusline
@@ -1098,7 +1067,6 @@ require("conform").setup({
     python = { "ruff_organize_imports", "ruff_format" },
     json = { "biome" },
     zig = { "zig_fmt" },
-    elixir = { "mix_format" },
   },
 
   -- Organise Python imports
@@ -1142,21 +1110,40 @@ require("conform").setup({
             args = { "fmt", "--stdin" },
             stdin = true,
         },
-        mix_format = {
-            command = "mix",
-            args = { "format", "--stdin-filename", "$FILENAME" },
-            stdin = true,
-            cwd = require("conform.util").root_file {
-              "mix.exs",
-            },
-        },
       },
   -- Format on save
 
   format_on_save = {
-    timeout_ms = 5000,
+    timeout_ms = 500,
     lsp_fallback = true,
   },
+})
+
+-- Elixir formatting on save (avoids "file changed" warning)
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*.ex",
+  callback = function()
+    local filename = vim.api.nvim_buf_get_name(0)
+    -- Run mix format asynchronously to avoid blocking LSP
+    local job = vim.fn.jobstart({"mix", "format", filename}, {
+      stdout_buffered = true,
+      on_exit = function(_, exit_code)
+        if exit_code == 0 and vim.fn.filereadable(filename) == 1 then
+          -- Reload the formatted file after the job finishes
+          vim.schedule(function()
+            vim.api.nvim_command('edit ' .. vim.fn.fnameescape(filename))
+          end)
+        end
+      end,
+    })
+    -- If job failed to start, fallback to synchronous formatting
+    if job <= 0 then
+      vim.fn.system({"mix", "format", filename})
+      if vim.fn.filereadable(filename) == 1 then
+        vim.api.nvim_command('edit ' .. vim.fn.fnameescape(filename))
+      end
+    end
+  end,
 })
 
 EOF
@@ -1181,18 +1168,21 @@ require("nvim-treesitter.config").setup {
 
         -- For documentation/markdown files
         "markdown",
-        "markdown_inline",
+        -- "markdown_inline",
 
         -- For Yaml files
         "yaml"
         },
 
-  sync_install = true,
+  sync_install = false,  -- Async installation for faster startup
   auto_install = true,
+  parser_install_dir = vim.fn.stdpath("cache") .. "/treesitter", -- faster cache location
 
-  highlight = { enable = true,
+  highlight = { 
+    enable = true,
+    delay = 200,  -- Delay initialization to reduce startup lag
     disable = function(lang, buf)
-      local max_filesize = 100 * 1024 -- 100 KB
+      local max_filesize = 200 * 1024 -- 200 KB
       local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
       if ok and stats and stats.size > max_filesize then
         return true
@@ -1215,19 +1205,6 @@ require("nvim-treesitter.config").setup {
     },
   },
 }
-
--- Code folding
-vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-
-
--- Start with all folds open (foldlevel 99 = show all levels)
-vim.opt.foldenable = true
-vim.opt.foldlevel = 99
-
--- Customize fold appearance (optional)
-vim.opt.fillchars = "fold: "
-vim.opt.foldtext = [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').' ... '.trim(getline(v:foldend))]]
 EOF
 """ nvim-treesitter Configuration
 
@@ -1343,22 +1320,6 @@ EOF
 
 """ Git
 lua << EOF
-require('gitsigns').setup({
-  current_line_blame = true,
-  signs = {
-    add = { text = '│' },
-    change = { text = '│' },
-    delete = { text = '_' },
-    topdelete = { text = '‾' },
-    changedelete = { text = '~' },
-    untracked = { text = '┆' },
-  },
-  on_attach = function(bufnr)
-    local gs = package.loaded.gitsigns
-
-  end
-})
-
 require('diffview').setup({
   enhanced_diff_hl = true,
   use_icons = true,
@@ -1607,6 +1568,9 @@ wk.add({
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
   -- { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" }, -- Not working with which-key
 
+  -- AI Completion
+  { "<leader>cp", '<cmd>let g:copilot_enabled = !g:copilot_enabled<CR>:echo "Copilot " . (g:copilot_enabled ? "enabled" : "disabled")<CR>', desc = "Toggle Copilot" },
+
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
   { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
@@ -1638,13 +1602,7 @@ wk.add({
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
 
-  -- Git hunk operations
-  { "<leader>hs", "<cmd>lua require('gitsigns').stage_hunk()<CR>", desc = "Stage Hunk" },
-  { "<leader>hr", "<cmd>lua require('gitsigns').reset_hunk()<CR>", desc = "Reset Hunk" },
-  { "<leader>hp", "<cmd>lua require('gitsigns').preview_hunk()<CR>", desc = "Preview Hunk" },
-
-
-  -- g prefix mappings
+  -- Git hunk navigation (use :Gdiffsplit, :Gblame, etc. from fugitive)
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
   { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
@@ -1657,10 +1615,6 @@ wk.add({
   { "]c", "<cmd>/^# %%<CR>", desc = "Next Cell" },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
-
-  -- Hunk navigation
-  { "<c", "<cmd>lua require('gitsigns').prev_hunk()<CR>", desc = "Previous Hunk" },
-  { ">c", "<cmd>lua require('gitsigns').next_hunk()<CR>", desc = "Next Hunk" },
 
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
