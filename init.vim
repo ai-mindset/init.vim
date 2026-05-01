@@ -1066,7 +1066,7 @@ require("conform").setup({
   formatters_by_ft = {
     python = { "ruff_organize_imports", "ruff_format" },
     json = { "biome" },
-    zig = { "zig_fmt" },
+    elixir = { "mix" },
   },
 
   -- Organise Python imports
@@ -1105,46 +1105,27 @@ require("conform").setup({
             ".ruff.toml",
           },
         },
-        zig_fmt = {
-            command = vim.fn.expand("$HOME/.zig/zig"),
-            args = { "fmt", "--stdin" },
-            stdin = true,
-        },
+zig_fmt = {
+    command = vim.fn.expand("$HOME/.zig/zig"),
+    args = { "fmt", "--stdin" },
+    stdin = true,
+},
+mix = {
+    command = "mix",
+    args = { "format", "$FILENAME" },
+    stdin = false,
+},
       },
   -- Format on save
 
   format_on_save = {
-    timeout_ms = 500,
+    timeout_ms = 2000,
     lsp_fallback = true,
   },
 })
 
 -- Elixir formatting on save (avoids "file changed" warning)
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*.ex",
-  callback = function()
-    local filename = vim.api.nvim_buf_get_name(0)
-    -- Run mix format asynchronously to avoid blocking LSP
-    local job = vim.fn.jobstart({"mix", "format", filename}, {
-      stdout_buffered = true,
-      on_exit = function(_, exit_code)
-        if exit_code == 0 and vim.fn.filereadable(filename) == 1 then
-          -- Reload the formatted file after the job finishes
-          vim.schedule(function()
-            vim.api.nvim_command('edit ' .. vim.fn.fnameescape(filename))
-          end)
-        end
-      end,
-    })
-    -- If job failed to start, fallback to synchronous formatting
-    if job <= 0 then
-      vim.fn.system({"mix", "format", filename})
-      if vim.fn.filereadable(filename) == 1 then
-        vim.api.nvim_command('edit ' .. vim.fn.fnameescape(filename))
-      end
-    end
-  end,
-})
+-- Elixir formatting delegated to conform (LSP fallback)
 
 EOF
 """ Linting, formatting configuration
