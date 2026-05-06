@@ -65,13 +65,13 @@ Plug 'm00qek/baleia.nvim'                                        " Colourful log
 Plug 'preservim/tagbar'                                          " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                                 " Keep notes
 Plug 'folke/which-key.nvim'                                      " Helps you remember your Neovim keymaps
-Plug 'norcalli/nvim-colorizer.lua'                               " Colour preview
+Plug 'catgoose/nvim-colorizer.lua'                               " Colour preview
 call plug#end()
 
 lua << EOF
-vim.highlight.on_yank({ higroup = "IncSearch", timeout = 150 })
+vim.hl.on_yank({ higroup = "IncSearch", timeout = 150 })
 vim.api.nvim_create_autocmd("TextYankPost", {
-  callback = function() vim.highlight.on_yank({ higroup = "IncSearch", timeout = 150 }) end,
+  callback = function() vim.hl.on_yank({ higroup = "IncSearch", timeout = 150 }) end,
 })
 EOF
 
@@ -793,13 +793,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 -- Configure signature help handler once (globally, outside on_attach)
-vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
-  vim.lsp.handlers.signature_help, {
-    border = "shadow",
-    close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
-    focusable = true,
-  }
-)
+pcall(vim.lsp.buf.signature_help, { border = "shadow", focusable = true })
 
 -- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
