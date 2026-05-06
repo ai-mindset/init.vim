@@ -24,11 +24,11 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
 " Elixir Development
-Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir 
+Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir
 
 " Common Lisp Development
 Plug 'vlime/vlime', { 'rtp': 'vim/', 'for': 'lisp' }           " Vim plugin for Common Lisp (lazy-load)
-Plug 'hrsh7th/cmp-omni'                                        
+Plug 'hrsh7th/cmp-omni'
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -56,17 +56,24 @@ Plug 'tpope/vim-fugitive'                                     " Git integration
 Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }    " Treesitter for syntax highlighting (lazy-loaded)
-Plug 'wellle/context.vim', { 'on': 'ContextEnable' }             " Shows context (lazy-loaded)
+Plug 'nvim-treesitter/nvim-treesitter', { 'commit': '42fc28ba918343ebfd5565147a42a26580579482', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter-context'                   " Show code context 
+Plug 'lukas-reineke/indent-blankline.nvim'                       " Vertical indentation guide lines
 Plug 'windwp/nvim-autopairs'                                     " Autopairs for auto closing brackets
 Plug 'wolandark/vim-piper'                                       " Text to speech
-Plug 'machakann/vim-highlightedyank', { 'on': 'TextYankPost' }   " Highlight yanked text (lazy-event)
 Plug 'm00qek/baleia.nvim'                                        " Colourful log messages
-Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
-Plug 'jakobkhansen/journal.nvim'                              " Keep notes
-Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
-Plug 'norcalli/nvim-colorizer.lua'                            " Colour preview
+Plug 'preservim/tagbar'                                          " Displays tags in a window, ordered by scope
+Plug 'jakobkhansen/journal.nvim'                                 " Keep notes
+Plug 'folke/which-key.nvim'                                      " Helps you remember your Neovim keymaps
+Plug 'norcalli/nvim-colorizer.lua'                               " Colour preview
 call plug#end()
+
+lua << EOF
+vim.highlight.on_yank({ higroup = "IncSearch", timeout = 150 })
+vim.api.nvim_create_autocmd("TextYankPost", {
+  callback = function() vim.highlight.on_yank({ higroup = "IncSearch", timeout = 150 }) end,
+})
+EOF
 
 """ Catppuccin Theme Configuration with Accessibility Improvements
 lua << EOF
@@ -97,6 +104,7 @@ require("catppuccin").setup({
     which_key = true,
     treesitter = true,
     mason = true,
+    indent_blankline = { enabled = true },
     native_lsp = {
       enabled = true,
       underlines = {
@@ -123,6 +131,9 @@ hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
 hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
 " Make hover documentation windows more visible
 hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
+" Visible indentation lines
+hi IblIndent guifg=#888888 gui=nocombine
+hi IblScope  guifg=#aaaaaa gui=nocombine
 """ Catppuccin Theme Configuration with Accessibility Improvements
 
 
@@ -328,7 +339,6 @@ set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
 set colorcolumn=90                    " Column indicating 90 characters
-set cursorcolumn                      " Indentation guide
 set cursorline
 set ruler                             " Always show current position
 set hlsearch                          " Highlight search results
@@ -538,10 +548,6 @@ let g:tagbar_compact = 1 " 0: Show short help and blank lines between top-level 
 let g:tagbar_show_data_type = 1
 let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
-" let g:tagbar_iconchars = ['▸', '▾']
-" let g:tagbar_iconchars = ['▷', '◢']
-
-
 
 " Zig configuration for tagbar (Exuberant Ctags)
 let g:tagbar_type_zig = {
@@ -558,7 +564,45 @@ let g:tagbar_type_zig = {
   \ 'sort': 0
   \ }
 
+" Elixir configuration for tagbar (via .ctags regex definitions)
+let g:tagbar_type_elixir = {
+  \ 'ctagstype': 'Elixir',
+  \ 'kinds': [
+    \ 'f:functions',
+    \ 'c:callbacks',
+    \ 'd:delegates',
+    \ 'e:exceptions',
+    \ 'i:implementations',
+    \ 'a:macros',
+    \ 'm:modules',
+    \ 'o:operators',
+    \ 'p:protocols',
+    \ 'r:records',
+    \ 't:tests',
+  \ ],
+  \ 'sort': 0
+  \ }
+
 """ tagbar
+
+""" indent-blankline configuration
+lua << EOF
+require("ibl").setup({
+  indent = {
+    char = "│",       -- Solid vertical line character
+  },
+  scope = {
+    enabled = true,   -- Highlight the current scope's indentation level
+    show_start = true,
+    show_end = false,
+  },
+  exclude = {
+    filetypes = { "help", "dashboard", "lazy", "mason", "tagbar" },
+    buftypes  = { "terminal", "nofile" },
+  },
+})
+EOF
+""" indent-blankline configuration
 
 " Autopairs Configuration
 lua << EOF
@@ -1138,7 +1182,7 @@ EOF
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter.config").setup {
+require("nvim-treesitter").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -1150,7 +1194,7 @@ require("nvim-treesitter.config").setup {
         "zig",
         "commonlisp",
         "elixir",
-        "eex", 
+        "eex",
         "heex",
 
         -- For documentation/markdown files
@@ -1165,7 +1209,7 @@ require("nvim-treesitter.config").setup {
   auto_install = true,
   parser_install_dir = vim.fn.stdpath("cache") .. "/treesitter", -- faster cache location
 
-  highlight = { 
+  highlight = {
     enable = true,
     delay = 200,  -- Delay initialization to reduce startup lag
     disable = function(lang, buf)
@@ -1195,9 +1239,11 @@ require("nvim-treesitter.config").setup {
 EOF
 """ nvim-treesitter Configuration
 
-""" context Configuration
-let g:context_enabled = 1
-""" context Configuration
+" Show context
+lua << EOF
+require('treesitter-context').setup({ enable = true, max_lines = 3 })
+EOF
+
 
 
 """ Fuzzy finding Configuration
@@ -1553,7 +1599,6 @@ wk.add({
 
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
-  -- { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" }, -- Not working with which-key
 
   -- AI Completion
   { "<leader>cp", '<cmd>let g:copilot_enabled = !g:copilot_enabled<CR>:echo "Copilot " . (g:copilot_enabled ? "enabled" : "disabled")<CR>', desc = "Toggle Copilot" },
@@ -1653,17 +1698,10 @@ wk.add({
 wk.add({
   -- IPython
   { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
-
-  -- FZF mappings handled outside which-key
-  -- { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
-
 }, { mode = "v" })
 
 -- Operator pending mode mappings
-wk.add({
-  -- FZF mappings handled outside which-key
-  -- { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
-}, { mode = "o" })
+wk.add({}, { mode = "o" })
 EOF
 """ which-key configuration
 
@@ -1718,3 +1756,4 @@ lua << EOF
 require("colorizer").setup()
 EOF
 """ nvim-colorizer
+
