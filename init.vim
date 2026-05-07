@@ -41,7 +41,7 @@ Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
-" Plug 'nvim-tree/nvim-web-devicons'                            " optional for icons - removed for performance
+Plug 'nvim-tree/nvim-web-devicons'                            " optional for icons
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }           " optional for the 'fzf' command
 Plug 'junegunn/fzf.vim'                                       " fzf vim bindings
 
@@ -56,7 +56,7 @@ Plug 'tpope/vim-fugitive'                                     " Git integration
 Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', { 'commit': '42fc28ba918343ebfd5565147a42a26580579482', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
 Plug 'nvim-treesitter/nvim-treesitter-context'                   " Show code context 
 Plug 'lukas-reineke/indent-blankline.nvim'                       " Vertical indentation guide lines
 Plug 'windwp/nvim-autopairs'                                     " Autopairs for auto closing brackets
