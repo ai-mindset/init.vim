@@ -16,7 +16,6 @@ Plug 'hrsh7th/nvim-cmp'                                       " Completion Engin
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
 Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
-Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Local LLM completion
 Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ollama AI completion
@@ -24,6 +23,12 @@ Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ol
 " GitHub Copilot
 Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
+" Elixir Development
+Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir
+
+" Common Lisp Development
+Plug 'vlime/vlime', { 'rtp': 'vim/', 'for': 'lisp' }           " Vim plugin for Common Lisp (lazy-load)
+Plug 'hrsh7th/cmp-omni'
 
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
@@ -48,23 +53,28 @@ Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugi
 
 " Git
 Plug 'tpope/vim-fugitive'                                     " Git integration
-Plug 'lewis6991/gitsigns.nvim'                                " Git signs
 Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}   " Treesitter for syntax highlighting
-Plug 'wellle/context.vim'                                     " Shows the context of the currently visible buffer contents
-Plug 'windwp/nvim-autopairs'                                  " Autopairs for auto closing brackets
-Plug 'lukas-reineke/indent-blankline.nvim'                    " Indentation lines
-Plug 'wolandark/vim-piper'                                    " Text to speech
-Plug 'machakann/vim-highlightedyank'                          " Highlight yanked text
-Plug 'm00qek/baleia.nvim'                                     " Colourful log messages
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
-Plug 'preservim/tagbar'                                       " Displays tags in a window, ordered by scope
-Plug 'jakobkhansen/journal.nvim'                              " Keep notes
-Plug 'folke/which-key.nvim'                                   " Helps you remember your Neovim keymaps
-Plug 'norcalli/nvim-colorizer.lua'                            " Colour preview
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter-context'                   " Show code context 
+Plug 'lukas-reineke/indent-blankline.nvim'                       " Vertical indentation guide lines
+Plug 'windwp/nvim-autopairs'                                     " Autopairs for auto closing brackets
+Plug 'wolandark/vim-piper'                                       " Text to speech
+Plug 'm00qek/baleia.nvim'                                        " Colourful log messages
+Plug 'preservim/tagbar'                                          " Displays tags in a window, ordered by scope
+Plug 'jakobkhansen/journal.nvim'                                 " Keep notes
+Plug 'folke/which-key.nvim'                                      " Helps you remember your Neovim keymaps
+Plug 'catgoose/nvim-colorizer.lua'                               " Colour preview
+Plug 'MeanderingProgrammer/render-markdown.nvim'                 " Better markdown rendering in Neovim 
 call plug#end()
+
+lua << EOF
+vim.hl.on_yank({ higroup = "IncSearch", timeout = 150 })
+vim.api.nvim_create_autocmd("TextYankPost", {
+  callback = function() vim.hl.on_yank({ higroup = "IncSearch", timeout = 150 }) end,
+})
+EOF
 
 """ Catppuccin Theme Configuration with Accessibility Improvements
 lua << EOF
@@ -95,6 +105,7 @@ require("catppuccin").setup({
     which_key = true,
     treesitter = true,
     mason = true,
+    indent_blankline = { enabled = true },
     native_lsp = {
       enabled = true,
       underlines = {
@@ -112,15 +123,15 @@ EOF
 colorscheme catppuccin
 
 " Additional accessibility improvements
-hi CursorLine guibg=#303030 ctermbg=236
+hi CursorLine guibg=#2e3440 ctermbg=236
 hi Comment guifg=#a0a0a0 ctermfg=247
-hi Visual guibg=#005f87 ctermbg=24 guifg=#ffffff ctermfg=15
-hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
-" Make gutter line numbers more accessible
+hi Visual guibg=#5e81ac guifg=#ffffff ctermfg=15 ctermbg=67
+hi Search guibg=#ffb86c guifg=#1e1e2e ctermfg=0 ctermbg=214
 hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
-hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
-" Make hover documentation windows more visible
+hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#2e3440 ctermbg=236 gui=bold cterm=bold
 hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
+hi IblIndent guifg=#888888 gui=nocombine
+hi IblScope  guifg=#aaaaaa gui=nocombine
 """ Catppuccin Theme Configuration with Accessibility Improvements
 
 
@@ -129,7 +140,7 @@ hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
 command! Format %!jq .
 """ Use jq for JSON formatting
 
-""" vim-slime configuration for IPython, Julia and Deno
+""" vim-slime configuration for IPython
 let g:slime_target = "tmux"
 let g:slime_default_config = {"socket_name": get(split($TMUX, ','), 0), "target_pane": ":.1"}
 let g:slime_dont_ask_default = 1
@@ -138,9 +149,6 @@ let g:slime_bracketed_paste = 1  " Better paste support for REPLs
 let g:slime_send_as_block = 1    " Global setting for proper multi-line selection sending in all REPLs
 
 " Language-specific settings
-au FileType julia let b:slime_cell_delimiter = "^##"  " Use '##' as cell delimiter in Julia
-au FileType typescript,javascript let b:slime_cell_delimiter = "^// %%"  " Use '// %%' for TypeScript/JavaScript
-au FileType typescript,javascript let b:slime_preserve_curly_braces = 1  " JS/TS-specific setting to preserve curly braces
 
 " Keep your existing cell navigation (works perfectly with vim-slime)
 " Clear the [c and ]c mappings from gitsigns
@@ -191,11 +199,6 @@ function! SlimeSendCell()
   let cell_pattern = "^# %%"  " Default for Python
 
   " Use filetype-specific cell patterns
-  if &filetype == 'typescript' || &filetype == 'javascript'
-    let cell_pattern = "^// %%"
-  elseif &filetype == 'julia'
-    let cell_pattern = "^##"
-  endif
 
   " Find cell boundaries using the appropriate pattern
   let cell_start = search(cell_pattern, "bcnW")
@@ -237,22 +240,23 @@ local opts = {
 }
 require("ollama").setup(opts)
 
-vim.keymap.set("i", "<C-x><C-o>", function()
-    require("cmp").complete({
-        config = {
-            sources = {
-                { name = "ollama" },
-                { name = "path"},
-            }
-        }
-    })
-end)
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "python", "zig", "elixir" },
+  callback = function()
+    vim.keymap.set("i", "<C-x><C-o>", function()
+      require("cmp").complete({
+        config = { sources = { { name = "ollama" }, { name = "path" } } }
+      })
+    end, { buffer = true })
+  end,
+})
+
 EOF
 """ ollama.nvim configuration
 
 """ GitHub Copilot
-" Enable Copilot for specific languages
-let g:copilot_enabled = 1
+" Disable Copilot on startup - toggle manually with <Leader>cp
+let g:copilot_enabled = 0
 let g:copilot_filetypes = {
       \ "vim": v:true,
       \ "python": v:true,
@@ -260,9 +264,8 @@ let g:copilot_filetypes = {
       \ "yaml": v:true,
       \ "json": v:true,
       \ "markdown": v:true,
-      \ "javascript": v:true,
-      \ "typescript": v:true,
-      \ "rust": v:true,
+      \ "elixir": v:true,
+      \ "zig": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
@@ -324,7 +327,7 @@ set relativenumber
 set expandtab                         " Use spaces instead of tabs
 set tabstop=4                         " Tab = 4 spaces
 set shiftwidth=4                      " Tab = 4 spaces
-set softtabstop=2                     " Number of spaces for a tab in insert mode
+set softtabstop=4                     " Number of spaces for a tab in insert mode
 set autoindent                        " Auto indent
 set smartindent                       " Smart autoindenting when starting a new line
 set cindent                           " Stricter indenting rules for C-like languages
@@ -333,8 +336,7 @@ set wrap                              " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=90                   " Column indicating 90 characters
-set cursorcolumn                      " Indentation guide
+set colorcolumn=90                    " Column indicating 90 characters
 set cursorline
 set ruler                             " Always show current position
 set hlsearch                          " Highlight search results
@@ -343,13 +345,12 @@ set encoding=utf8                     " Set utf8 as standard encoding
 set ffs=unix,dos,mac                  " Use Unix as the standard file type
 set spell                             " Enable spell checking
 set spelllang=en_gb
-set clipboard=unnamedplus            " Clipboard Settings
+set clipboard=unnamedplus             " Clipboard Settings
 set background=dark                   " Set dark background
 if $COLORTERM == 'gnome-terminal'
   set t_Co=256                        " 256 colours
 endif
 set termguicolors                     " True colour support
-
 """ Basic Settings
 
 "" Highlight on hover
@@ -453,17 +454,17 @@ function! SetupStatusline()
     exe 'hi StModeNormal guifg=' . l:fg . ' guibg=' . l:bg_normal . ' gui=bold'
 
     " Define highlight groups with accessible, harmonious colours
-    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold  " Blue
-    hi StModeInsert   guifg=#F8F8F2 guibg=#AF5F00 ctermfg=255 ctermbg=130 gui=bold  " Amber
-    hi StModeVisual   guifg=#F8F8F2 guibg=#D70000 ctermfg=255 ctermbg=160 gui=bold  " Red
-    hi StModeReplace  guifg=#F8F8F2 guibg=#8700AF ctermfg=255 ctermbg=91  gui=bold  " Purple
-    hi StModeCommand  guifg=#F8F8F2 guibg=#005F5F ctermfg=255 ctermbg=23  gui=bold  " Teal
+    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold   " Blue (unchanged, kept for reference)
+    hi StModeInsert   guifg=#1e1e2e guibg=#a6e3a1 ctermfg=235 ctermbg=150 gui=bold   " Green‑mint insert"
+    hi StModeVisual   guifg=#1e1e2e guibg=#f5c2e7 ctermfg=235 ctermbg=224 gui=bold   " Pink visual"
+    hi StModeReplace  guifg=#1e1e2e guibg=#f38ba8 ctermfg=235 ctermbg=210 gui=bold   " Rose replace"
+    hi StModeCommand  guifg=#1e1e2e guibg=#89b4fa ctermfg=235 ctermbg=111 gui=bold   " Calm blue command"
 
-    hi StInfo         guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
-    hi StPath         guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=none  " Blue
-    hi StGit          guifg=#F8F8F2 guibg=#5F8700 ctermfg=255 ctermbg=64  gui=none  " Green
-    hi StVenv         guifg=#F8F8F2 guibg=#5F5F87 ctermfg=255 ctermbg=60  gui=none  " Slate
-    hi StPosition     guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
+    hi StInfo         guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
+    hi StPath         guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
+    hi StGit          guifg=#cdd6f4 guibg=#5f8700 ctermfg=255 ctermbg=64  gui=NONE   " Green"
+    hi StVenv         guifg=#cdd6f4 guibg=#5f5f87 ctermfg=255 ctermbg=60  gui=NONE   " Slate"
+    hi StPosition     guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
 
     " Update statusline with dynamically coloured mode segment
     let &statusline = ''
@@ -545,49 +546,84 @@ let g:tagbar_compact = 1 " 0: Show short help and blank lines between top-level 
 let g:tagbar_show_data_type = 1
 let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
-" let g:tagbar_iconchars = ['▸', '▾']
-" let g:tagbar_iconchars = ['▷', '◢']
 
-
-" TypeScript configuration for tagbar (Exuberant Ctags)
-let g:tagbar_type_typescript = {
-  \ 'ctagstype': 'typescript',
+" Zig configuration for tagbar (Exuberant Ctags)
+let g:tagbar_type_zig = {
+  \ 'ctagstype': 'Zig',
   \ 'kinds': [
-    \ 'c:classes',
-    \ 'n:modules',
     \ 'f:functions',
-    \ 'v:variables',
-    \ 'm:members',
-    \ 'i:interfaces',
+    \ 's:structs',
     \ 'e:enums',
+    \ 'u:unions',
+    \ 'c:constants',
+    \ 'v:variables',
+    \ 't:tests',
   \ ],
   \ 'sort': 0
   \ }
+
+" Elixir configuration for tagbar (via .ctags regex definitions)
+let g:tagbar_type_elixir = {
+  \ 'ctagstype': 'Elixir',
+  \ 'kinds': [
+    \ 'f:functions',
+    \ 'c:callbacks',
+    \ 'd:delegates',
+    \ 'e:exceptions',
+    \ 'i:implementations',
+    \ 'a:macros',
+    \ 'm:modules',
+    \ 'o:operators',
+    \ 'p:protocols',
+    \ 'r:records',
+    \ 't:tests',
+  \ ],
+  \ 'sort': 0
+  \ }
+
 """ tagbar
+
+""" indent-blankline configuration
+lua << EOF
+require("ibl").setup({
+  indent = {
+    char = "│",       -- Solid vertical line character
+  },
+  scope = {
+    enabled = true,   -- Highlight the current scope's indentation level
+    show_start = true,
+    show_end = false,
+  },
+  exclude = {
+    filetypes = { "help", "dashboard", "lazy", "mason", "tagbar" },
+    buftypes  = { "terminal", "nofile" },
+  },
+})
+EOF
+""" indent-blankline configuration
 
 " Autopairs Configuration
 lua << EOF
 require("nvim-autopairs").setup({})
 EOF
 
-" Indent Blankline Configuration
-lua << EOF
-require("ibl").setup()
-EOF
-
 """ Mason Configuration
 lua << EOF
-require("mason").setup()
+require("mason").setup({
+  ensure_installed = {
+    "actionlint",            -- GH Actions
+  }
+})
 require("mason-lspconfig").setup({
   ensure_installed = {
     "jedi_language_server",  -- Python LSP
-    "denols",                -- Deno
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
     "biome",                 -- JSON
     "yamlls",                -- YAML
     "zls",                   -- Zig Language Server
+    "elixirls",              -- Elixir Language Server
   },
   automatic_installation = false,
   handlers = {
@@ -617,53 +653,6 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Deno Language Server
-    denols = function()
-      require("lspconfig").denols.setup({
-        root_dir = require("lspconfig.util").root_pattern(
-          "deno.json",
-          "deno.jsonc"
-        ),
-        single_file_support = false,
-
-        init_options = {
-          lint = true,
-          unstable = true,
-          suggest = {
-            imports = {
-              hosts = {
-                ["https://deno.land"] = true,
-                ["https://cdn.nest.land"] = true,
-                ["https://crux.land"] = true,
-              },
-            },
-          },
-        },
-
-        settings = {
-          deno = {
-            enable = true,
-            lint = true,
-            unstable = true,
-            codeLens = {
-              references = true,
-              referencesAllFunctions = true,
-              test = true,
-            },
-            suggest = {
-              imports = {
-                hosts = {
-                  ["https://deno.land"] = true,
-                },
-              },
-            },
-          },
-        },
-
-        on_attach = on_attach,
-        capabilities = capabilities,
-      })
-    end,
 
     -- Docker Language Server
     dockerls = function()
@@ -711,101 +700,18 @@ require("mason-lspconfig").setup({
         capabilities = capabilities,
       })
     end,
-  }
 
+    -- Elixir Language Server
+    elixirls = function()
+      require("lspconfig").elixirls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+    end,
+  }
 })
 EOF
 """ Mason Configuration
-
-
-""" Julia Language Server setup
-lua << EOF
--- Simple configuration
-local lspconfig = require('lspconfig')
-
--- Create direct command to launch/restart Julia LSP
-vim.api.nvim_create_user_command('JuliaLspStart', function()
-  local clients = vim.lsp.get_active_clients({name = "julials"})
-
-  -- Stop any existing Julia LSP clients
-  for _, client in ipairs(clients) do
-    vim.lsp.stop_client(client.id, true)
-  end
-
-  -- Wait briefly and restart
-  vim.defer_fn(function()
-    vim.cmd("LspStart julials")
-    print("Julia LSP restarted")
-  end, 200)
-end, {})
-
--- Julia LSP configuration with proper hover, snippet and formatting support
-lspconfig.julials.setup({
-  on_attach = function(client, bufnr)
-    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-  end,
-  -- Static cmd with environment variable that gets evaluated on LSP start
-  cmd = {
-    "julia",
-    "--startup-file=no",
-    "--history-file=no",
-    "--project=${dirname:${find:Project.toml}}",  -- Use Project.toml from current directory
-    "-e",
-    "using LanguageServer; using SymbolServer; using StaticLint; runserver()"
-  },
-  filetypes = {"julia"},
-  root_dir = lspconfig.util.root_pattern("Project.toml", ".git"),
-
-  -- Properly define capabilities for hover, snippets and formatting
-  capabilities = {
-    textDocumentSync = {
-      openClose = true,
-      change = 2, -- Incremental sync
-    },
-    hoverProvider = true,
-    completionProvider = {
-      triggerCharacters = { ".", "@" }
-    },
-    signatureHelpProvider = {
-      triggerCharacters = { "(", ",", " " }
-    },
-    definitionProvider = true,
-    documentSymbolProvider = true,
-    workspaceSymbolProvider = true,
-    documentFormattingProvider = true,
-    textDocument = {
-      completion = {
-        completionItem = {
-          snippetSupport = true,
-          commitCharactersSupport = true,
-          documentationFormat = { "markdown", "plaintext" },
-          resolveSupport = {
-            properties = {
-              "documentation",
-              "detail",
-              "additionalTextEdits",
-            }
-          }
-        }
-      }
-    }
-  },
-})
-
-
--- Create autocommand to ensure Julia LSP starts for Julia files
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "julia",
-  callback = function()
-    -- Try to start LSP automatically
-    vim.cmd("LspStart julials")
-
-        -- Basic omnifunc setup for Julia
-    vim.bo.omnifunc = "v:lua.vim.lsp.omnifunc"
-  end
-})
-EOF
-""" Julia Language Server setup
 
 
 """ Completion setup
@@ -837,8 +743,14 @@ cmp.setup({
   sources = cmp.config.sources({
     { name = "nvim_lsp" },
     { name = "buffer" },
-    { name = "path"},
-    { name = "ollama" },
+  })
+})
+
+-- Common Lisp: use Vlime's omni completion via cmp-omni
+cmp.setup.filetype('lisp', {
+  sources = cmp.config.sources({
+    { name = "omni" },
+    { name = "buffer" },
   })
 })
 
@@ -847,19 +759,9 @@ EOF
 
 """ LSP Configuration
 lua << EOF
-vim.lsp.set_log_level("DEBUG")  -- Temporarily enable debug logging
-function _G.dump_lsp_client()
-    local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
-    for _, client in pairs(buf_clients) do
-        print(string.format("Client: %s, Server capabilities:", client.name))
-        print(vim.inspect(client.server_capabilities))
-    end
-end
 
 -- Configure diagnostics once (remove duplicate config)
 -- This config is moved and consolidated below with the main diagnostic config
--- Show diagnostics when pressing 'gh'
-vim.api.nvim_set_keymap('n', 'gh', ':lua vim.diagnostic.open_float(nil, {focus=true})<CR>', { silent = true })
 
 -- Proper file type detection
 vim.cmd([[
@@ -874,6 +776,8 @@ vim.cmd([[
 vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('UserLspConfig', {}),
     callback = function(ev)
+        -- Don't override omnifunc for Common Lisp (Vlime handles it)
+        if vim.bo[ev.buf].filetype == 'lisp' then return end
         -- Enable completion triggered by <c-x><c-o>
         vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 
@@ -882,7 +786,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         vim.keymap.set('n', 'K', function()
             local winid = require('vim.lsp.util').open_floating_preview(
                 {'Fetching documentation...'}, 'markdown', {
-                    border = 'rounded',
+                    border = "shadow",
                     focusable = true,
                 })
             vim.lsp.buf.hover()
@@ -891,28 +795,20 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 -- Configure signature help handler once (globally, outside on_attach)
-vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
-  vim.lsp.handlers.signature_help, {
-    border = 'rounded',
-    close_events = { 'CursorMoved', 'BufHidden', 'InsertCharPre' },
-    focusable = true,
-  }
-)
+pcall(vim.lsp.buf.signature_help, { border = "shadow", focusable = true })
 
 -- LSP Configuration
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
 -- LSP Keybindings
 local on_attach = function(client, bufnr)
-  -- Debug print
-  print("LSP attached:", client.name)
 
   -- Common options for most keymaps
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
 
   -- Programming filetypes where signature help should auto-trigger
-  local programming_filetypes = {'python', 'typescript', 'javascript'}
+  local programming_filetypes = {'python'}
 
   -- Set up signature help auto-trigger only for programming files
   if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
@@ -947,6 +843,11 @@ local on_attach = function(client, bufnr)
 end
 EOF
 """ LSP Configuration
+
+augroup lisp_vlime
+  autocmd!
+  autocmd FileType lisp setlocal omnifunc=vlime#plugin#CompleteFunc
+augroup END
 
 """ Linting and Formatting Configuration
 lua << EOF
@@ -992,10 +893,8 @@ lint.linters.ty = {
 
 lint.linters_by_ft = {
   python = {'ruff', 'ty'},
-  javascript = {'deno'},
-  typescript = {'deno'},
   zig = {'zig'},
-  julia = {'julialint'},
+  elixir = {'credo'},
 }
 
 -- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
@@ -1028,6 +927,50 @@ lint.linters.ruff = {
       end
     end
     return diagnostics
+  end
+}
+
+
+-- Credo linter for Elixir
+lint.linters.credo = {
+  cmd = "mix",
+  stdin = false,
+  args = {
+    "credo",
+    "suggest",
+    "--format",
+    "json",
+    "--read-from-stdin",
+    function() return vim.api.nvim_buf_get_name(0) end
+  },
+  ignore_exitcode = true,
+  parser = function(output, bufnr, cwd)
+    local ok, decoded = pcall(vim.json.decode, output)
+    if not ok then return {} end
+
+    local diagnostics = {}
+    if decoded and type(decoded) == "table" and decoded.issues then
+      for _, issue in ipairs(decoded.issues) do
+        table.insert(diagnostics, {
+          lnum = (issue.line_no or 1) - 1,
+          col = (issue.column or 1) - 1,
+          message = issue.message or "Credo issue",
+          severity = vim.diagnostic.severity.WARN,
+          source = "credo",
+          code = issue.check
+        })
+      end
+    end
+    return diagnostics
+  end,
+  -- Check if Credo is available in the current Mix project
+  condition = function(ctx)
+    local handle = io.popen("mix help | grep -q credo")
+    if handle then
+      local result = handle:close()
+      return result == 0
+    end
+    return false
   end
 }
 
@@ -1094,21 +1037,17 @@ local function update_diagnostics_status()
   end
 end
 
--- Set up linting on file save
+-- Set up linting on file save only (reduced frequency)
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.zig" },
+  pattern = { "*.py", "*.zig", "*.ex", "*.exs", "*.yml", "*.yaml" },
   callback = function()
-    require("lint").try_lint()
+    local path = vim.api.nvim_buf_get_name(0)
+    if path:match("%.github/workflows/") then
+      require("lint").try_lint("actionlint")
+    else
+      require("lint").try_lint()
+    end
     vim.defer_fn(update_diagnostics_status, 100)
-  end,
-})
-
--- Set up on-the-fly linting while typing/pausing
-vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI", "InsertLeave" }, {
-  pattern = { "*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.zig" },
-  callback = function()
-    require("lint").try_lint()
-    vim.defer_fn(update_diagnostics_status, 50)
   end,
 })
 
@@ -1126,14 +1065,13 @@ vim.diagnostic.config({
   underline = true,
   severity_sort = true,
   update_in_insert = false,
-  float = false,  -- No automatic popups (we handle this manually)
+  float = { border = "shadow" },
 })
 
--- Show diagnostics popup on hover (same as :ShowDiagnostics)
 vim.api.nvim_create_autocmd("CursorHold", {
   callback = function()
-    vim.diagnostic.open_float()
-  end
+    vim.diagnostic.open_float(nil, { focusable = false })
+  end,
 })
 
 -- Add linting status to your statusline
@@ -1177,26 +1115,18 @@ end, {})
 require("conform").setup({
   -- Formatters for your languages
   formatters_by_ft = {
-    python = { "ruff_organise_imports", "ruff_format" },
-    css = { "deno_fmt" },
-    html = { "deno_fmt" },
-    javascript = { "deno_fmt" },
-    typescript = { "deno_fmt" },
-    json = { "deno_fmt" },
-    jsonc = { "deno_fmt" },
-    -- markdown = { "deno_fmt" },
+    python = { "ruff_organize_imports", "ruff_format" },
     json = { "biome" },
-    zig = { "zig_fmt" },
-    julia = { "juliaformatter" },
+    elixir = { "mix" },
   },
 
   -- Organise Python imports
     formatters = {
-        ruff_organise_imports = {
+        ruff_organize_imports = {
           command = "ruff",
           args = {
             "check",
-            "--force-exclude",
+            "--no-force-exclude",
             "--select=I001",
             "--fix",
             "--exit-zero",
@@ -1226,56 +1156,34 @@ require("conform").setup({
             ".ruff.toml",
           },
         },
-        deno_fmt = {
-            command = "deno",
-            args = {
-                "fmt",
-                "--prose-wrap=never",
-                "--line-width=10000",
-                "-" -- For stdin
-            },
-            stdin = true,
-        },
-        juliaformatter = {
-            command = "julia",
-            args = {
-                "--startup-file=no",
-                "--history-file=no",
-                "-e",
-                "using JuliaFormatter; print(format_text(read(stdin, String)))"
-            },
-            stdin = true,
-        },
-        zig_fmt = {
-            command = vim.fn.expand("$HOME/.zig/zig"),
-            args = { "fmt", "--stdin" },
-            stdin = true,
-        },
+zig_fmt = {
+    command = vim.fn.expand("$HOME/.zig/zig"),
+    args = { "fmt", "--stdin" },
+    stdin = true,
+},
+mix = {
+    command = "mix",
+    args = { "format", "$FILENAME" },
+    stdin = false,
+},
       },
   -- Format on save
 
   format_on_save = {
-    -- These options will be passed to conform.format()
-    enabled = true,
-    timeout_ms = 500,
+    timeout_ms = 2000,
     lsp_fallback = true,
   },
 })
 
-  -- For format on key mapping (optional, if you want manual formatting)
-  vim.keymap.set({ "n", "v" }, "==", function()
-    require("conform").format({
-      lsp_fallback = true,
-      async = false,
-      timeout_ms = 500,
-    })
-  end, { desc = "Format file or range" })
+-- Elixir formatting on save (avoids "file changed" warning)
+-- Elixir formatting delegated to conform (LSP fallback)
+
 EOF
 """ Linting, formatting configuration
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter.configs").setup {
+require("nvim-treesitter").setup {
     ensure_installed = {
         -- Essential ones for Neovim itself
         "vim",
@@ -1284,26 +1192,29 @@ require("nvim-treesitter.configs").setup {
 
         -- Languages you use
         "python",
-        "javascript",
-        "typescript",
         "zig",
-        "julia",
+        "commonlisp",
+        "elixir",
+        "eex",
+        "heex",
 
         -- For documentation/markdown files
         "markdown",
-        "markdown_inline",
+        -- "markdown_inline",
 
         -- For Yaml files
         "yaml"
         },
 
-  sync_install = false,
+  sync_install = false,  -- Async installation for faster startup
   auto_install = true,
+  parser_install_dir = vim.fn.stdpath("cache") .. "/treesitter", -- faster cache location
 
   highlight = {
     enable = true,
+    delay = 200,  -- Delay initialization to reduce startup lag
     disable = function(lang, buf)
-      local max_filesize = 100 * 1024 -- 100 KB
+      local max_filesize = 200 * 1024 -- 200 KB
       local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
       if ok and stats and stats.size > max_filesize then
         return true
@@ -1311,14 +1222,10 @@ require("nvim-treesitter.configs").setup {
     end,
     additional_vim_regex_highlighting = false,
   },
-  fold = {
-      enable = true
-  },
+  fold = { enable = true },
 
   -- Optional but recommended
-  indent = {
-    enable = true,
-  },
+  indent = { enable = true },
 
   incremental_selection = {
     enable = true,
@@ -1330,25 +1237,14 @@ require("nvim-treesitter.configs").setup {
     },
   },
 }
-
--- Code folding
-vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
-
-
--- Start with all folds closed
-vim.opt.foldenable = true
-vim.opt.foldlevel = 99
-
--- Customize fold appearance (optional)
-vim.opt.fillchars = "fold: "
-vim.opt.foldtext = [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').' ... '.trim(getline(v:foldend))]]
 EOF
 """ nvim-treesitter Configuration
 
-""" context Configuration
-let g:context_enabled = 1
-""" context Configuration
+" Show context
+lua << EOF
+require('treesitter-context').setup({ enable = true, max_lines = 3 })
+EOF
+
 
 
 """ Fuzzy finding Configuration
@@ -1458,22 +1354,6 @@ EOF
 
 """ Git
 lua << EOF
-require('gitsigns').setup({
-  current_line_blame = true,
-  signs = {
-    add = { text = '│' },
-    change = { text = '│' },
-    delete = { text = '_' },
-    topdelete = { text = '‾' },
-    changedelete = { text = '~' },
-    untracked = { text = '┆' },
-  },
-  on_attach = function(bufnr)
-    local gs = package.loaded.gitsigns
-
-  end
-})
-
 require('diffview').setup({
   enhanced_diff_hl = true,
   use_icons = true,
@@ -1541,7 +1421,7 @@ wk.setup({
   },
 
   win = {
-    border = "single",
+    border = "shadow",
     padding = { 2, 2, 2, 2 },
   },
   layout = {
@@ -1720,7 +1600,9 @@ wk.add({
 
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
-  -- { "<leader>k", "<Plug>(fzf-maps-n)", desc = "Show key mappings" }, -- Not working with which-key
+
+  -- AI Completion
+  { "<leader>cp", '<cmd>let g:copilot_enabled = !g:copilot_enabled<CR>:echo "Copilot " . (g:copilot_enabled ? "enabled" : "disabled")<CR>', desc = "Toggle Copilot" },
 
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
@@ -1753,20 +1635,7 @@ wk.add({
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
 
-  -- Git hunk operations
-  { "<leader>hs", "<cmd>lua require('gitsigns').stage_hunk()<CR>", desc = "Stage Hunk" },
-  { "<leader>hr", "<cmd>lua require('gitsigns').reset_hunk()<CR>", desc = "Reset Hunk" },
-  { "<leader>hp", "<cmd>lua require('gitsigns').preview_hunk()<CR>", desc = "Preview Hunk" },
-
-  -- Space prefix mappings
-  { "<space>t", group = "Text-to-Speech" },
-  { "<space>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
-  { "<space>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
-  { "<space>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
-  { "<space>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
-  { "<space>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
-
-  -- g prefix mappings
+  -- Git hunk navigation (use :Gdiffsplit, :Gblame, etc. from fugitive)
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
   { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
@@ -1775,20 +1644,10 @@ wk.add({
   { "gnn", "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
-  { "[c",
-    "<cmd>lua require('navigation_helper').prev_cell()<CR>",
-    desc = "Previous Cell (highlighted)"
-  },
-  { "]c",
-    "<cmd>lua require('navigation_helper').next_cell()<CR>",
-    desc = "Next Cell (highlighted)"
-  },
+  { "[c", "<cmd>?^# %%<CR>", desc = "Previous Cell" },
+  { "]c", "<cmd>/^# %%<CR>", desc = "Next Cell" },
   { "[g", "<cmd>lua _G.conflict.prev()<CR>", desc = "Previous Conflict" },
   { "]g", "<cmd>lua _G.conflict.next()<CR>", desc = "Next Conflict" },
-
-  -- Hunk navigation
-  { "<c", "<cmd>lua require('gitsigns').prev_hunk()<CR>", desc = "Previous Hunk" },
-  { ">c", "<cmd>lua require('gitsigns').next_hunk()<CR>", desc = "Next Hunk" },
 
   -- Function key mappings
   { "<F8>", "<cmd>TagbarToggle<CR>", desc = "Toggle Tagbar" },
@@ -1800,12 +1659,21 @@ wk.add({
   { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
   { "<leader>ox", "<cmd>lua require('ollama').serve_stop()<CR>", desc = "Stop Ollama Server" },
 
-  -- Julia specific commands
-  { "<leader>j", group = "Julia" },
-  { "<leader>jr", "<cmd>JuliaLspRestart<CR>", desc = "Restart Julia LSP" },
-  { "<leader>ji", "<cmd>JuliaLspInfo<CR>", desc = "Julia LSP Info" },
-  { "<leader>jl", "<cmd>edit " .. vim.fn.stdpath('cache') .. "/lsp.log<CR>", desc = "Open LSP Logs" },
-  { "<leader>jf", "<cmd>lua require('conform').format()<CR>", desc = "Format Julia Code" },
+  -- Elixir commands
+  { "<leader>e", group = "Elixir" },
+  { "<leader>ef", "<cmd>!mix format %<CR>", desc = "Format current file" },
+  { "<leader>et", "<cmd>!mix test<CR>", desc = "Run all tests" },
+  { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
+  { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
+  { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
+
+  -- Common Lisp / Vlime
+  { "<localleader>r", group = "SWANK Server" },
+  { "<localleader>s", group = "Eval / Send" },
+  { "<localleader>d", group = "Describe / Doc" },
+  { "<localleader>w", group = "Window" },
+  { "<localleader>I", group = "Inspect" },
+
 }, { mode = "n" })
 
 -- Insert mode mappings
@@ -1831,20 +1699,10 @@ wk.add({
 wk.add({
   -- IPython
   { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
-
-  -- FZF mappings handled outside which-key
-  -- { "<leader>k", "<plug>(fzf-maps-x)", desc = "Show key mappings" },
-
-  -- Rust crates
-  { "<leader>cku", "<cmd>lua require('crates').update_crates()<CR>", desc = "Update Selected Crates" },
-  { "<leader>ckU", "<cmd>lua require('crates').upgrade_crates()<CR>", desc = "Upgrade Selected Crates" },
 }, { mode = "v" })
 
 -- Operator pending mode mappings
-wk.add({
-  -- FZF mappings handled outside which-key
-  -- { "<leader>k", "<plug>(fzf-maps-o)", desc = "Show key mappings"}
-}, { mode = "o" })
+wk.add({}, { mode = "o" })
 EOF
 """ which-key configuration
 
@@ -1899,3 +1757,9 @@ lua << EOF
 require("colorizer").setup()
 EOF
 """ nvim-colorizer
+
+""" Markdown preview 
+lua << EOF 
+require('render-markdown').setup({})
+EOF
+""" Markdown preview
