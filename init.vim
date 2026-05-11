@@ -66,6 +66,7 @@ Plug 'preservim/tagbar'                                          " Displays tags
 Plug 'jakobkhansen/journal.nvim'                                 " Keep notes
 Plug 'folke/which-key.nvim'                                      " Helps you remember your Neovim keymaps
 Plug 'catgoose/nvim-colorizer.lua'                               " Colour preview
+Plug 'MeanderingProgrammer/render-markdown.nvim'                 " Better markdown rendering in Neovim 
 call plug#end()
 
 lua << EOF
@@ -1757,3 +1758,8 @@ require("colorizer").setup()
 EOF
 """ nvim-colorizer
 
+""" Markdown preview 
+lua << EOF 
+require('render-markdown').setup({})
+EOF
+""" Markdown preview
