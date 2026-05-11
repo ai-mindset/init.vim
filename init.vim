@@ -122,16 +122,13 @@ EOF
 colorscheme catppuccin
 
 " Additional accessibility improvements
-hi CursorLine guibg=#303030 ctermbg=236
+hi CursorLine guibg=#2e3440 ctermbg=236
 hi Comment guifg=#a0a0a0 ctermfg=247
-hi Visual guibg=#005f87 ctermbg=24 guifg=#ffffff ctermfg=15
-hi Search guibg=#ffaf00 ctermbg=214 guifg=#000000 ctermfg=0
-" Make gutter line numbers more accessible
+hi Visual guibg=#5e81ac guifg=#ffffff ctermfg=15 ctermbg=67
+hi Search guibg=#ffb86c guifg=#1e1e2e ctermfg=0 ctermbg=214
 hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
-hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#303030 ctermbg=236 gui=bold cterm=bold
-" Make hover documentation windows more visible
+hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#2e3440 ctermbg=236 gui=bold cterm=bold
 hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
-" Visible indentation lines
 hi IblIndent guifg=#888888 gui=nocombine
 hi IblScope  guifg=#aaaaaa gui=nocombine
 """ Catppuccin Theme Configuration with Accessibility Improvements
@@ -456,17 +453,17 @@ function! SetupStatusline()
     exe 'hi StModeNormal guifg=' . l:fg . ' guibg=' . l:bg_normal . ' gui=bold'
 
     " Define highlight groups with accessible, harmonious colours
-    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold  " Blue
-    hi StModeInsert   guifg=#F8F8F2 guibg=#AF5F00 ctermfg=255 ctermbg=130 gui=bold  " Amber
-    hi StModeVisual   guifg=#F8F8F2 guibg=#D70000 ctermfg=255 ctermbg=160 gui=bold  " Red
-    hi StModeReplace  guifg=#F8F8F2 guibg=#8700AF ctermfg=255 ctermbg=91  gui=bold  " Purple
-    hi StModeCommand  guifg=#F8F8F2 guibg=#005F5F ctermfg=255 ctermbg=23  gui=bold  " Teal
+    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold   " Blue (unchanged, kept for reference)
+    hi StModeInsert   guifg=#1e1e2e guibg=#a6e3a1 ctermfg=235 ctermbg=150 gui=bold   " Green‑mint insert"
+    hi StModeVisual   guifg=#1e1e2e guibg=#f5c2e7 ctermfg=235 ctermbg=224 gui=bold   " Pink visual"
+    hi StModeReplace  guifg=#1e1e2e guibg=#f38ba8 ctermfg=235 ctermbg=210 gui=bold   " Rose replace"
+    hi StModeCommand  guifg=#1e1e2e guibg=#89b4fa ctermfg=235 ctermbg=111 gui=bold   " Calm blue command"
 
-    hi StInfo         guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
-    hi StPath         guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=none  " Blue
-    hi StGit          guifg=#F8F8F2 guibg=#5F8700 ctermfg=255 ctermbg=64  gui=none  " Green
-    hi StVenv         guifg=#F8F8F2 guibg=#5F5F87 ctermfg=255 ctermbg=60  gui=none  " Slate
-    hi StPosition     guifg=#F8F8F2 guibg=#3A3A3A ctermfg=255 ctermbg=237 gui=none  " Dark gray
+    hi StInfo         guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
+    hi StPath         guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
+    hi StGit          guifg=#cdd6f4 guibg=#5f8700 ctermfg=255 ctermbg=64  gui=NONE   " Green"
+    hi StVenv         guifg=#cdd6f4 guibg=#5f5f87 ctermfg=255 ctermbg=60  gui=NONE   " Slate"
+    hi StPosition     guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
 
     " Update statusline with dynamically coloured mode segment
     let &statusline = ''
@@ -611,7 +608,11 @@ EOF
 
 """ Mason Configuration
 lua << EOF
-require("mason").setup()
+require("mason").setup({
+  ensure_installed = {
+    "actionlint",            -- GH Actions
+  }
+})
 require("mason-lspconfig").setup({
   ensure_installed = {
     "jedi_language_server",  -- Python LSP
@@ -1037,9 +1038,14 @@ end
 
 -- Set up linting on file save only (reduced frequency)
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.zig", "*.ex", "*.exs" },
+  pattern = { "*.py", "*.zig", "*.ex", "*.exs", "*.yml", "*.yaml" },
   callback = function()
-    require("lint").try_lint()
+    local path = vim.api.nvim_buf_get_name(0)
+    if path:match("%.github/workflows/") then
+      require("lint").try_lint("actionlint")
+    else
+      require("lint").try_lint()
+    end
     vim.defer_fn(update_diagnostics_status, 100)
   end,
 })
