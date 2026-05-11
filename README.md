@@ -36,85 +36,6 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - CSV viewing and editing with csvview.nvim
 - Note-taking with journal.nvim
 
-## Key Bindings
-- `<leader>` = `<space>`
-- `<localleader>` = `,`
-
-### Development
-- LSP hover: `K`
-- Go to definition: `gd`
-- Go to declaration: `gD`
-- Go to implementation: `gi`
-- Find references: `gr`
-- Show diagnostics: `gh`
-- Code actions: `<leader>ca`
-- Rename symbol: `<leader>rn`
-- Show signature help: `<C-k>` (insert mode)
-
-### Formatting
-- Format file: `<leader>==`
-- Format JSON with jq: `<leader>=j`
-
-### Navigation
-- Find files: `<leader>f`
-- Find keymappings: `<leader>k`
-- Previous/next cell: `[c` / `]c`
-- Previous/next conflict: `[g` / `]g`
-- Previous/next git hunk: `<c` / `>c`
-- Toggle Tagbar: `<F8>`
-- Insert cell above: `<F9>`
-- Insert cell below: `<F10>`
-
-### IPython Integration
-- Send cell: `<localleader>c`
-- Send line: `<localleader>l`
-- Send selection: `<localleader>v` (visual mode)
-
-### Git Operations
-- Diff view: `<leader>gd`
-- Merge conflicts view: `<leader>gm`
-- Open conflicts: `<leader>gc`
-- Close diff view: `<leader>gx`
-- Accept current changes: `<leader>go`
-- Accept incoming changes: `<leader>gt`
-- Accept both changes: `<leader>gb`
-- Stage hunk: `<leader>hs`
-- Reset hunk: `<leader>hr`
-- Preview hunk: `<leader>hp`
-
-### Elixir Development
-- Format current file: `<leader>ef`
-- Run all tests: `<leader>et`
-- Compile project: `<leader>ec`
-- Restart Elixir LS: `<leader>er`
-
-### Text-to-Speech
-- Speak word: `<leader>tw`
-- Speak current line: `<leader>tc`
-- Speak paragraph: `<leader>tp`
-- Speak file: `<leader>tf`
-- Speak selection: `<leader>tv`
-
-### Spelling
-- Toggle spell checking: `<leader>ss`
-- Next misspelled word: `<leader>sn`
-- Previous misspelled word: `<leader>sp`
-- Add word to dictionary: `<leader>sa`
-- Suggest corrections: `<leader>s?`
-
-### Copy Path
-- Copy full path: `<leader>Yf`
-- Copy relative path: `<leader>Yr`
-- Copy filename only: `<leader>Yn`
-
-### AI Assistance
-- Start Ollama Server: `<leader>os`
-- Stop Ollama Server: `<leader>ox`
-- Trigger Ollama completion: `<C-x><C-o>` (insert mode)
-
-### Utilities
-- Toggle paste mode: `<leader>pp`
-
 ## Requirements
 - [Neovim](https://neovim.io/)
 - [git](https://git-scm.com/)
@@ -217,6 +138,27 @@ Use text-to-speech in Neovim with these commands:
 - `<space>tf` - Speak Current File
 - `<space>tv` - Speak Visual Selection
 
+## Nerd Fonts Setup
+
+Nerd Fonts are required for icon rendering (used by markdown preview and other UI components).
+
+**Linux:**
+```bash
+mkdir -p ~/.local/share/fonts
+curl -fLo ~/.local/share/fonts/JetBrainsMono.zip \
+  https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+unzip ~/.local/share/fonts/JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+fc-cache -fv
+```
+
+**macOS:**
+```bash
+brew tap homebrew/cask-fonts
+brew install --cask font-jetbrains-mono-nerd-font
+```
+
+Then set `JetBrainsMono Nerd Font` (or equivalent) as your terminal's font.
+
 ## Elixir Setup
 
 For full Elixir language support, install Elixir and set up your development environment:
@@ -255,11 +197,11 @@ Use the Elixir development keybindings:
 
 ## Tagbar Setup
 
-### Zig Tagbar Setup
+### Zig and Elixir Tagbar Setup
 For Exuberant Ctags (default in many distros), a `.ctags` file is provided in this repo with support for:
 - Zig (functions, structs, enums, unions, constants, variables, tests)
 
 Save the file in `$HOME/.ctags`.
 Press `<F8>` to toggle Tagbar for code navigation in supported languages.
 
-Zig support requires the language patterns in `.ctags`. The configuration is already included in this repo.
+Zig and Elixir support requires the language patterns in `.ctags`. The configuration is already included in this repo.
