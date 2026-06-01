@@ -1166,15 +1166,16 @@ mix = {
     args = { "format", "$FILENAME" },
     stdin = false,
 },
-      },
-  -- Format on save
-
-  format_on_save = {
-    timeout_ms = 2000,
-    lsp_fallback = true,
-  },
+    },
 })
 
+-- Format on save
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*",
+  callback = function(args)
+    require("conform").format({ timeout_ms = 2000, lsp_fallback = true })
+  end,
+})
 -- Elixir formatting on save (avoids "file changed" warning)
 -- Elixir formatting delegated to conform (LSP fallback)
 
