@@ -54,19 +54,20 @@ Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugi
 " Git
 Plug 'tpope/vim-fugitive'                                     " Git integration
 Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
+Plug 'lewis6991/gitsigns.nvim'                                " Git integration for buffers 
 
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
-Plug 'nvim-treesitter/nvim-treesitter-context'                   " Show code context 
-Plug 'lukas-reineke/indent-blankline.nvim'                       " Vertical indentation guide lines
-Plug 'windwp/nvim-autopairs'                                     " Autopairs for auto closing brackets
-Plug 'wolandark/vim-piper'                                       " Text to speech
-Plug 'm00qek/baleia.nvim'                                        " Colourful log messages
-Plug 'preservim/tagbar'                                          " Displays tags in a window, ordered by scope
-Plug 'jakobkhansen/journal.nvim'                                 " Keep notes
-Plug 'folke/which-key.nvim'                                      " Helps you remember your Neovim keymaps
-Plug 'catgoose/nvim-colorizer.lua'                               " Colour preview
-Plug 'MeanderingProgrammer/render-markdown.nvim'                 " Better markdown rendering in Neovim 
+Plug 'nvim-treesitter/nvim-treesitter-context'                 " Show code context 
+Plug 'lukas-reineke/indent-blankline.nvim'                     " Vertical indentation guide lines
+Plug 'windwp/nvim-autopairs'                                   " Autopairs for auto closing brackets
+Plug 'wolandark/vim-piper'                                     " Text to speech
+Plug 'm00qek/baleia.nvim'                                      " Colourful log messages
+Plug 'preservim/tagbar'                                        " Displays tags in a window, ordered by scope
+Plug 'jakobkhansen/journal.nvim'                               " Keep notes
+Plug 'folke/which-key.nvim'                                    " Helps you remember your Neovim keymaps
+Plug 'catgoose/nvim-colorizer.lua'                             " Colour preview
+Plug 'MeanderingProgrammer/render-markdown.nvim'               " Better markdown rendering in Neovim 
 call plug#end()
 
 lua << EOF
@@ -361,7 +362,6 @@ augroup HighlightOnHover
     autocmd CursorHold,CursorHoldI * match none
 augroup END
 "" Highlight on hover
-
 
 
 """ Statusline configuration
@@ -711,8 +711,7 @@ require("mason-lspconfig").setup({
   }
 })
 EOF
-""" Mason Configuration
-
+""" Mason Configuratio
 
 """ Completion setup
 lua << EOF
@@ -929,7 +928,6 @@ lint.linters.ruff = {
     return diagnostics
   end
 }
-
 
 -- Credo linter for Elixir
 lint.linters.credo = {
@@ -1246,8 +1244,6 @@ lua << EOF
 require('treesitter-context').setup({ enable = true, max_lines = 3 })
 EOF
 
-
-
 """ Fuzzy finding Configuration
 let g:fzf_vim = {}
 " This is the default option:
@@ -1385,6 +1381,36 @@ require('diffview').setup({
 })
 EOF
 """ Git
+
+""" gitsigns.nvim
+lua << EOF
+require('gitsigns').setup({
+  signs = {
+    add          = { text = '│' },
+    change       = { text = '│' },
+    delete       = { text = '_' },
+    topdelete    = { text = '‾' },
+    changedelete = { text = '~' },
+  },
+  preview_config = {
+    border = 'shadow',
+    style = 'minimal',
+  },
+  current_line_blame = true,
+  current_line_blame_opts = {
+    virt_text = true,
+    virt_text_pos = 'eol',
+    delay = 500,
+  },
+  current_line_blame_formatter = '<author>, <author_time:%R> (<abbrev_sha>) • <summary>',
+})
+EOF
+
+nnoremap <leader>hp <cmd>Gitsigns preview_hunk<CR>
+nnoremap <leader>hb <cmd>Gitsigns toggle_current_line_blame<CR>
+nnoremap ]h <cmd>Gitsigns next_hunk<CR>
+nnoremap [h <cmd>Gitsigns prev_hunk<CR>
+""" gitsigns.nvim
 
 """ FZF key mappings
 " Key mapping for FZF maps browser - needs to be defined outside which-key
@@ -1635,6 +1661,9 @@ wk.add({
   { "<leader>go", "<cmd>lua _G.conflict.accept_current()<CR>", desc = "Accept Current Changes" },
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
+  { "<leader>gh", group = "Hunk" },
+  { "<leader>ghp", "<cmd>Gitsigns preview_hunk<CR>", desc = "Preview Hunk" },
+  { "<leader>ghb", "<cmd>Gitsigns toggle_current_line_blame<CR>", desc = "Toggle Blame" },
 
   -- Git hunk navigation (use :Gdiffsplit, :Gblame, etc. from fugitive)
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
