@@ -325,33 +325,33 @@ let maplocalleader = ","
 
 """ Basic Settings
 set relativenumber
-set expandtab                         " Use spaces instead of tabs
-set tabstop=4                         " Tab = 4 spaces
-set shiftwidth=4                      " Tab = 4 spaces
-set softtabstop=4                     " Number of spaces for a tab in insert mode
-set autoindent                        " Auto indent
-set smartindent                       " Smart autoindenting when starting a new line
-set cindent                           " Stricter indenting rules for C-like languages
-set indentexpr=                       " Let cindent handle indenting
-set wrap                              " Wrap lines
+set expandtab                                   " Use spaces instead of tabs
+set tabstop=4                                   " Tab = 4 spaces
+set shiftwidth=4                                " Tab = 4 spaces
+set softtabstop=4                               " Number of spaces for a tab in insert mode
+set autoindent                                  " Auto indent
+set smartindent                                 " Smart autoindenting when starting a new line
+set cindent                                     " Stricter indenting rules for C-like languages
+set indentexpr=                                 " Let cindent handle indenting
+set wrap                                        " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=90                    " Column indicating 90 characters
+set colorcolumn=90                              " Column indicating 90 characters
 set cursorline
-set ruler                             " Always show current position
-set hlsearch                          " Highlight search results
-set incsearch                         " Makes search act like search in modern browsers
-set encoding=utf8                     " Set utf8 as standard encoding
-set ffs=unix,dos,mac                  " Use Unix as the standard file type
-set spell                             " Enable spell checking
+set ruler                                       " Always show current position
+set hlsearch                                    " Highlight search results
+set incsearch                                   " Makes search act like search in modern browsers
+set encoding=utf8                               " Set utf8 as standard encoding
+set ffs=unix,dos,mac                            " Use Unix as the standard file type
+set spell                                       " Enable spell checking
 set spelllang=en_gb
-set clipboard=unnamedplus             " Clipboard Settings
-set background=dark                   " Set dark background
+set clipboard=unnamedplus                       " Clipboard Settings
+set background=dark                             " Set dark background
 if $COLORTERM == 'gnome-terminal'
-  set t_Co=256                        " 256 colours
+  set t_Co=256                                  " 256 colours
 endif
-set termguicolors                     " True colour support
+set termguicolors                               " True colour support
 """ Basic Settings
 
 "" Highlight on hover
@@ -363,6 +363,10 @@ augroup HighlightOnHover
 augroup END
 "" Highlight on hover
 
+"" Highlight column under cursor
+set cursorcolumn
+hi CursorColumn guibg=#2e3440
+"" Highlight column under cursor
 
 """ Statusline configuration
 set laststatus=3                     " Global statusline (Neovim only)
