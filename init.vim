@@ -57,7 +57,7 @@ Plug 'sindrets/diffview.nvim'                                 " Easily cycling t
 Plug 'lewis6991/gitsigns.nvim'                                " Git integration for buffers 
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }  " Treesitter for syntax highlighting
 Plug 'nvim-treesitter/nvim-treesitter-context'                 " Show code context 
 Plug 'lukas-reineke/indent-blankline.nvim'                     " Vertical indentation guide lines
 Plug 'windwp/nvim-autopairs'                                   " Autopairs for auto closing brackets
@@ -354,19 +354,26 @@ endif
 set termguicolors                               " True colour support
 """ Basic Settings
 
-"" Highlight on hover
+""" Code folding
+set foldmethod=expr
+set foldexpr=v:lua.vim.treesitter.foldexpr()
+set foldlevel=99
+set foldlevelstart=99
+""" Code folding
+
+""" Highlight on hover
 set updatetime=1000
 augroup HighlightOnHover
     autocmd!
     autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
     autocmd CursorHold,CursorHoldI * match none
 augroup END
-"" Highlight on hover
+""" Highlight on hover
 
-"" Highlight column under cursor
+""" Highlight column under cursor
 set cursorcolumn
 hi CursorColumn guibg=#2e3440
-"" Highlight column under cursor
+""" Highlight column under cursor
 
 """ Statusline configuration
 set laststatus=3                     " Global statusline (Neovim only)
