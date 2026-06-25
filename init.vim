@@ -242,7 +242,7 @@ local opts = {
 require("ollama").setup(opts)
 
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "python", "zig", "elixir" },
+  pattern = { "python", "zig", "elixir", "typescript" },
   callback = function()
     vim.keymap.set("i", "<C-x><C-o>", function()
       require("cmp").complete({
@@ -267,6 +267,10 @@ let g:copilot_filetypes = {
       \ "markdown": v:true,
       \ "elixir": v:true,
       \ "zig": v:true,
+      \ "typescript": v:true,
+      \ "typescriptreact": v:true,
+      \ "javascript": v:true,
+      \ "javascriptreact": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
@@ -631,7 +635,7 @@ require("mason-lspconfig").setup({
     "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
     "bashls",                -- Bash
-    "biome",                 -- JSON
+    "denols",                -- Deno Language Server (TS/JS/JSON)
     "yamlls",                -- YAML
     "zls",                   -- Zig Language Server
     "elixirls",              -- Elixir Language Server
@@ -696,11 +700,12 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Biome (JSON)
-    biome = function()
-      require("lspconfig").biome.setup({
+    -- Deno Language Server (TS/JS/JSON)
+    denols = function()
+      require("lspconfig").denols.setup({
         on_attach = on_attach,
         capabilities = capabilities,
+        single_file_support = true,
       })
     end,
 
@@ -1122,12 +1127,14 @@ end, {})
 -- Formatting Configuration
 -- https://questions.deno.com/m/1233267429656891495
 require("conform").setup({
-  -- Formatters for your languages
+  -- Formatters for your Language-specific
   formatters_by_ft = {
-    python = { "ruff_organize_imports", "ruff_format" },
-    json = { "biome" },
-    elixir = { "mix" },
-  },
+      python = { "ruff_organize_imports", "ruff_format" },
+      typescript = { "deno_fmt" },
+      javascript = { "deno_fmt" },
+      json = { "deno_fmt" },
+      elixir = { "mix" },
+    },
 
   -- Organise Python imports
     formatters = {
@@ -1165,16 +1172,16 @@ require("conform").setup({
             ".ruff.toml",
           },
         },
-zig_fmt = {
-    command = vim.fn.expand("$HOME/.zig/zig"),
-    args = { "fmt", "--stdin" },
-    stdin = true,
-},
-mix = {
-    command = "mix",
-    args = { "format", "$FILENAME" },
-    stdin = false,
-},
+        zig_fmt = {
+            command = vim.fn.expand("$HOME/.zig/zig"),
+            args = { "fmt", "--stdin" },
+            stdin = true,
+        },
+        mix = {
+            command = "mix",
+            args = { "format", "$FILENAME" },
+            stdin = false,
+        },
     },
 })
 
@@ -1207,6 +1214,10 @@ require("nvim-treesitter").setup {
         "elixir",
         "eex",
         "heex",
+        "typescript",
+        "tsx",
+        "javascript",
+        "jsdoc",
 
         -- For documentation/markdown files
         "markdown",
@@ -1707,6 +1718,13 @@ wk.add({
   { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
   { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
   { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
+
+  -- Deno commands
+  { "<leader>d", group = "Deno" },
+  { "<leader>df", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file" },
+  { "<leader>dt", "<cmd>!deno test %<CR>", desc = "Run tests for current file" },
+  { "<leader>dc", "<cmd>!deno cache --reload %<CR>", desc = "Reload cache for current file" },
+  { "<leader>dl", "<cmd>!deno lint %<CR>", desc = "Lint current file" },
 
   -- Common Lisp / Vlime
   { "<localleader>r", group = "SWANK Server" },
