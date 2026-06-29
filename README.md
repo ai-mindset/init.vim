@@ -118,17 +118,39 @@ You can also start and stop the Ollama server directly from Neovim using:
 For text-to-speech capabilities, install Piper using `uv` (a faster, more reliable Python package installer):
 
 ```bash
-# Install uv if you don't have it already
-curl -fsSL https://astral.sh/uv/install.sh | bash
+#!/usr/bin/env bash
+set -e
 
-# Install Piper using uv
-uv pip install piper-tts
+PIPER_VERSION="2023.11.14-2"
+VOICE_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium"
+VOICE_NAME="en_GB-alba-medium"
 
-# Download a voice model
-mkdir -p ~/.local/share/piper-voices/
-# You can choose any voice model from https://huggingface.co/rhasspy/piper-voices/
-# For example:
-wget -P ~/.local/share/piper-voices/ https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium/en_GB-alba-medium.onnx
+# Detect OS and architecture
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+case "$OS" in
+  Linux)  PLATFORM="linux_${ARCH}" ;;
+  Darwin) [[ "$ARCH" == "arm64" ]] && PLATFORM="macos_arm64" || PLATFORM="macos_x64" ;;
+  MINGW*|CYGWIN*|MSYS*) PLATFORM="windows_amd64" ;;
+  *) echo "Unsupported OS: $OS"; exit 1 ;;
+esac
+
+# Download and extract Piper
+mkdir -p ~/.local/share/piper
+cd ~/.local/share/piper
+if [[ "$PLATFORM" == windows_amd64 ]]; then
+  curl -L -o piper.zip "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_${PLATFORM}.zip"
+  unzip -o piper.zip
+else
+  curl -L -o piper.tar.gz "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_${PLATFORM}.tar.gz"
+  tar -xzf piper.tar.gz
+fi
+
+# Download voice model and config
+mkdir -p ~/.local/share/piper-voices
+cd ~/.local/share/piper-voices
+wget -nc "$VOICE_URL/${VOICE_NAME}.onnx"
+wget -nc "$VOICE_URL/${VOICE_NAME}.onnx.json"
 ```
 
 Use text-to-speech in Neovim with these commands:
