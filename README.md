@@ -160,6 +160,19 @@ Use text-to-speech in Neovim with these commands:
 - `<space>tf` - Speak Current File
 - `<space>tv` - Speak Visual Selection
 
+
+You can convert text to audio with
+
+
+```bash
+cat input.txt | piper \
+  --model en_GB-alba-medium.onnx \
+  --config en_GB-alba-medium.onnx.json \
+  --output_file speech.wav
+
+ffmpeg -i speech.wav -codec:a libmp3lame -q:a 4 output.mp3
+```
+
 ## Nerd Fonts Setup
 
 Nerd Fonts are required for icon rendering (used by markdown preview and other UI components).
