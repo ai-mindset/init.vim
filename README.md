@@ -36,85 +36,6 @@ A comprehensive Neovim configuration that transforms your editor into a full-fea
 - CSV viewing and editing with csvview.nvim
 - Note-taking with journal.nvim
 
-## Key Bindings
-- `<leader>` = `<space>`
-- `<localleader>` = `,`
-
-### Development
-- LSP hover: `K`
-- Go to definition: `gd`
-- Go to declaration: `gD`
-- Go to implementation: `gi`
-- Find references: `gr`
-- Show diagnostics: `gh`
-- Code actions: `<leader>ca`
-- Rename symbol: `<leader>rn`
-- Show signature help: `<C-k>` (insert mode)
-
-### Formatting
-- Format file: `<leader>==`
-- Format JSON with jq: `<leader>=j`
-
-### Navigation
-- Find files: `<leader>f`
-- Find keymappings: `<leader>k`
-- Previous/next cell: `[c` / `]c`
-- Previous/next conflict: `[g` / `]g`
-- Previous/next git hunk: `<c` / `>c`
-- Toggle Tagbar: `<F8>`
-- Insert cell above: `<F9>`
-- Insert cell below: `<F10>`
-
-### IPython Integration
-- Send cell: `<localleader>c`
-- Send line: `<localleader>l`
-- Send selection: `<localleader>v` (visual mode)
-
-### Git Operations
-- Diff view: `<leader>gd`
-- Merge conflicts view: `<leader>gm`
-- Open conflicts: `<leader>gc`
-- Close diff view: `<leader>gx`
-- Accept current changes: `<leader>go`
-- Accept incoming changes: `<leader>gt`
-- Accept both changes: `<leader>gb`
-- Stage hunk: `<leader>hs`
-- Reset hunk: `<leader>hr`
-- Preview hunk: `<leader>hp`
-
-### Elixir Development
-- Format current file: `<leader>ef`
-- Run all tests: `<leader>et`
-- Compile project: `<leader>ec`
-- Restart Elixir LS: `<leader>er`
-
-### Text-to-Speech
-- Speak word: `<leader>tw`
-- Speak current line: `<leader>tc`
-- Speak paragraph: `<leader>tp`
-- Speak file: `<leader>tf`
-- Speak selection: `<leader>tv`
-
-### Spelling
-- Toggle spell checking: `<leader>ss`
-- Next misspelled word: `<leader>sn`
-- Previous misspelled word: `<leader>sp`
-- Add word to dictionary: `<leader>sa`
-- Suggest corrections: `<leader>s?`
-
-### Copy Path
-- Copy full path: `<leader>Yf`
-- Copy relative path: `<leader>Yr`
-- Copy filename only: `<leader>Yn`
-
-### AI Assistance
-- Start Ollama Server: `<leader>os`
-- Stop Ollama Server: `<leader>ox`
-- Trigger Ollama completion: `<C-x><C-o>` (insert mode)
-
-### Utilities
-- Toggle paste mode: `<leader>pp`
-
 ## Requirements
 - [Neovim](https://neovim.io/)
 - [git](https://git-scm.com/)
@@ -197,17 +118,39 @@ You can also start and stop the Ollama server directly from Neovim using:
 For text-to-speech capabilities, install Piper using `uv` (a faster, more reliable Python package installer):
 
 ```bash
-# Install uv if you don't have it already
-curl -fsSL https://astral.sh/uv/install.sh | bash
+#!/usr/bin/env bash
+set -e
 
-# Install Piper using uv
-uv pip install piper-tts
+PIPER_VERSION="2023.11.14-2"
+VOICE_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium"
+VOICE_NAME="en_GB-alba-medium"
 
-# Download a voice model
-mkdir -p ~/.local/share/piper-voices/
-# You can choose any voice model from https://huggingface.co/rhasspy/piper-voices/
-# For example:
-wget -P ~/.local/share/piper-voices/ https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium/en_GB-alba-medium.onnx
+# Detect OS and architecture
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+case "$OS" in
+  Linux)  PLATFORM="linux_${ARCH}" ;;
+  Darwin) [[ "$ARCH" == "arm64" ]] && PLATFORM="macos_arm64" || PLATFORM="macos_x64" ;;
+  MINGW*|CYGWIN*|MSYS*) PLATFORM="windows_amd64" ;;
+  *) echo "Unsupported OS: $OS"; exit 1 ;;
+esac
+
+# Download and extract Piper
+mkdir -p ~/.local/share/piper
+cd ~/.local/share/piper
+if [[ "$PLATFORM" == windows_amd64 ]]; then
+  curl -L -o piper.zip "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_${PLATFORM}.zip"
+  unzip -o piper.zip
+else
+  curl -L -o piper.tar.gz "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_${PLATFORM}.tar.gz"
+  tar -xzf piper.tar.gz
+fi
+
+# Download voice model and config
+mkdir -p ~/.local/share/piper-voices
+cd ~/.local/share/piper-voices
+wget -nc "$VOICE_URL/${VOICE_NAME}.onnx"
+wget -nc "$VOICE_URL/${VOICE_NAME}.onnx.json"
 ```
 
 Use text-to-speech in Neovim with these commands:
@@ -216,6 +159,40 @@ Use text-to-speech in Neovim with these commands:
 - `<space>tp` - Speak Current Paragraph
 - `<space>tf` - Speak Current File
 - `<space>tv` - Speak Visual Selection
+
+
+You can convert text to audio with
+
+
+```bash
+cat input.txt | piper \
+  --model en_GB-alba-medium.onnx \
+  --config en_GB-alba-medium.onnx.json \
+  --output_file speech.wav
+
+ffmpeg -i speech.wav -codec:a libmp3lame -q:a 4 output.mp3
+```
+
+## Nerd Fonts Setup
+
+Nerd Fonts are required for icon rendering (used by markdown preview and other UI components).
+
+**Linux:**
+```bash
+mkdir -p ~/.local/share/fonts
+curl -fLo ~/.local/share/fonts/JetBrainsMono.zip \
+  https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+unzip ~/.local/share/fonts/JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+fc-cache -fv
+```
+
+**macOS:**
+```bash
+brew tap homebrew/cask-fonts
+brew install --cask font-jetbrains-mono-nerd-font
+```
+
+Then set `JetBrainsMono Nerd Font` (or equivalent) as your terminal's font.
 
 ## Elixir Setup
 
@@ -255,11 +232,11 @@ Use the Elixir development keybindings:
 
 ## Tagbar Setup
 
-### Zig Tagbar Setup
+### Zig and Elixir Tagbar Setup
 For Exuberant Ctags (default in many distros), a `.ctags` file is provided in this repo with support for:
 - Zig (functions, structs, enums, unions, constants, variables, tests)
 
 Save the file in `$HOME/.ctags`.
 Press `<F8>` to toggle Tagbar for code navigation in supported languages.
 
-Zig support requires the language patterns in `.ctags`. The configuration is already included in this repo.
+Zig and Elixir support requires the language patterns in `.ctags`. The configuration is already included in this repo.

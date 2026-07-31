@@ -21,7 +21,7 @@ Plug 'hrsh7th/cmp-cmdline'                                    " Command line com
 Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ollama AI completion
 
 " GitHub Copilot
-Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
+" Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
 
 " Elixir Development
 Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir
@@ -54,19 +54,20 @@ Plug 'tpope/vim-unimpaired'                                   " Unimpaired plugi
 " Git
 Plug 'tpope/vim-fugitive'                                     " Git integration
 Plug 'sindrets/diffview.nvim'                                 " Easily cycling through diffs for all modified files for any git rev
+Plug 'lewis6991/gitsigns.nvim'                                " Git integration for buffers 
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Treesitter for syntax highlighting
-Plug 'nvim-treesitter/nvim-treesitter-context'                   " Show code context 
-Plug 'lukas-reineke/indent-blankline.nvim'                       " Vertical indentation guide lines
-Plug 'windwp/nvim-autopairs'                                     " Autopairs for auto closing brackets
-Plug 'wolandark/vim-piper'                                       " Text to speech
-Plug 'm00qek/baleia.nvim'                                        " Colourful log messages
-Plug 'preservim/tagbar'                                          " Displays tags in a window, ordered by scope
-Plug 'jakobkhansen/journal.nvim'                                 " Keep notes
-Plug 'folke/which-key.nvim'                                      " Helps you remember your Neovim keymaps
-Plug 'catgoose/nvim-colorizer.lua'                               " Colour preview
-Plug 'MeanderingProgrammer/render-markdown.nvim'                 " Better markdown rendering in Neovim 
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }  " Treesitter for syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter-context'                 " Show code context 
+Plug 'lukas-reineke/indent-blankline.nvim'                     " Vertical indentation guide lines
+Plug 'windwp/nvim-autopairs'                                   " Autopairs for auto closing brackets
+Plug 'wolandark/vim-piper'                                     " Text to speech
+Plug 'm00qek/baleia.nvim'                                      " Colourful log messages
+Plug 'preservim/tagbar'                                        " Displays tags in a window, ordered by scope
+Plug 'jakobkhansen/journal.nvim'                               " Keep notes
+Plug 'folke/which-key.nvim'                                    " Helps you remember your Neovim keymaps
+Plug 'catgoose/nvim-colorizer.lua'                             " Colour preview
+Plug 'MeanderingProgrammer/render-markdown.nvim'               " Better markdown rendering in Neovim 
 call plug#end()
 
 lua << EOF
@@ -241,7 +242,7 @@ local opts = {
 require("ollama").setup(opts)
 
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "python", "zig", "elixir" },
+  pattern = { "python", "elixir", "typescript" },
   callback = function()
     vim.keymap.set("i", "<C-x><C-o>", function()
       require("cmp").complete({
@@ -265,7 +266,10 @@ let g:copilot_filetypes = {
       \ "json": v:true,
       \ "markdown": v:true,
       \ "elixir": v:true,
-      \ "zig": v:true,
+      \ "typescript": v:true,
+      \ "typescriptreact": v:true,
+      \ "javascript": v:true,
+      \ "javascriptreact": v:true,
       \ "sh": v:true,
       \ "zsh": v:true,
       \ "*": v:false,
@@ -324,45 +328,55 @@ let maplocalleader = ","
 
 """ Basic Settings
 set relativenumber
-set expandtab                         " Use spaces instead of tabs
-set tabstop=4                         " Tab = 4 spaces
-set shiftwidth=4                      " Tab = 4 spaces
-set softtabstop=4                     " Number of spaces for a tab in insert mode
-set autoindent                        " Auto indent
-set smartindent                       " Smart autoindenting when starting a new line
-set cindent                           " Stricter indenting rules for C-like languages
-set indentexpr=                       " Let cindent handle indenting
-set wrap                              " Wrap lines
+set expandtab                                   " Use spaces instead of tabs
+set tabstop=4                                   " Tab = 4 spaces
+set shiftwidth=4                                " Tab = 4 spaces
+set softtabstop=4                               " Number of spaces for a tab in insert mode
+set autoindent                                  " Auto indent
+set smartindent                                 " Smart autoindenting when starting a new line
+set cindent                                     " Stricter indenting rules for C-like languages
+set indentexpr=                                 " Let cindent handle indenting
+set wrap                                        " Wrap lines
 set signcolumn=yes
 set updatetime=300
 set completeopt=menu,menuone,noselect
-set colorcolumn=90                    " Column indicating 90 characters
+set colorcolumn=90                              " Column indicating 90 characters
 set cursorline
-set ruler                             " Always show current position
-set hlsearch                          " Highlight search results
-set incsearch                         " Makes search act like search in modern browsers
-set encoding=utf8                     " Set utf8 as standard encoding
-set ffs=unix,dos,mac                  " Use Unix as the standard file type
-set spell                             " Enable spell checking
+set ruler                                       " Always show current position
+set hlsearch                                    " Highlight search results
+set incsearch                                   " Makes search act like search in modern browsers
+set encoding=utf8                               " Set utf8 as standard encoding
+set ffs=unix,dos,mac                            " Use Unix as the standard file type
+set spell                                       " Enable spell checking
 set spelllang=en_gb
-set clipboard=unnamedplus             " Clipboard Settings
-set background=dark                   " Set dark background
+set clipboard=unnamedplus                       " Clipboard Settings
+set background=dark                             " Set dark background
 if $COLORTERM == 'gnome-terminal'
-  set t_Co=256                        " 256 colours
+  set t_Co=256                                  " 256 colours
 endif
-set termguicolors                     " True colour support
+set termguicolors                               " True colour support
 """ Basic Settings
 
-"" Highlight on hover
+""" Code folding
+set foldmethod=expr
+set foldexpr=v:lua.vim.treesitter.foldexpr()
+set foldlevel=99
+set foldlevelstart=99
+""" Code folding
+
+""" Highlight on hover
 set updatetime=1000
 augroup HighlightOnHover
     autocmd!
     autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
     autocmd CursorHold,CursorHoldI * match none
 augroup END
-"" Highlight on hover
+""" Highlight on hover
 
-
+""" Highlight column under cursor
+set cursorcolumn
+hi CursorColumn guibg=#2e3440
+""" Highlight column under cursor
 
 """ Statusline configuration
 set laststatus=3                     " Global statusline (Neovim only)
@@ -535,6 +549,31 @@ hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
+""" TypeScript/Deno configuration for tagbar (matches .ctags TypeScript definitions)
+let g:tagbar_type_typescript = {
+  \ 'ctagstype': 'TypeScript',
+  \ 'kinds': [
+    \ 'f:functions',
+    \ 'c:classes',
+    \ 'i:interfaces',
+    \ 't:types',
+    \ 'e:enums',
+    \ 'v:variables',
+  \ ],
+  \ 'sort': 0
+  \ }
+
+" JavaScript configuration for tagbar (covers .mjs, .cjs from .ctags)
+let g:tagbar_type_javascript = {
+  \ 'ctagstype': 'JavaScript',
+  \ 'kinds': [
+    \ 'f:functions',
+    \ 'c:classes',
+    \ 'v:variables',
+  \ ],
+  \ 'sort': 0
+  \ }
+
 """ tagbar
 " https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
 let g:tagbar_left = 1
@@ -546,21 +585,6 @@ let g:tagbar_compact = 1 " 0: Show short help and blank lines between top-level 
 let g:tagbar_show_data_type = 1
 let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
-
-" Zig configuration for tagbar (Exuberant Ctags)
-let g:tagbar_type_zig = {
-  \ 'ctagstype': 'Zig',
-  \ 'kinds': [
-    \ 'f:functions',
-    \ 's:structs',
-    \ 'e:enums',
-    \ 'u:unions',
-    \ 'c:constants',
-    \ 'v:variables',
-    \ 't:tests',
-  \ ],
-  \ 'sort': 0
-  \ }
 
 " Elixir configuration for tagbar (via .ctags regex definitions)
 let g:tagbar_type_elixir = {
@@ -617,12 +641,8 @@ require("mason").setup({
 require("mason-lspconfig").setup({
   ensure_installed = {
     "jedi_language_server",  -- Python LSP
-    "dockerls",              -- Docker
     "markdown_oxide",        -- Markdown
-    "bashls",                -- Bash
-    "biome",                 -- JSON
-    "yamlls",                -- YAML
-    "zls",                   -- Zig Language Server
+    "denols",                -- Deno Language Server (TS/JS/JSON)
     "elixirls",              -- Elixir Language Server
   },
   automatic_installation = false,
@@ -632,36 +652,6 @@ require("mason-lspconfig").setup({
       require('lspconfig').jedi_language_server.setup({
         on_attach = on_attach,
         capabilities = capabilities,
-      })
-    end,
-
-    -- Zig Language Server
-    zls = function()
-      require("lspconfig").zls.setup({
-        cmd = { vim.fn.expand("$HOME/.zig/zls") },
-        on_attach = on_attach,
-        capabilities = capabilities,
-        settings = {
-          zls = {
-            enable_build_on_save = true,
-            enable_autofix = true,
-            enable_inlay_hints = true,
-            inlay_hints_hide_redundant_param_names = true,
-            inlay_hints_hide_redundant_param_names_last_token = true,
-          }
-        }
-      })
-    end,
-
-
-    -- Docker Language Server
-    dockerls = function()
-      require("lspconfig").dockerls.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        cmd = { "docker-langserver", "--stdio" },
-        filetypes = { "Dockerfile", "dockerfile", "Containerfile", "containerfile" },
-        root_dir = require("lspconfig").util.root_pattern("Dockerfile", ".git"),
       })
     end,
 
@@ -675,29 +665,12 @@ require("mason-lspconfig").setup({
       })
     end,
 
-    -- Bash Language Server
-    bashls = function()
-      require("lspconfig").bashls.setup({
+    -- Deno Language Server (TS/JS/JSON)
+    denols = function()
+      require("lspconfig").denols.setup({
         on_attach = on_attach,
         capabilities = capabilities,
-        filetypes = { "sh", "bash", "zsh" },
-        root_dir = require("lspconfig").util.root_pattern(".git"),
-      })
-    end,
-
-    -- Biome (JSON)
-    biome = function()
-      require("lspconfig").biome.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-      })
-    end,
-
-    -- YAML Language Server
-    yamlls = function()
-      require("lspconfig").yamlls.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
+        single_file_support = true,
       })
     end,
 
@@ -711,8 +684,7 @@ require("mason-lspconfig").setup({
   }
 })
 EOF
-""" Mason Configuration
-
+""" Mason Configuratio
 
 """ Completion setup
 lua << EOF
@@ -893,7 +865,6 @@ lint.linters.ty = {
 
 lint.linters_by_ft = {
   python = {'ruff', 'ty'},
-  zig = {'zig'},
   elixir = {'credo'},
 }
 
@@ -929,7 +900,6 @@ lint.linters.ruff = {
     return diagnostics
   end
 }
-
 
 -- Credo linter for Elixir
 lint.linters.credo = {
@@ -1039,7 +1009,7 @@ end
 
 -- Set up linting on file save only (reduced frequency)
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.zig", "*.ex", "*.exs", "*.yml", "*.yaml" },
+  pattern = { "*.py", "*.ex", "*.exs", "*.yml", "*.yaml" },
   callback = function()
     local path = vim.api.nvim_buf_get_name(0)
     if path:match("%.github/workflows/") then
@@ -1113,12 +1083,14 @@ end, {})
 -- Formatting Configuration
 -- https://questions.deno.com/m/1233267429656891495
 require("conform").setup({
-  -- Formatters for your languages
+  -- Formatters for your Language-specific
   formatters_by_ft = {
-    python = { "ruff_organize_imports", "ruff_format" },
-    json = { "biome" },
-    elixir = { "mix" },
-  },
+      python = { "ruff_organize_imports", "ruff_format" },
+      typescript = { "deno_fmt" },
+      javascript = { "deno_fmt" },
+      json = { "deno_fmt" },
+      elixir = { "mix" },
+    },
 
   -- Organise Python imports
     formatters = {
@@ -1156,25 +1128,21 @@ require("conform").setup({
             ".ruff.toml",
           },
         },
-zig_fmt = {
-    command = vim.fn.expand("$HOME/.zig/zig"),
-    args = { "fmt", "--stdin" },
-    stdin = true,
-},
-mix = {
-    command = "mix",
-    args = { "format", "$FILENAME" },
-    stdin = false,
-},
-      },
-  -- Format on save
-
-  format_on_save = {
-    timeout_ms = 2000,
-    lsp_fallback = true,
-  },
+        mix = {
+            command = "mix",
+            args = { "format", "$FILENAME" },
+            stdin = false,
+        },
+    },
 })
 
+-- Format on save
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*",
+  callback = function(args)
+    require("conform").format({ timeout_ms = 2000, lsp_fallback = true })
+  end,
+})
 -- Elixir formatting on save (avoids "file changed" warning)
 -- Elixir formatting delegated to conform (LSP fallback)
 
@@ -1192,18 +1160,17 @@ require("nvim-treesitter").setup {
 
         -- Languages you use
         "python",
-        "zig",
         "commonlisp",
         "elixir",
         "eex",
         "heex",
+        "typescript",
+        "tsx",
+        "javascript",
+        "jsdoc",
 
         -- For documentation/markdown files
         "markdown",
-        -- "markdown_inline",
-
-        -- For Yaml files
-        "yaml"
         },
 
   sync_install = false,  -- Async installation for faster startup
@@ -1244,8 +1211,6 @@ EOF
 lua << EOF
 require('treesitter-context').setup({ enable = true, max_lines = 3 })
 EOF
-
-
 
 """ Fuzzy finding Configuration
 let g:fzf_vim = {}
@@ -1384,6 +1349,36 @@ require('diffview').setup({
 })
 EOF
 """ Git
+
+""" gitsigns.nvim
+lua << EOF
+require('gitsigns').setup({
+  signs = {
+    add          = { text = '│' },
+    change       = { text = '│' },
+    delete       = { text = '_' },
+    topdelete    = { text = '‾' },
+    changedelete = { text = '~' },
+  },
+  preview_config = {
+    border = 'shadow',
+    style = 'minimal',
+  },
+  current_line_blame = true,
+  current_line_blame_opts = {
+    virt_text = true,
+    virt_text_pos = 'eol',
+    delay = 500,
+  },
+  current_line_blame_formatter = '<author>, <author_time:%R> (<abbrev_sha>) • <summary>',
+})
+EOF
+
+nnoremap <leader>hp <cmd>Gitsigns preview_hunk<CR>
+nnoremap <leader>hb <cmd>Gitsigns toggle_current_line_blame<CR>
+nnoremap ]h <cmd>Gitsigns next_hunk<CR>
+nnoremap [h <cmd>Gitsigns prev_hunk<CR>
+""" gitsigns.nvim
 
 """ FZF key mappings
 " Key mapping for FZF maps browser - needs to be defined outside which-key
@@ -1634,6 +1629,9 @@ wk.add({
   { "<leader>go", "<cmd>lua _G.conflict.accept_current()<CR>", desc = "Accept Current Changes" },
   { "<leader>gt", "<cmd>lua _G.conflict.accept_incoming()<CR>", desc = "Accept Incoming Changes" },
   { "<leader>gb", "<cmd>lua _G.conflict.accept_both()<CR>", desc = "Accept Both Changes" },
+  { "<leader>gh", group = "Hunk" },
+  { "<leader>ghp", "<cmd>Gitsigns preview_hunk<CR>", desc = "Preview Hunk" },
+  { "<leader>ghb", "<cmd>Gitsigns toggle_current_line_blame<CR>", desc = "Toggle Blame" },
 
   -- Git hunk navigation (use :Gdiffsplit, :Gblame, etc. from fugitive)
   { "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", desc = "Go to Declaration" },
@@ -1666,6 +1664,13 @@ wk.add({
   { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
   { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
   { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
+
+  -- Deno commands
+  { "<leader>d", group = "Deno" },
+  { "<leader>df", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file" },
+  { "<leader>dt", "<cmd>!deno test %<CR>", desc = "Run tests for current file" },
+  { "<leader>dc", "<cmd>!deno cache --reload %<CR>", desc = "Reload cache for current file" },
+  { "<leader>dl", "<cmd>!deno lint %<CR>", desc = "Lint current file" },
 
   -- Common Lisp / Vlime
   { "<localleader>r", group = "SWANK Server" },
