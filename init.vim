@@ -1315,6 +1315,11 @@ require("conform").setup({
     eelixir = { "mix" },
     heex = { "mix" },
   },
+  formatters = {
+     deno_fmt = {
+       append_args = { "--prose-wrap", "preserve" },
+     },
+  },
   default_format_opts = {
     lsp_format = "fallback",
   },
