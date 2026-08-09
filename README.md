@@ -1,98 +1,216 @@
 # init.vim
-A comprehensive Neovim configuration that transforms your editor into a full-featured IDE with intelligent code assistance, seamless Git integration, and powerful language tools for Data Science, AI Engineering, and Backend development.
 
-## Development Environments
-- GitHub Copilot integration
-- Local LLM assistance with Ollama integration
+A lightweight, full-featured Neovim IDE for Python, Deno TypeScript/JavaScript,
+Elixir, Markdown, and technical writing. The configuration favours fast native
+features, visible diagnostics, discoverable Which-key mappings, and a
+comfortable Catppuccin Macchiato interface for Kitty and tmux.
 
-### Python (Data Science/AI)
-- Full LSP support via Jedi Language Server
-- Automatic linting and formatting with Ruff
-- Type checking with ty
-- IPython integration with cell-based execution
-- Jupyter notebook support with automatic conversion
+## Language support
 
-### Elixir (Functional Programming-style Data Science/AI)
-- Elixir Language Server (ElixirLS) integration
-- Real-time error checking and diagnostics
-- Mix project support with formatting
-- Code intelligence and hover documentation
+### Python
 
-### Zig (Systems Programming)
-- Zig Language Server (ZLS) integration
-- Real-time error checking with zig compiler
-- Automatic code formatting with zig fmt
-- Smart completion and diagnostic messages
+- Jedi Language Server provides completion, navigation, signatures, and hover
+  documentation.
+- Pyright provides `standard` type checking without duplicating Jedi's UI
+  features.
+- Ruff provides linting, import organisation, and formatting.
+- IPython cells work through vim-slime and tmux.
+- Jupyter notebooks are edited as Python percent-format buffers through
+  Jupytext.
 
-### Container & Infrastructure
-- Containerfile/Dockerfile LSP support
-- Shell script (Bash/Zsh) language server
+### Deno TypeScript/JavaScript
 
-### Documentation & Data
-- Markdown LSP with preview via markdown-preview.nvim
-- JSON/YAML language servers with Biome formatting
-- Built-in spell checking
-- Text-to-speech capabilities via Piper
-- CSV viewing and editing with csvview.nvim
-- Note-taking with journal.nvim
+- Deno's language server provides completion, navigation, type checking, and
+  lint diagnostics.
+- Deno formatting runs through conform.nvim.
+- Attachment is limited to plain `typescript` and `javascript` files in Deno
+  projects; React filetypes are intentionally excluded.
+
+### Elixir
+
+- ElixirLS provides completion, navigation, compiler diagnostics, and Dialyzer
+  analysis.
+- Mix formatting runs automatically through conform.nvim.
+- Credo diagnostics are added when the current Mix project includes Credo.
+
+### Markdown and writing
+
+- markdown-oxide provides Markdown language intelligence.
+- markdownlint-cli2 reports Markdown style problems.
+- render-markdown.nvim renders Markdown inside Neovim.
+- Marp preview is available for saved slide decks.
+- Prose buffers enable wrapping and British English spell checking.
+- Piper TTS can read a word, line, paragraph, selection, or file.
+
+### Additional support
+
+- actionlint checks files under `.github/workflows/`.
+- Tree-sitter highlighting, indentation, folding, and sticky code context cover
+  the configured languages.
+- Vlime supports Common Lisp, csvview.nvim handles tabular data, and
+  journal.nvim manages notes.
+- Git workflows use Fugitive, Gitsigns, and Diffview.
+- Ollama provides optional local LLM completion.
+
+## Diagnostics
+
+LSP servers and external linters all publish through Neovim's diagnostic API.
+Every severity is retained and shown through:
+
+- coloured `E`, `W`, `I`, and `H` gutter signs;
+- coloured line numbers and underlines;
+- statusline counts such as `E:2@14`, including the first affected line;
+- a non-focus-stealing popup when the cursor rests on an affected line;
+- navigable location and quickfix lists containing file, line, column, source,
+  rule code, and message.
+
+Virtual text is disabled so diagnostics do not displace source code. `K` opens
+rendered LSP documentation, while `gh` opens diagnostics for the current line.
+
+| Mapping                     | Action                                       |
+| --------------------------- | -------------------------------------------- |
+| `]d` / `[d`                 | Next / previous diagnostic                   |
+| `<leader>ln` / `<leader>lp` | Next / previous diagnostic                   |
+| `<leader>le` / `<leader>lE` | Next / previous error                        |
+| `<leader>lw` / `<leader>lW` | Next / previous warning                      |
+| `<leader>lh` or `gh`        | Show diagnostics on the current line         |
+| `<leader>ld`                | List diagnostics for the current buffer      |
+| `<leader>lD`                | List known diagnostics across loaded buffers |
+
+Each jump opens the corresponding diagnostic message. The entire group is
+discoverable under `<leader>l` in Which-key.
 
 ## Requirements
-- [Neovim](https://neovim.io/)
-- [git](https://git-scm.com/)
-- [node.js](https://nodejs.org/) (for copilot.vim)
-- [ollama](https://ollama.com/) (for local LLM capabilities)
-- [ripgrep](https://github.com/BurntSushi/ripgrep) for global search (optional)
-- [Zig](https://ziglang.org/) (Systems programming)
-- [Elixir](https://elixir-lang.org/) (Functional programming/Backend development)
-- [Python](https://www.python.org/) with [uv](https://github.com/astral-sh/uv) (optionally, [Jupyter](https://jupyter.org/) for notebook support)
-- [IPython](https://ipython.org/) for Python REPL-driven development
-- [Piper](https://github.com/OHF-Voice/piper1-gpl) (for text-to-speech, previously rhasspy/piper)
-- Voice model for text-to-speech capabilities
+
+Required:
+
+- [Neovim](https://neovim.io/) 0.12.0 or newer;
+- Git and curl;
+- a C compiler and
+  [tree-sitter-cli](https://github.com/nvim-treesitter/nvim-treesitter) 0.26.1
+  or newer for Tree-sitter parser builds;
+- Node.js for Pyright and markdownlint-cli2—the configuration also discovers
+  asdf Node installations;
+- Python for Python tooling;
+- Erlang and Elixir for ElixirLS and Mix workflows.
+
+Useful optional tools:
+
+- [ripgrep](https://github.com/BurntSushi/ripgrep) for FZF-powered search and
+  completion;
+- IPython, tmux, and Jupytext for the Python REPL/notebook workflow;
+- [Marp CLI](https://github.com/marp-team/marp-cli) for slide preview;
+- [Piper](https://github.com/OHF-Voice/piper1-gpl), a supported audio player,
+  and the Alba voice model for TTS;
+- [Ollama](https://ollama.com/) for local LLM completion;
+- `jq` for the explicit JSON formatting command;
+- Universal Ctags for Tagbar;
+- a Nerd Font for optional filetype icons.
 
 ## Installation
-1. Backup your existing config:
+
+1. Back up an existing configuration if necessary:
+
 ```bash
-mv ~/.config/nvim ~/.config/nvim.backup # Backup your current setup
-# Cleanup old configuration artefacts
-rm -r ~/.local/share/nvim
-rm -r ~/.local/state/nvim
-rm -r ~/.cache/nvim
+mv ~/.config/nvim ~/.config/nvim.backup
 ```
 
-2. Install Vim-plug
-```bash
-curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-```
+2. Clone this repository:
 
-3. Clone this config:
 ```bash
 git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
 ```
 
-4. Install tree-sitter CLI (required for syntax highlighting):
+3. Install `tree-sitter-cli` using an upstream-supported installation method and
+   confirm it is available on `PATH`:
 
-**Linux:**
 ```bash
-# Install system library
-sudo apt install libtree-sitter-dev
-
-# Download pre-built CLI binary
-curl -L -o /tmp/tree-sitter-linux-x64.gz https://github.com/tree-sitter/tree-sitter/releases/download/v0.26.5/tree-sitter-linux-x64.gz
-gunzip /tmp/tree-sitter-linux-x64.gz
-sudo mv /tmp/tree-sitter-linux-x64 /usr/local/bin/tree-sitter
-sudo chmod +x /usr/local/bin/tree-sitter
+tree-sitter --version
 ```
 
-**macOS:** `brew install tree-sitter`
+If the upstream Linux binary requires a newer glibc than the host provides,
+build the CLI in a Debian Bullseye container. This keeps Rust, Cargo, Clang, and
+the older build-time glibc inside Podman; only the resulting executable is
+written to `~/.local/bin`:
 
-**Windows:** Download from [GitHub releases](https://github.com/tree-sitter/tree-sitter/releases/latest) or `winget install tree-sitter.tree-sitter`
-
-5. Start Neovim:
 ```bash
-nvim --headless +PlugInstall +qall # Only required on first start, to install plugins
+mkdir -p "$HOME/.local"
+
+podman run --rm \
+  --volume "$HOME/.local:/output" \
+  docker.io/library/rust:1.97.1-bullseye \
+  bash -c '
+    apt-get update &&
+    apt-get install -y --no-install-recommends clang libclang-dev &&
+    export PATH="/usr/local/cargo/bin:$PATH" &&
+    cargo install tree-sitter-cli \
+      --version 0.26.11 \
+      --locked \
+      --root /output
+  '
 ```
 
-Treesitter parsers (elixir, eex, heex, python, zig, etc.) will install automatically when you first open files of those types.
+Ensure the installation directory is on the shell path, then verify the host
+binary rather than the incompatible download:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+rehash
+command -v tree-sitter
+tree-sitter --version
+```
+
+The `--rm` option removes the temporary build container when it exits. After
+verifying the CLI, the cached build image can also be removed:
+
+```bash
+podman image rm docker.io/library/rust:1.97.1-bullseye
+podman system df
+```
+
+4. Start Neovim normally:
+
+```bash
+nvim
+```
+
+On a fresh installation, the configuration downloads vim-plug, installs plugins,
+and reloads itself. Mason then installs these tools from the central
+`mason_packages` list:
+
+- actionlint
+- jedi-language-server
+- pyright
+- ruff
+- markdown-oxide
+- markdownlint-cli2
+- deno
+- elixir-ls
+
+Tree-sitter installs its configured parsers independently once the CLI is
+available. ElixirLS may perform a longer one-time compilation when first opened
+after an upgrade.
+
+## Main keybindings
+
+Press `<leader>` (Space) and pause briefly to browse available mappings with
+Which-key.
+
+| Mapping               | Action                               |
+| --------------------- | ------------------------------------ |
+| `K`                   | LSP hover documentation              |
+| `<leader>ca`          | LSP code action                      |
+| `<leader>rn`          | Rename symbol                        |
+| `<leader>==`          | Format file or visual selection      |
+| `<leader>f`           | Find files with FZF                  |
+| `<leader>mp`          | Toggle Marp preview                  |
+| `<leader>mr`          | Toggle in-editor Markdown rendering  |
+| `<leader>tw/tc/tp/tf` | Speak word / line / paragraph / file |
+| `<leader>tv`          | Speak visual selection               |
+| `<F8>`                | Toggle Tagbar                        |
+
+Deno commands are under `<leader>d`, Elixir commands under `<leader>e`, Git
+commands under `<leader>g`, and spelling commands under `<leader>s`.
 
 ## Ollama Setup
 
@@ -110,133 +228,42 @@ ollama pull mistral
 ```
 
 You can also start and stop the Ollama server directly from Neovim using:
+
 - `<leader>os` - Start Ollama Server
 - `<leader>ox` - Stop Ollama Server
 
 ## Piper TTS Setup
 
-For text-to-speech capabilities, install Piper using `uv` (a faster, more reliable Python package installer):
+Install Piper and place `en_GB-alba-medium.onnx` in either:
 
-```bash
-#!/usr/bin/env bash
-set -e
+- `~/.local/share/piper-voices/`
+- `/usr/share/piper-voices/`
 
-PIPER_VERSION="2023.11.14-2"
-VOICE_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alba/medium"
-VOICE_NAME="en_GB-alba-medium"
+The configuration looks for the Piper executable on `PATH`, in `~/.local/bin`,
+`~/.local/share/piper`, or `~/.venv/bin`. Playback uses the first available
+command among `aplay`, `pw-play`, `afplay`, and `ffplay`.
 
-# Detect OS and architecture
-OS="$(uname -s)"
-ARCH="$(uname -m)"
-case "$OS" in
-  Linux)  PLATFORM="linux_${ARCH}" ;;
-  Darwin) [[ "$ARCH" == "arm64" ]] && PLATFORM="macos_arm64" || PLATFORM="macos_x64" ;;
-  MINGW*|CYGWIN*|MSYS*) PLATFORM="windows_amd64" ;;
-  *) echo "Unsupported OS: $OS"; exit 1 ;;
-esac
+## Interface and terminal
 
-# Download and extract Piper
-mkdir -p ~/.local/share/piper
-cd ~/.local/share/piper
-if [[ "$PLATFORM" == windows_amd64 ]]; then
-  curl -L -o piper.zip "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_${PLATFORM}.zip"
-  unzip -o piper.zip
-else
-  curl -L -o piper.tar.gz "https://github.com/rhasspy/piper/releases/download/${PIPER_VERSION}/piper_${PLATFORM}.tar.gz"
-  tar -xzf piper.tar.gz
-fi
+Catppuccin Macchiato uses true colour and explicit high-contrast gutter, ruler,
+cursor-line, cursor-column, and diagnostic highlights. Kitty works directly;
+configure tmux separately to advertise `tmux-kitty` and RGB colour.
 
-# Download voice model and config
-mkdir -p ~/.local/share/piper-voices
-cd ~/.local/share/piper-voices
-wget -nc "$VOICE_URL/${VOICE_NAME}.onnx"
-wget -nc "$VOICE_URL/${VOICE_NAME}.onnx.json"
-```
+Tree-sitter context keeps the enclosing function or scope visible at the top of
+long files. Hover, signature, completion-documentation, diagnostic, and Markdown
+windows use bordered floating windows.
 
-Use text-to-speech in Neovim with these commands:
-- `<space>tw` - Speak Word
-- `<space>tc` - Speak Current Line
-- `<space>tp` - Speak Current Paragraph
-- `<space>tf` - Speak Current File
-- `<space>tv` - Speak Visual Selection
+## Tagbar
 
-
-You can convert text to audio with
-
-
-```bash
-cat input.txt | piper \
-  --model en_GB-alba-medium.onnx \
-  --config en_GB-alba-medium.onnx.json \
-  --output_file speech.wav
-
-ffmpeg -i speech.wav -codec:a libmp3lame -q:a 4 output.mp3
-```
-
-## Nerd Fonts Setup
-
-Nerd Fonts are required for icon rendering (used by markdown preview and other UI components).
-
-**Linux:**
-```bash
-mkdir -p ~/.local/share/fonts
-curl -fLo ~/.local/share/fonts/JetBrainsMono.zip \
-  https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
-unzip ~/.local/share/fonts/JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
-fc-cache -fv
-```
-
-**macOS:**
-```bash
-brew tap homebrew/cask-fonts
-brew install --cask font-jetbrains-mono-nerd-font
-```
-
-Then set `JetBrainsMono Nerd Font` (or equivalent) as your terminal's font.
-
-## Elixir Setup
-
-For full Elixir language support, install Elixir and set up your development environment:
-
-```bash
-# Install Elixir (varies by OS)
-# On macOS with Homebrew:
-brew install elixir
-
-# On Ubuntu/Debian:
-sudo apt-get update
-sudo apt-get install elixir
-
-# On Arch Linux:
-sudo pacman -S elixir
-
-# Verify installation
-elixir --version
-mix --version
-```
-
-The configuration automatically installs and configures ElixirLS (Elixir Language Server) via Mason. No additional setup is required.
-
-Use the Elixir development keybindings:
-- `<leader>ef` - Format current file with `mix format`
-- `<leader>et` - Run all tests with `mix test`
-- `<leader>ec` - Compile project with `mix compile`
-- `<leader>er` - Restart Elixir Language Server
+The bundled `.ctags` file defines tags for Elixir, JavaScript, TypeScript, and
+Zig. Copy or link it to `~/.ctags` if your Ctags installation does not load the
+repository file automatically. Press `<F8>` to toggle Tagbar.
 
 ## Customisation
-- LSP servers: Modify `ensure_installed` in the Mason setup (Python, Zig, Elixir, Docker, Markdown, Bash, JSON, YAML, etc.)
-- Colour scheme: Change `colorscheme catppuccin` to your preferred theme
-- Formatters: Adjust `formatters_by_ft` in the conform.nvim setup
-- Keybindings: Modify the which-key configuration
-- CSV view: Customize the csvview.nvim configuration
 
-## Tagbar Setup
-
-### Zig and Elixir Tagbar Setup
-For Exuberant Ctags (default in many distros), a `.ctags` file is provided in this repo with support for:
-- Zig (functions, structs, enums, unions, constants, variables, tests)
-
-Save the file in `$HOME/.ctags`.
-Press `<F8>` to toggle Tagbar for code navigation in supported languages.
-
-Zig and Elixir support requires the language patterns in `.ctags`. The configuration is already included in this repo.
+- Mason tools: edit `mason_packages`.
+- LSP clients: edit `lsp_servers` and their `vim.lsp.config` blocks.
+- Linters: edit `linters_by_ft` and `lint_buffer`.
+- Formatters: edit `formatters_by_ft` in the conform.nvim setup.
+- Keybindings: edit the `wk.add` tables.
+- Theme: adjust the Catppuccin setup and `apply_accessible_ui_highlights`.

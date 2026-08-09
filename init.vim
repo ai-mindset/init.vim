@@ -1,14 +1,17 @@
 " Auto-install vim-plug if not present
 let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
-if empty(glob(data_dir . '/autoload/plug.vim'))
+let s:bootstrap_plugins = empty(glob(data_dir . '/autoload/plug.vim'))
+if s:bootstrap_plugins
   silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+  if empty(glob(data_dir . '/autoload/plug.vim'))
+    echoerr 'Could not install vim-plug'
+    finish
+  endif
 endif
 
 call plug#begin()
 " LSP Support with Mason
-Plug 'williamboman/mason.nvim'                                " Mason
-Plug 'williamboman/mason-lspconfig.nvim'                      " Mason LSP Config
+Plug 'mason-org/mason.nvim'                                   " Mason
 Plug 'neovim/nvim-lspconfig'                                  " LSP Configuration
 Plug 'mfussenegger/nvim-lint'                                 " Linting engine
 Plug 'stevearc/conform.nvim'                                  " Formatting engine
@@ -16,12 +19,10 @@ Plug 'hrsh7th/nvim-cmp'                                       " Completion Engin
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
 Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion
 Plug 'hrsh7th/cmp-cmdline'                                    " Command line completion
+Plug 'hrsh7th/cmp-path'                                       " Path completion
 
 " Local LLM completion
-Plug 'nomnivore/ollama.nvim', { 'dependencies': ['nvim-lua/plenary.nvim'] } " Ollama AI completion
-
-" GitHub Copilot
-" Plug 'github/copilot.vim'                                     " Neovim plugin for GitHub Copilot
+Plug 'nomnivore/ollama.nvim'                                  " Ollama AI completion
 
 " Elixir Development
 Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir
@@ -57,11 +58,10 @@ Plug 'sindrets/diffview.nvim'                                 " Easily cycling t
 Plug 'lewis6991/gitsigns.nvim'                                " Git integration for buffers 
 
 " Additional Quality of Life Improvements
-Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }  " Treesitter for syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Neovim 0.12 API
 Plug 'nvim-treesitter/nvim-treesitter-context'                 " Show code context 
 Plug 'lukas-reineke/indent-blankline.nvim'                     " Vertical indentation guide lines
 Plug 'windwp/nvim-autopairs'                                   " Autopairs for auto closing brackets
-Plug 'wolandark/vim-piper'                                     " Text to speech
 Plug 'm00qek/baleia.nvim'                                      " Colourful log messages
 Plug 'preservim/tagbar'                                        " Displays tags in a window, ordered by scope
 Plug 'jakobkhansen/journal.nvim'                               " Keep notes
@@ -70,19 +70,25 @@ Plug 'catgoose/nvim-colorizer.lua'                             " Colour preview
 Plug 'MeanderingProgrammer/render-markdown.nvim'               " Better markdown rendering in Neovim 
 call plug#end()
 
+" Do not execute plugin configuration until a fresh install has completed.
+if s:bootstrap_plugins
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+  finish
+endif
+
 lua << EOF
-vim.hl.on_yank({ higroup = "IncSearch", timeout = 150 })
 vim.api.nvim_create_autocmd("TextYankPost", {
   callback = function() vim.hl.on_yank({ higroup = "IncSearch", timeout = 150 }) end,
 })
 EOF
 
-""" Catppuccin Theme Configuration with Accessibility Improvements
+""" Catppuccin theme
 lua << EOF
 require("catppuccin").setup({
-  flavour = "mocha",   -- The highest contrast variant
+  flavour = "macchiato",
+  term_colors = true,
   no_italic = false,
-  no_bold = false,     -- Keep bold for structure
+  no_bold = false,
   styles = {
     comments = {},
     conditionals = {},
@@ -96,26 +102,21 @@ require("catppuccin").setup({
     properties = {},
     types = {},
   },
-  color_overrides = {
-    mocha = {
-      base = "#000000",  -- Deeper black for better contrast
-      text = "#FFFFFF",  -- Brighter text
+  lsp_styles = {
+    underlines = {
+      errors = { "underline" },
+      hints = { "underline" },
+      warnings = { "underline" },
+      information = { "underline" },
     },
   },
   integrations = {
+    cmp = true,
+    gitsigns = true,
     which_key = true,
     treesitter = true,
     mason = true,
     indent_blankline = { enabled = true },
-    native_lsp = {
-      enabled = true,
-      underlines = {
-        errors = { "underline" },
-        hints = { "underline" },
-        information = { "underline" },
-        warnings = { "underline" },
-      },
-    },
   },
 })
 EOF
@@ -123,18 +124,42 @@ EOF
 " Set the theme
 colorscheme catppuccin
 
-" Additional accessibility improvements
-hi CursorLine guibg=#2e3440 ctermbg=236
-hi Comment guifg=#a0a0a0 ctermfg=247
-hi Visual guibg=#5e81ac guifg=#ffffff ctermfg=15 ctermbg=67
-hi Search guibg=#ffb86c guifg=#1e1e2e ctermfg=0 ctermbg=214
-hi LineNr guifg=#CCCCCC ctermfg=252 guibg=#1a1a1a ctermbg=234
-hi CursorLineNr guifg=#FFFFFF ctermfg=15 guibg=#2e3440 ctermbg=236 gui=bold cterm=bold
-hi NormalFloat guibg=#303446 guifg=#ffffff gui=NONE
-hi IblIndent guifg=#888888 gui=nocombine
-hi IblScope  guifg=#aaaaaa gui=nocombine
-""" Catppuccin Theme Configuration with Accessibility Improvements
+lua << EOF
+local function apply_accessible_ui_highlights()
+  local palette = require("catppuccin.palettes").get_palette("macchiato")
+  local highlights = {
+    LineNr = { fg = palette.subtext0, bg = palette.mantle },
+    LineNrAbove = { fg = palette.subtext0, bg = palette.mantle },
+    LineNrBelow = { fg = palette.subtext0, bg = palette.mantle },
+    CursorLineNr = { fg = palette.yellow, bg = palette.surface0, bold = true },
+    SignColumn = { fg = palette.overlay1, bg = palette.mantle },
+    FoldColumn = { fg = palette.overlay1, bg = palette.mantle },
+    ColorColumn = { bg = palette.surface0 },
+    CursorColumn = { bg = palette.surface0 },
+    CursorLine = { bg = palette.surface0 },
+    HoverWord = { fg = palette.base, bg = palette.yellow, bold = true },
+    DiagnosticSignError = { fg = palette.red, bg = palette.mantle, bold = true },
+    DiagnosticSignWarn = { fg = palette.yellow, bg = palette.mantle, bold = true },
+    DiagnosticSignInfo = { fg = palette.sapphire, bg = palette.mantle, bold = true },
+    DiagnosticSignHint = { fg = palette.teal, bg = palette.mantle, bold = true },
+    DiagnosticLineNrError = { fg = palette.red, bg = palette.mantle, bold = true },
+    DiagnosticLineNrWarn = { fg = palette.yellow, bg = palette.mantle, bold = true },
+    DiagnosticLineNrInfo = { fg = palette.sapphire, bg = palette.mantle, bold = true },
+    DiagnosticLineNrHint = { fg = palette.teal, bg = palette.mantle, bold = true },
+  }
 
+  for group, spec in pairs(highlights) do
+    vim.api.nvim_set_hl(0, group, spec)
+  end
+end
+
+apply_accessible_ui_highlights()
+vim.api.nvim_create_autocmd("ColorScheme", {
+  pattern = "catppuccin*",
+  callback = apply_accessible_ui_highlights,
+})
+EOF
+""" Catppuccin theme
 
 """ Use jq for JSON formatting
 " Makes :Format run `:%!jq .`
@@ -242,7 +267,7 @@ local opts = {
 require("ollama").setup(opts)
 
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "python", "elixir", "typescript" },
+  pattern = { "python", "elixir", "typescript", "javascript" },
   callback = function()
     vim.keymap.set("i", "<C-x><C-o>", function()
       require("cmp").complete({
@@ -254,28 +279,6 @@ vim.api.nvim_create_autocmd("FileType", {
 
 EOF
 """ ollama.nvim configuration
-
-""" GitHub Copilot
-" Disable Copilot on startup - toggle manually with <Leader>cp
-let g:copilot_enabled = 0
-let g:copilot_filetypes = {
-      \ "vim": v:true,
-      \ "python": v:true,
-      \ "toml": v:true,
-      \ "yaml": v:true,
-      \ "json": v:true,
-      \ "markdown": v:true,
-      \ "elixir": v:true,
-      \ "typescript": v:true,
-      \ "typescriptreact": v:true,
-      \ "javascript": v:true,
-      \ "javascriptreact": v:true,
-      \ "sh": v:true,
-      \ "zsh": v:true,
-      \ "*": v:false,
-      \ }
-let g:copilot_model = "gemini-2.5-pro"
-""" GitHub Copilot
 
 """ journal.nvim
 lua << EOF
@@ -327,27 +330,25 @@ let mapleader = " "
 let maplocalleader = ","
 
 """ Basic Settings
+set number
 set relativenumber
 set expandtab                                   " Use spaces instead of tabs
 set tabstop=4                                   " Tab = 4 spaces
 set shiftwidth=4                                " Tab = 4 spaces
 set softtabstop=4                               " Number of spaces for a tab in insert mode
 set autoindent                                  " Auto indent
-set smartindent                                 " Smart autoindenting when starting a new line
-set cindent                                     " Stricter indenting rules for C-like languages
-set indentexpr=                                 " Let cindent handle indenting
-set wrap                                        " Wrap lines
+set nowrap                                      " Source code stays aligned; prose wraps locally
 set signcolumn=yes
-set updatetime=300
+set updatetime=1000                            " Clear hover highlighting after one second
 set completeopt=menu,menuone,noselect
 set colorcolumn=90                              " Column indicating 90 characters
 set cursorline
+set cursorcolumn                                " Track the current alignment column
 set ruler                                       " Always show current position
 set hlsearch                                    " Highlight search results
 set incsearch                                   " Makes search act like search in modern browsers
 set encoding=utf8                               " Set utf8 as standard encoding
 set ffs=unix,dos,mac                            " Use Unix as the standard file type
-set spell                                       " Enable spell checking
 set spelllang=en_gb
 set clipboard=unnamedplus                       " Clipboard Settings
 set background=dark                             " Set dark background
@@ -357,26 +358,32 @@ endif
 set termguicolors                               " True colour support
 """ Basic Settings
 
-""" Code folding
-set foldmethod=expr
-set foldexpr=v:lua.vim.treesitter.foldexpr()
+" Tree-sitter folding is enabled later only for supported filetypes.
 set foldlevel=99
 set foldlevelstart=99
-""" Code folding
+
+augroup ProseSettings
+    autocmd!
+    autocmd FileType markdown,gitcommit,text setlocal spell wrap linebreak
+augroup END
 
 """ Highlight on hover
-set updatetime=1000
+function! s:HighlightWordUnderCursor() abort
+    let l:word = expand('<cword>')
+    if empty(l:word)
+        match none
+        return
+    endif
+
+    execute printf('match HoverWord /\V\<%s\>/', escape(l:word, '/\'))
+endfunction
+
 augroup HighlightOnHover
     autocmd!
-    autocmd CursorMoved * exe printf('match IncSearch /\V\<%s\>/', escape(expand('<cword>'), '/\'))
+    autocmd CursorMoved * call <SID>HighlightWordUnderCursor()
     autocmd CursorHold,CursorHoldI * match none
 augroup END
 """ Highlight on hover
-
-""" Highlight column under cursor
-set cursorcolumn
-hi CursorColumn guibg=#2e3440
-""" Highlight column under cursor
 
 """ Statusline configuration
 set laststatus=3                     " Global statusline (Neovim only)
@@ -486,6 +493,7 @@ function! SetupStatusline()
     let &statusline .= '%#StInfo# fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()} '         " Format and states
     let &statusline .= '%#StPath# path:%{PWDPath()} ' " File path relative to home
     let &statusline .= '%#StGit#%{GitInfo()}%*'                                               " Git status
+    let &statusline .= '%#StInfo# %{get(g:, ''diagnostic_status'', '''')}%*'                  " Diagnostics
     let &statusline .= '%='                                                                   " Switch sides
     let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'         " Virtual env if exists
     let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% '                                     " Position info (clearer labels)
@@ -495,25 +503,18 @@ endfunction
 function! StatuslineMode()
     let l:mode = mode()
 
-    " Set highlight based on mode
-    if l:mode =~# '\v(n|no)'
-        exe 'hi! link StatusLine StModeNormal'
-        return 'NORMAL '
-    elseif l:mode =~# '\v(i)'
-        exe 'hi! link StatusLine StModeInsert'
-        return 'INSERT '
-    elseif l:mode =~# '\v(v|V|\<C-v>)'
-        exe 'hi! link StatusLine StModeVisual'
-        return 'VISUAL '
-    elseif l:mode =~# '\v(R)'
-        exe 'hi! link StatusLine StModeReplace'
-        return 'REPLACE '
-    elseif l:mode =~# '\v(c)'
-        exe 'hi! link StatusLine StModeCommand'
-        return 'COMMAND '
+    if l:mode =~# '^n'
+        return '%#StModeNormal#NORMAL '
+    elseif l:mode =~# '^i'
+        return '%#StModeInsert#INSERT '
+    elseif l:mode ==# 'v' || l:mode ==# 'V' || l:mode ==# "\<C-v>"
+        return '%#StModeVisual#VISUAL '
+    elseif l:mode =~# '^R'
+        return '%#StModeReplace#REPLACE '
+    elseif l:mode =~# '^c'
+        return '%#StModeCommand#COMMAND '
     else
-        exe 'hi! link StatusLine StModeNormal'
-        return '  ' . get(g:currentmode, l:mode, l:mode) . ' '
+        return '%#StModeNormal#  ' . get(g:currentmode, l:mode, l:mode) . ' '
     endif
 endfunction
 
@@ -531,15 +532,123 @@ augroup END
 call SetupStatusline()
 """ Statusline Configuration
 
-""" piper TTS
-let g:piper_bin = '~/.venv/bin/piper'
-let g:piper_voice = '/usr/share/piper-voices/en_GB-alba-medium.onnx'
-                    " <space>tw = SpeakWord()
-                    " <space>tc = SpeakCurrentLine()
-                    " <space>tp = SpeakCurrentParagraph()
-                    " <space>tf = SpeakCurrentFile()
-                    " <space>tv = SpeakVisualSelection()
-""" piper TTS
+""" Piper TTS
+lua << EOF
+local function first_executable(candidates)
+  for _, candidate in ipairs(candidates) do
+    local path = candidate == "piper" and vim.fn.exepath(candidate) or vim.fn.expand(candidate)
+    if path ~= "" and vim.fn.executable(path) == 1 then
+      return path
+    end
+  end
+end
+
+local function first_readable(candidates)
+  for _, candidate in ipairs(candidates) do
+    local path = vim.fn.expand(candidate)
+    if vim.fn.filereadable(path) == 1 then
+      return path
+    end
+  end
+end
+
+local function player_command(path)
+  local players = {
+    { "aplay", { path } },
+    { "pw-play", { path } },
+    { "afplay", { path } },
+    { "ffplay", { "-nodisp", "-autoexit", "-loglevel", "quiet", path } },
+  }
+  for _, player in ipairs(players) do
+    local executable = vim.fn.exepath(player[1])
+    if executable ~= "" then
+      return vim.list_extend({ executable }, player[2])
+    end
+  end
+end
+
+local function speak(text)
+  if not text or not text:match("%S") then
+    return
+  end
+
+  local piper = first_executable({
+    "piper",
+    "~/.local/bin/piper",
+    "~/.local/share/piper/piper",
+    "~/.venv/bin/piper",
+  })
+  local voice = first_readable({
+    "~/.local/share/piper-voices/en_GB-alba-medium.onnx",
+    "/usr/share/piper-voices/en_GB-alba-medium.onnx",
+  })
+
+  if not piper or not voice then
+    vim.notify("Piper executable or voice model not found", vim.log.levels.ERROR)
+    return
+  end
+
+  local output = vim.fn.tempname() .. ".wav"
+  vim.system({ piper, "--model", voice, "--output_file", output }, {
+    stdin = text,
+    text = true,
+  }, function(result)
+    vim.schedule(function()
+      if result.code ~= 0 then
+        vim.uv.fs_unlink(output)
+        vim.notify("Piper failed: " .. vim.trim(result.stderr or ""), vim.log.levels.ERROR)
+        return
+      end
+
+      local command = player_command(output)
+      if not command then
+        vim.uv.fs_unlink(output)
+        vim.notify("No supported audio player found", vim.log.levels.ERROR)
+        return
+      end
+
+      vim.system(command, { text = true }, function(playback)
+        vim.schedule(function()
+          vim.uv.fs_unlink(output)
+          if playback.code ~= 0 then
+            vim.notify("Audio playback failed", vim.log.levels.ERROR)
+          end
+        end)
+      end)
+    end)
+  end)
+end
+
+_G.PiperTTS = {
+  word = function()
+    speak(vim.fn.expand("<cword>"))
+  end,
+  line = function()
+    speak(vim.api.nvim_get_current_line())
+  end,
+  paragraph = function()
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    local first, last = row, row
+    while first > 1 and vim.fn.getline(first - 1):match("%S") do
+      first = first - 1
+    end
+    while last < vim.api.nvim_buf_line_count(0) and vim.fn.getline(last + 1):match("%S") do
+      last = last + 1
+    end
+    speak(table.concat(vim.api.nvim_buf_get_lines(0, first - 1, last, false), "\n"))
+  end,
+  file = function()
+    speak(table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n"))
+  end,
+  visual = function()
+    local region = vim.fn.getregion(vim.fn.getpos("v"), vim.fn.getpos("."), {
+      type = vim.fn.mode(),
+    })
+    speak(table.concat(region, "\n"))
+  end,
+}
+EOF
+""" Piper TTS
 
 
 """ Spelling mistakes will be coloured up red.
@@ -633,58 +742,53 @@ EOF
 
 """ Mason Configuration
 lua << EOF
-require("mason").setup({
-  ensure_installed = {
-    "actionlint",            -- GH Actions
-  }
-})
-require("mason-lspconfig").setup({
-  ensure_installed = {
-    "jedi_language_server",  -- Python LSP
-    "markdown_oxide",        -- Markdown
-    "denols",                -- Deno Language Server (TS/JS/JSON)
-    "elixirls",              -- Elixir Language Server
-  },
-  automatic_installation = false,
-  handlers = {
-    -- Jedi for Python LSP features (code intelligence)
-    jedi_language_server = function()
-      require('lspconfig').jedi_language_server.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-      })
-    end,
+require("mason").setup()
 
-    -- Markdown Oxide
-    markdown_oxide = function()
-      require("lspconfig").markdown_oxide.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        filetypes = { "markdown", "markdown.mdx" },
-        root_dir = require("lspconfig").util.root_pattern(".git"),
-      })
-    end,
+-- Use Mason package names here, not nvim-lspconfig server names.
+local mason_packages = {
+  "actionlint",            -- GitHub Actions linter
+  "jedi-language-server",  -- Python LSP
+  "pyright",               -- Python type-checking LSP
+  "ruff",                  -- Python linter and formatter
+  "markdown-oxide",        -- Markdown LSP
+  "markdownlint-cli2",     -- Markdown linter
+  "deno",                  -- Deno runtime and LSP
+  "elixir-ls",             -- Elixir LSP
+}
 
-    -- Deno Language Server (TS/JS/JSON)
-    denols = function()
-      require("lspconfig").denols.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-        single_file_support = true,
-      })
-    end,
+local registry = require("mason-registry")
+registry.refresh(vim.schedule_wrap(function(success)
+  if not success then
+    vim.notify(
+      "Could not refresh the Mason registry; tools were not installed",
+      vim.log.levels.WARN
+    )
+    return
+  end
 
-    -- Elixir Language Server
-    elixirls = function()
-      require("lspconfig").elixirls.setup({
-        on_attach = on_attach,
-        capabilities = capabilities,
-      })
-    end,
-  }
-})
+  for _, name in ipairs(mason_packages) do
+    local package_name = name
+    local found, package = pcall(registry.get_package, name)
+    if not found then
+      vim.notify("Unknown Mason package: " .. name, vim.log.levels.WARN)
+    elseif not package:is_installed() and not package:is_installing() then
+      package:install({}, vim.schedule_wrap(function(installed, err)
+        if not installed then
+          vim.notify(
+            string.format(
+              "Mason could not install %s: %s",
+              package_name,
+              tostring(err or "unknown error")
+            ),
+            vim.log.levels.WARN
+          )
+        end
+      end))
+    end
+  end
+end))
 EOF
-""" Mason Configuratio
+""" Mason Configuration
 
 """ Completion setup
 lua << EOF
@@ -702,8 +806,8 @@ cmp.setup({
    end,
    },
    window = {
-      -- completion = cmp.config.window.bordered(),
-      -- documentation = cmp.config.window.bordered(),
+      completion = cmp.config.window.bordered(),
+      documentation = cmp.config.window.bordered(),
     },
     mapping = cmp.mapping.preset.insert({
       ["<C-b>"] = cmp.mapping.scroll_docs(-4),
@@ -714,9 +818,15 @@ cmp.setup({
     }),
   sources = cmp.config.sources({
     { name = "nvim_lsp" },
+    { name = "path" },
     { name = "buffer" },
   })
 })
+
+cmp.event:on(
+  "confirm_done",
+  require("nvim-autopairs.completion.cmp").on_confirm_done()
+)
 
 -- Common Lisp: use Vlime's omni completion via cmp-omni
 cmp.setup.filetype('lisp', {
@@ -726,93 +836,226 @@ cmp.setup.filetype('lisp', {
   })
 })
 
+cmp.setup.cmdline({ '/', '?' }, {
+  mapping = cmp.mapping.preset.cmdline(),
+  sources = { { name = 'buffer' } },
+})
+
+cmp.setup.cmdline(':', {
+  mapping = cmp.mapping.preset.cmdline(),
+  sources = cmp.config.sources({ { name = 'path' } }, { { name = 'cmdline' } }),
+})
+
 EOF
 """ Completion setup
 
 """ LSP Configuration
 lua << EOF
+vim.g.markdown_fenced_languages = {
+  "py=python",
+  "ex=elixir",
+  "js=javascript",
+  "ts=typescript",
+}
 
--- Configure diagnostics once (remove duplicate config)
--- This config is moved and consolidated below with the main diagnostic config
+local function show_signature_help()
+  pcall(vim.lsp.buf.signature_help, {
+    border = "rounded",
+    focusable = true,
+    max_width = math.min(100, math.floor(vim.o.columns * 0.6)),
+    max_height = math.max(10, math.floor(vim.o.lines * 0.4)),
+  })
+end
 
--- Proper file type detection
-vim.cmd([[
-  augroup python_lsp
-    autocmd!
-    autocmd FileType python lua vim.diagnostic.enable(true)
-    autocmd FileType python setlocal omnifunc=v:lua.vim.lsp.omnifunc
-  augroup END
-]])
+local function show_hover()
+  local diagnostic_win = vim.b.auto_diagnostic_float_win
+  if diagnostic_win and vim.api.nvim_win_is_valid(diagnostic_win) then
+    vim.api.nvim_win_close(diagnostic_win, true)
+  end
+  vim.b.auto_diagnostic_float_win = nil
 
--- Add this before your LSP configurations
+  vim.lsp.buf.hover({
+    border = "rounded",
+    focusable = true,
+    max_width = math.min(100, math.floor(vim.o.columns * 0.6)),
+    max_height = math.max(10, math.floor(vim.o.lines * 0.5)),
+    wrap = true,
+  })
+end
+
 vim.api.nvim_create_autocmd('LspAttach', {
-    group = vim.api.nvim_create_augroup('UserLspConfig', {}),
-    callback = function(ev)
-        -- Don't override omnifunc for Common Lisp (Vlime handles it)
-        if vim.bo[ev.buf].filetype == 'lisp' then return end
-        -- Enable completion triggered by <c-x><c-o>
-        vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+  group = vim.api.nvim_create_augroup('UserLspConfig', { clear = true }),
+  callback = function(ev)
+    local bufnr = ev.buf
+    local filetype = vim.bo[bufnr].filetype
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
 
-        -- Buffer local mappings.
-        local opts = { buffer = ev.buf }
-        vim.keymap.set('n', 'K', function()
-            local winid = require('vim.lsp.util').open_floating_preview(
-                {'Fetching documentation...'}, 'markdown', {
-                    border = "shadow",
-                    focusable = true,
-                })
-            vim.lsp.buf.hover()
-        end, opts)
-    end,
+    -- Jedi owns Python navigation/completion/hover. Pyright contributes diagnostics
+    -- without presenting duplicate results for the same language features.
+    if client and client.name == 'pyright' then
+      client.server_capabilities.completionProvider = nil
+      client.server_capabilities.hoverProvider = false
+      client.server_capabilities.signatureHelpProvider = nil
+      client.server_capabilities.definitionProvider = false
+      client.server_capabilities.declarationProvider = false
+      client.server_capabilities.implementationProvider = false
+      client.server_capabilities.referencesProvider = false
+      client.server_capabilities.renameProvider = false
+      client.server_capabilities.documentSymbolProvider = false
+      client.server_capabilities.workspaceSymbolProvider = false
+      client.server_capabilities.documentFormattingProvider = false
+      client.server_capabilities.documentRangeFormattingProvider = false
+    end
+
+    -- Don't override omnifunc for Common Lisp (Vlime handles it).
+    if filetype ~= 'lisp' then
+      vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+    end
+
+    vim.keymap.set('n', 'K', show_hover, {
+      buffer = bufnr,
+      silent = true,
+      desc = 'Show hover documentation',
+    })
+
+    -- Automatically show Python signature help after '(' or ','.
+    if filetype == 'python' and not vim.b[bufnr].lsp_signature_help_configured then
+      vim.b[bufnr].lsp_signature_help_configured = true
+
+      vim.api.nvim_create_autocmd('InsertCharPre', {
+        buffer = bufnr,
+        callback = function()
+          if vim.v.char == '(' or vim.v.char == ',' then
+            vim.schedule(show_signature_help)
+          end
+        end,
+      })
+
+      vim.api.nvim_create_autocmd('CursorHoldI', {
+        buffer = bufnr,
+        callback = function()
+          local line = vim.api.nvim_get_current_line()
+          local col = vim.api.nvim_win_get_cursor(0)[2]
+          local before_cursor = col > 0 and line:sub(1, col) or ''
+
+          if before_cursor:match('%(') and not before_cursor:match('%)') then
+            show_signature_help()
+          end
+        end,
+      })
+    end
+  end,
 })
 
--- Configure signature help handler once (globally, outside on_attach)
-pcall(vim.lsp.buf.signature_help, { border = "shadow", focusable = true })
-
--- LSP Configuration
+-- Extend nvim-lspconfig's server defaults with completion capabilities.
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
+local lsp_servers = {
+  'jedi_language_server',
+  'pyright',
+  'markdown_oxide',
+  'denols',
+  'elixirls',
+}
 
--- LSP Keybindings
-local on_attach = function(client, bufnr)
-
-  -- Common options for most keymaps
-  local opts = { noremap = true, silent = true, buffer = bufnr }
-
-
-  -- Programming filetypes where signature help should auto-trigger
-  local programming_filetypes = {'python'}
-
-  -- Set up signature help auto-trigger only for programming files
-  if vim.tbl_contains(programming_filetypes, vim.bo.filetype) then
-    -- Use InsertCharPre instead of TextChangedI - fires BEFORE character insertion
-    vim.api.nvim_create_autocmd('InsertCharPre', {
-      buffer = bufnr,
-      callback = function()
-        local char = vim.v.char
-        if char == '(' or char == ',' then
-          vim.schedule(function()
-            pcall(vim.lsp.buf.signature_help)
-          end)
-        end
-      end,
-    })
-
-    -- Backup: CursorHoldI for when pausing inside function calls
-    vim.api.nvim_create_autocmd('CursorHoldI', {
-      buffer = bufnr,
-      callback = function()
-        local line = vim.api.nvim_get_current_line()
-        local col = vim.api.nvim_win_get_cursor(0)[2]
-        local before_cursor = col > 0 and line:sub(1, col) or ''
-
-        -- Only trigger if we're likely inside a function call
-        if before_cursor:match('%(') and not before_cursor:match('%)') then
-          pcall(vim.lsp.buf.signature_help)
-        end
-      end,
-    })
+for _, server in ipairs(lsp_servers) do
+  if server ~= 'pyright' then
+    vim.lsp.config(server, { capabilities = capabilities })
   end
 end
+
+-- This configuration intentionally targets Deno projects and plain JS/TS only.
+vim.lsp.config('denols', {
+  filetypes = { 'javascript', 'typescript' },
+  settings = {
+    deno = { lint = true },
+  },
+})
+
+local function find_node_executable()
+  local from_path = vim.fn.exepath('node')
+  if from_path ~= '' then
+    return from_path
+  end
+
+  local candidates = vim.fn.glob(
+    vim.fn.expand('~/.asdf/installs/nodejs/*/bin/node'),
+    false,
+    true
+  )
+  table.sort(candidates, function(left, right)
+    local left_version = vim.version.parse(left:match('/nodejs/([^/]+)/bin/node$') or '')
+    local right_version = vim.version.parse(right:match('/nodejs/([^/]+)/bin/node$') or '')
+    if left_version and right_version then
+      return vim.version.gt(left_version, right_version)
+    end
+    return left > right
+  end)
+
+  for _, candidate in ipairs(candidates) do
+    if vim.fn.executable(candidate) == 1 then
+      return candidate
+    end
+  end
+end
+
+local pyright_config = {
+  capabilities = vim.deepcopy(capabilities),
+  settings = {
+    python = {
+      analysis = {
+        typeCheckingMode = 'standard',
+        diagnosticMode = 'openFilesOnly',
+      },
+    },
+  },
+}
+
+-- Pyright 1.1.411 can dynamically register the pull-diagnostics provider
+-- several times with Nvim 0.12. Duplicate empty responses then clear valid
+-- results. Let Pyright use its established publishDiagnostics path until the
+-- Nvim 0.13 diagnostic client is available.
+if vim.fn.has('nvim-0.12') == 1 and vim.fn.has('nvim-0.13') == 0 then
+  pyright_config.before_init = function(params)
+    if params.capabilities.textDocument then
+      params.capabilities.textDocument.diagnostic = nil
+    end
+    if params.capabilities.workspace then
+      params.capabilities.workspace.diagnostics = nil
+    end
+  end
+end
+
+local node = find_node_executable()
+if node then
+  -- GUI-launched Nvim may not inherit asdf's Node.js path. Mason's npm tools
+  -- (Pyright and markdownlint-cli2) need it in their child-process PATH.
+  local node_dir = vim.fs.dirname(node)
+  local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
+  local path_entries = vim.split(vim.env.PATH or '', path_separator, { plain = true })
+  if not vim.list_contains(path_entries, node_dir) then
+    vim.env.PATH = node_dir .. path_separator .. (vim.env.PATH or '')
+  end
+
+  pyright_config.cmd = {
+    node,
+    vim.fs.joinpath(
+      vim.fn.stdpath('data'),
+      'mason',
+      'packages',
+      'pyright',
+      'node_modules',
+      'pyright',
+      'langserver.index.js'
+    ),
+    '--stdio',
+  }
+else
+  vim.notify('Node.js was not found; Pyright cannot start', vim.log.levels.WARN)
+end
+
+vim.lsp.config('pyright', pyright_config)
+
+vim.lsp.enable(lsp_servers)
 EOF
 """ LSP Configuration
 
@@ -826,198 +1069,155 @@ lua << EOF
 -- Linting Configuration
 local lint = require('lint')
 
--- Register ty as a custom linter
-lint.linters.ty = {
-  cmd = "ty",
-  stdin = false,
-  args = {
-    "--show-error-codes",
-    "--show-column-numbers"
-  },
-  ignore_exitcode = true,
-  parser = function(output, bufnr)
-    local diagnostics = {}
-    for _, line in ipairs(vim.split(output, '\n')) do
-      -- Parse ty output lines that look like: file.py:line:col: error: message [error-code]
-      local file, line, col, severity, message, code =
-        line:match(".-:(%d+):(%d+): (%w+): (.-) %[(.-)%]")
-
-      if line and col and message then
-        local severity_map = {
-          error = vim.diagnostic.severity.ERROR,
-          warning = vim.diagnostic.severity.WARN,
-          note = vim.diagnostic.severity.INFO,
-          hint = vim.diagnostic.severity.HINT
-        }
-
-        table.insert(diagnostics, {
-          lnum = tonumber(line) - 1,  -- 0-indexed
-          col = tonumber(col) - 1,    -- 0-indexed
-          message = message .. (code and " [" .. code .. "]" or ""),
-          source = "ty",
-          severity = severity_map[severity] or vim.diagnostic.severity.ERROR
-        })
-      end
-    end
-    return diagnostics
-  end
-}
-
 lint.linters_by_ft = {
-  python = {'ruff', 'ty'},
+  python = {'ruff'},
   elixir = {'credo'},
+  markdown = {'markdownlint-cli2'},
 }
 
--- Simple ruff linter that runs on actual file (not stdin) to find pyproject.toml
-lint.linters.ruff = {
-  cmd = "ruff",
-  stdin = false,
-  args = {
-    "check",
-    "--output-format=json",
-    function() return vim.api.nvim_buf_get_name(0) end
-  },
-  ignore_exitcode = true,
-  parser = function(output, bufnr, cwd)
-    local ok, decoded = pcall(vim.json.decode, output)
-    if not ok then return {} end
+local function diagnostic_format(diag)
+  local code = diag.code and (" [" .. tostring(diag.code) .. "]") or ""
+  return diag.message .. code
+end
 
-    local diagnostics = {}
-    if decoded and type(decoded) == "table" then
-      for _, item in ipairs(decoded) do
-        if item.location then
-          table.insert(diagnostics, {
-            lnum = (item.location.row or 1) - 1,
-            col = (item.location.column or 1) - 1,
-            message = item.message or "Ruff error",
-            severity = vim.diagnostic.severity.WARN,
-            source = "ruff",
-            code = item.code
-          })
-        end
-      end
+local function diagnostic_list_format(diag)
+  local source = diag.source or "diagnostic"
+  local code = diag.code and (":" .. tostring(diag.code)) or ""
+  return string.format("[%s%s] %s", source, code, diag.message:gsub("\n", " "))
+end
+
+_G.UserDiagnostics = {
+  jump = function(count, severity)
+    local diagnostic = vim.diagnostic.jump({
+      count = count,
+      severity = severity,
+      wrap = true,
+    })
+    if not diagnostic then
+      return
     end
-    return diagnostics
-  end
-}
 
--- Credo linter for Elixir
-lint.linters.credo = {
-  cmd = "mix",
-  stdin = false,
-  args = {
-    "credo",
-    "suggest",
-    "--format",
-    "json",
-    "--read-from-stdin",
-    function() return vim.api.nvim_buf_get_name(0) end
-  },
-  ignore_exitcode = true,
-  parser = function(output, bufnr, cwd)
-    local ok, decoded = pcall(vim.json.decode, output)
-    if not ok then return {} end
-
-    local diagnostics = {}
-    if decoded and type(decoded) == "table" and decoded.issues then
-      for _, issue in ipairs(decoded.issues) do
-        table.insert(diagnostics, {
-          lnum = (issue.line_no or 1) - 1,
-          col = (issue.column or 1) - 1,
-          message = issue.message or "Credo issue",
-          severity = vim.diagnostic.severity.WARN,
-          source = "credo",
-          code = issue.check
-        })
-      end
-    end
-    return diagnostics
+    vim.schedule(function()
+      local _, winid = vim.diagnostic.open_float({
+        bufnr = diagnostic.bufnr,
+        scope = "cursor",
+        pos = { diagnostic.lnum, diagnostic.col },
+        focusable = false,
+        border = "rounded",
+        source = true,
+        format = diagnostic_format,
+        close_events = {
+          "BufHidden",
+          "CursorMoved",
+          "CursorMovedI",
+          "InsertEnter",
+          "WinLeave",
+        },
+      })
+      vim.b[diagnostic.bufnr].auto_diagnostic_float_win = winid
+    end)
   end,
-  -- Check if Credo is available in the current Mix project
-  condition = function(ctx)
-    local handle = io.popen("mix help | grep -q credo")
-    if handle then
-      local result = handle:close()
-      return result == 0
-    end
-    return false
-  end
 }
 
--- Simple command to show diagnostics in popup
+-- Show every diagnostic on the current line in a focusable popup.
 vim.api.nvim_create_user_command("ShowDiagnostics", function()
-  vim.diagnostic.open_float()
+  vim.diagnostic.open_float({
+    scope = "line",
+    border = "rounded",
+    focusable = true,
+    source = true,
+    format = diagnostic_format,
+  })
 end, {})
 
 -- Function to count diagnostics and update status line
-local function update_diagnostics_status()
-  local diagnostics = vim.diagnostic.get(0)
+local function update_diagnostics_status(bufnr)
+  if bufnr ~= vim.api.nvim_get_current_buf() then
+    return
+  end
+
+  local diagnostics = vim.diagnostic.get(bufnr)
   local error_count = 0
   local warn_count = 0
-  local error_lines = {}
-  local warn_lines = {}
+  local info_count = 0
+  local hint_count = 0
+  local first_error
+  local first_warning
+  local first_info
+  local first_hint
 
   for _, diag in ipairs(diagnostics) do
     if diag.severity == vim.diagnostic.severity.ERROR then
       error_count = error_count + 1
-      table.insert(error_lines, diag.lnum + 1)  -- +1 to convert to 1-based line numbers
+      first_error = math.min(first_error or math.huge, diag.lnum + 1)
     elseif diag.severity == vim.diagnostic.severity.WARN then
       warn_count = warn_count + 1
-      table.insert(warn_lines, diag.lnum + 1)  -- +1 to convert to 1-based line numbers
+      first_warning = math.min(first_warning or math.huge, diag.lnum + 1)
+    elseif diag.severity == vim.diagnostic.severity.INFO then
+      info_count = info_count + 1
+      first_info = math.min(first_info or math.huge, diag.lnum + 1)
+    elseif diag.severity == vim.diagnostic.severity.HINT then
+      hint_count = hint_count + 1
+      first_hint = math.min(first_hint or math.huge, diag.lnum + 1)
     end
   end
 
-  -- Sort line numbers
-  table.sort(error_lines)
-  table.sort(warn_lines)
-
-  -- Prepare location strings (with up to 3 line numbers shown)
-  local error_loc = #error_lines > 0 and
-    " [Lines: " .. table.concat(error_lines, ",", 1, math.min(3, #error_lines)) ..
-    (#error_lines > 3 and "..." or "") .. "]" or ""
-
-  local warn_loc = #warn_lines > 0 and
-    " [Lines: " .. table.concat(warn_lines, ",", 1, math.min(3, #warn_lines)) ..
-    (#warn_lines > 3 and "..." or "") .. "]" or ""
-
-  -- Display diagnostic count in command line with locations
-  if error_count > 0 or warn_count > 0 then
-    local msg = string.format("Linting: %d errors%s, %d warnings%s",
-      error_count, error_loc, warn_count, warn_loc)
-    vim.api.nvim_echo({{msg, "WarningMsg"}}, false, {})
-  end
-
-  -- Update statusline variable
-  vim.g.linting_status = ""
+  local status = {}
   if error_count > 0 then
-    vim.g.linting_status = vim.g.linting_status .. "E:" .. error_count
-    if #error_lines > 0 then
-      -- Show first error location
-      vim.g.linting_status = vim.g.linting_status .. "@" .. error_lines[1]
-    end
-    vim.g.linting_status = vim.g.linting_status .. " "
+    table.insert(status, string.format("E:%d@%d", error_count, first_error))
   end
   if warn_count > 0 then
-    vim.g.linting_status = vim.g.linting_status .. "W:" .. warn_count
-    if #warn_lines > 0 then
-      -- Show first warning location
-      vim.g.linting_status = vim.g.linting_status .. "@" .. warn_lines[1]
-    end
-    vim.g.linting_status = vim.g.linting_status .. " "
+    table.insert(status, string.format("W:%d@%d", warn_count, first_warning))
   end
+  if info_count > 0 then
+    table.insert(status, string.format("I:%d@%d", info_count, first_info))
+  end
+  if hint_count > 0 then
+    table.insert(status, string.format("H:%d@%d", hint_count, first_hint))
+  end
+  vim.g.diagnostic_status = table.concat(status, " ")
+  vim.cmd.redrawstatus()
 end
 
--- Set up linting on file save only (reduced frequency)
-vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  pattern = { "*.py", "*.ex", "*.exs", "*.yml", "*.yaml" },
-  callback = function()
-    local path = vim.api.nvim_buf_get_name(0)
+local diagnostic_group = vim.api.nvim_create_augroup("UserDiagnostics", { clear = true })
+
+local function lint_buffer(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) or vim.bo[bufnr].buftype ~= "" then
+    return
+  end
+
+  vim.api.nvim_buf_call(bufnr, function()
+    local path = vim.api.nvim_buf_get_name(bufnr):gsub("\\", "/")
+    local filetype = vim.bo[bufnr].filetype
     if path:match("%.github/workflows/") then
-      require("lint").try_lint("actionlint")
-    else
-      require("lint").try_lint()
+      lint.try_lint("actionlint")
+    elseif filetype == "python" then
+      lint.try_lint("ruff")
+    elseif filetype == "markdown" then
+      lint.try_lint("markdownlint-cli2")
+    elseif filetype == "elixir" then
+      local root = vim.fs.root(bufnr, { "mix.exs" })
+      if root then
+        lint.try_lint("credo", { cwd = root })
+      end
     end
-    vim.defer_fn(update_diagnostics_status, 100)
+  end)
+end
+
+-- LSP diagnostics update while editing; external linters run when a supported
+-- file is opened and saved to keep the IDE responsive and results current.
+vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost" }, {
+  group = diagnostic_group,
+  pattern = { "*.py", "*.ex", "*.exs", "*.md", "*.markdown", "*.yml", "*.yaml" },
+  callback = function(args)
+    lint_buffer(args.buf)
+  end,
+})
+
+vim.api.nvim_create_autocmd({ "DiagnosticChanged", "BufEnter" }, {
+  group = diagnostic_group,
+  callback = function(args)
+    update_diagnostics_status(args.buf)
   end,
 })
 
@@ -1025,191 +1225,221 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 vim.diagnostic.config({
   virtual_text = false,  -- No inline text
   signs = {
+    priority = 20,
     text = {
-      [vim.diagnostic.severity.ERROR] = "✖",
-      [vim.diagnostic.severity.WARN] = "⚠",
-      [vim.diagnostic.severity.HINT] = "💡",
-      [vim.diagnostic.severity.INFO] = "ℹ",
-    }
+      [vim.diagnostic.severity.ERROR] = "E",
+      [vim.diagnostic.severity.WARN] = "W",
+      [vim.diagnostic.severity.INFO] = "I",
+      [vim.diagnostic.severity.HINT] = "H",
+    },
+    numhl = {
+      [vim.diagnostic.severity.ERROR] = "DiagnosticLineNrError",
+      [vim.diagnostic.severity.WARN] = "DiagnosticLineNrWarn",
+      [vim.diagnostic.severity.INFO] = "DiagnosticLineNrInfo",
+      [vim.diagnostic.severity.HINT] = "DiagnosticLineNrHint",
+    },
   },
   underline = true,
   severity_sort = true,
   update_in_insert = false,
-  float = { border = "shadow" },
+  float = {
+    border = "rounded",
+    source = true,
+    format = diagnostic_format,
+  },
 })
 
+-- Show a non-focus-stealing popup only when the cursor rests on a line with
+-- diagnostics. Explicit LSP hover closes it before opening documentation.
 vim.api.nvim_create_autocmd("CursorHold", {
-  callback = function()
-    vim.diagnostic.open_float(nil, { focusable = false })
+  group = diagnostic_group,
+  callback = function(args)
+    if vim.fn.mode() ~= "n" or #vim.diagnostic.get(args.buf, {
+      lnum = vim.api.nvim_win_get_cursor(0)[1] - 1,
+    }) == 0 then
+      return
+    end
+
+    for _, winid in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.api.nvim_win_get_config(winid).relative ~= "" then
+        return
+      end
+    end
+
+    local _, winid = vim.diagnostic.open_float({
+      bufnr = args.buf,
+      scope = "line",
+      focusable = false,
+      border = "rounded",
+      source = true,
+      format = diagnostic_format,
+      close_events = {
+        "BufHidden",
+        "CursorMoved",
+        "CursorMovedI",
+        "InsertEnter",
+        "WinLeave",
+      },
+    })
+    vim.b[args.buf].auto_diagnostic_float_win = winid
   end,
 })
 
--- Add linting status to your statusline
-vim.o.statusline = vim.o.statusline .. " %{get(g:, 'linting_status', '')}"
-
--- Add command to show all diagnostics with their locations
+-- Put all diagnostics for the current buffer in a navigable location list.
 vim.api.nvim_create_user_command("LintLocations", function()
-  local diagnostics = vim.diagnostic.get(0)
-  if #diagnostics == 0 then
-    print("No linting issues found")
-    return
-  end
+  vim.diagnostic.setloclist({
+    open = true,
+    title = "Buffer diagnostics",
+    format = diagnostic_list_format,
+  })
+end, {})
 
-  -- Sort diagnostics by line number
-  table.sort(diagnostics, function(a, b) return a.lnum < b.lnum end)
-
-  -- Display all diagnostics in a nice format
-  local output = {"Linting issues:"}
-  for _, diag in ipairs(diagnostics) do
-    local severity = "Info"
-    if diag.severity == vim.diagnostic.severity.ERROR then
-      severity = "Error"
-    elseif diag.severity == vim.diagnostic.severity.WARN then
-      severity = "Warning"
-    elseif diag.severity == vim.diagnostic.severity.HINT then
-      severity = "Hint"
-    end
-
-    table.insert(output, string.format("Line %d: [%s] %s",
-      diag.lnum + 1, severity, diag.message))
-  end
-
-  vim.api.nvim_echo(vim.tbl_map(function(line)
-    return {line, "Normal"}
-  end, output), true, {})
+vim.api.nvim_create_user_command("DiagnosticsWorkspace", function()
+  vim.diagnostic.setqflist({
+    open = true,
+    title = "Workspace diagnostics",
+    format = diagnostic_list_format,
+  })
 end, {})
 
 
--- Formatting Configuration
--- https://questions.deno.com/m/1233267429656891495
 require("conform").setup({
-  -- Formatters for your Language-specific
   formatters_by_ft = {
-      python = { "ruff_organize_imports", "ruff_format" },
-      typescript = { "deno_fmt" },
-      javascript = { "deno_fmt" },
-      json = { "deno_fmt" },
-      elixir = { "mix" },
-    },
-
-  -- Organise Python imports
-    formatters = {
-        ruff_organize_imports = {
-          command = "ruff",
-          args = {
-            "check",
-            "--no-force-exclude",
-            "--select=I001",
-            "--fix",
-            "--exit-zero",
-            "--stdin-filename",
-            "$FILENAME",
-            "-",
-          },
-          stdin = true,
-          cwd = require("conform.util").root_file {
-            "pyproject.toml",
-            "ruff.toml",
-            ".ruff.toml",
-          },
-        },
-        ruff_format = {
-          command = "ruff",
-          args = {
-            "format",
-            "--stdin-filename",
-            "$FILENAME",
-            "-",
-          },
-          stdin = true,
-          cwd = require("conform.util").root_file {
-            "pyproject.toml",
-            "ruff.toml",
-            ".ruff.toml",
-          },
-        },
-        mix = {
-            command = "mix",
-            args = { "format", "$FILENAME" },
-            stdin = false,
-        },
-    },
-})
-
--- Format on save
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*",
-  callback = function(args)
-    require("conform").format({ timeout_ms = 2000, lsp_fallback = true })
+    python = { "ruff_organize_imports", "ruff_format" },
+    typescript = { "deno_fmt" },
+    javascript = { "deno_fmt" },
+    json = { "deno_fmt" },
+    jsonc = { "deno_fmt" },
+    markdown = { "deno_fmt" },
+    elixir = { "mix" },
+    eelixir = { "mix" },
+    heex = { "mix" },
+  },
+  default_format_opts = {
+    lsp_format = "fallback",
+  },
+  format_on_save = function(bufnr)
+    if vim.bo[bufnr].buftype ~= "" then
+      return
+    end
+    return { timeout_ms = 2000, lsp_format = "fallback" }
   end,
+  notify_no_formatters = false,
 })
--- Elixir formatting on save (avoids "file changed" warning)
--- Elixir formatting delegated to conform (LSP fallback)
 
 EOF
 """ Linting, formatting configuration
 
 """ nvim-treesitter Configuration
 lua << EOF
-require("nvim-treesitter").setup {
-    ensure_installed = {
-        -- Essential ones for Neovim itself
-        "vim",
-        "vimdoc",
-        "query",
+local function large_file(bufnr)
+  local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(bufnr))
+  return ok and stats and stats.size > 200 * 1024
+end
 
-        -- Languages you use
-        "python",
-        "commonlisp",
-        "elixir",
-        "eex",
-        "heex",
-        "typescript",
-        "tsx",
-        "javascript",
-        "jsdoc",
+local treesitter = require("nvim-treesitter")
+treesitter.setup({
+  install_dir = vim.fn.stdpath("data") .. "/site",
+})
 
-        -- For documentation/markdown files
-        "markdown",
-        },
-
-  sync_install = false,  -- Async installation for faster startup
-  auto_install = true,
-  parser_install_dir = vim.fn.stdpath("cache") .. "/treesitter", -- faster cache location
-
-  highlight = {
-    enable = true,
-    delay = 200,  -- Delay initialization to reduce startup lag
-    disable = function(lang, buf)
-      local max_filesize = 200 * 1024 -- 200 KB
-      local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
-      if ok and stats and stats.size > max_filesize then
-        return true
-      end
-    end,
-    additional_vim_regex_highlighting = false,
-  },
-  fold = { enable = true },
-
-  -- Optional but recommended
-  indent = { enable = true },
-
-  incremental_selection = {
-    enable = true,
-    keymaps = {
-      init_selection = "gnn",
-      node_incremental = "grn",
-      scope_incremental = "grc",
-      node_decremental = "grm",
-    },
-  },
+local ensure_installed = {
+  "vim",
+  "vimdoc",
+  "query",
+  "python",
+  "commonlisp",
+  "elixir",
+  "eex",
+  "heex",
+  "typescript",
+  "javascript",
+  "jsdoc",
+  "markdown",
+  "markdown_inline",
+  "html",
+  "yaml",
+  "json",
 }
+
+-- The rewritten plugin uses tree-sitter-cli to build parsers. Keep startup
+-- clean on machines where it is not installed; :checkhealth reports details.
+if vim.fn.executable("tree-sitter") == 1 then
+  treesitter.install(ensure_installed)
+end
+
+local fold_filetypes = {
+  python = true,
+  lisp = true,
+  elixir = true,
+  eelixir = true,
+  heex = true,
+  typescript = true,
+  javascript = true,
+  markdown = true,
+  json = true,
+  jsonc = true,
+  yaml = true,
+  vim = true,
+}
+
+local treesitter_group = vim.api.nvim_create_augroup("UserTreesitter", { clear = true })
+vim.api.nvim_create_autocmd("FileType", {
+  group = treesitter_group,
+  pattern = "*",
+  callback = function(args)
+    if large_file(args.buf) or vim.bo[args.buf].buftype ~= "" then
+      return
+    end
+
+    local filetype = vim.bo[args.buf].filetype
+    local language = vim.treesitter.language.get_lang(filetype)
+    if not language or not vim.treesitter.language.add(language) then
+      return
+    end
+
+    if not pcall(vim.treesitter.start, args.buf, language) then
+      return
+    end
+
+    vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+    if fold_filetypes[filetype] then
+      vim.wo.foldmethod = "expr"
+      vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    end
+  end,
+})
+
+-- Incremental selection moved into Neovim 0.12. The public wrapper landed
+-- after 0.12.0, so retain a fallback to the implementation shipped in 0.12.0.
+local function select_tree(target)
+  if vim.treesitter.select then
+    vim.treesitter.select(target)
+    return
+  end
+
+  local select = require("vim.treesitter._select")
+  select[target == "parent" and "select_parent" or "select_child"](1)
+end
+
+vim.keymap.set("n", "gnn", function() select_tree("child") end,
+  { desc = "Initialize Treesitter Selection" })
+vim.keymap.set("x", "grn", function() select_tree("parent") end,
+  { desc = "Increment Treesitter Selection" })
+vim.keymap.set("x", "grc", function() select_tree("parent") end,
+  { desc = "Increment Treesitter Scope Selection" })
+vim.keymap.set("x", "grm", function() select_tree("child") end,
+  { desc = "Decrement Treesitter Selection" })
 EOF
 """ nvim-treesitter Configuration
 
 " Show context
 lua << EOF
-require('treesitter-context').setup({ enable = true, max_lines = 3 })
+require('treesitter-context').setup({
+  enable = true,
+  max_lines = 5,
+  multiline_threshold = 12,
+  separator = "─",
+})
 EOF
 
 """ Fuzzy finding Configuration
@@ -1226,8 +1456,11 @@ let g:fzf_vim.commits_log_options = '--graph --color=always --format="%C(auto)%h
 "" Mappings
 "" Completion handled by which-key
 " Statusline
-autocmd! FileType fzf set laststatus=0 noshowmode noruler
-  \| autocmd BufLeave <buffer> set laststatus=2 showmode ruler
+augroup FzfStatusline
+  autocmd!
+  autocmd FileType fzf set laststatus=0 noshowmode noruler
+        \| autocmd BufLeave <buffer> set laststatus=3 noshowmode ruler
+augroup END
 """ Fuzzy finding Configuration
 
 """ CSV view
@@ -1364,7 +1597,7 @@ require('gitsigns').setup({
     border = 'shadow',
     style = 'minimal',
   },
-  current_line_blame = true,
+  current_line_blame = false,
   current_line_blame_opts = {
     virt_text = true,
     virt_text_pos = 'eol',
@@ -1410,9 +1643,11 @@ wk.setup({
   },
 
   replace = {
-    ["<space>"] = "SPC",
-    ["<cr>"] = "RET",
-    ["<tab>"] = "TAB",
+    key = {
+      { "<Space>", "SPC" },
+      { "<CR>", "RET" },
+      { "<Tab>", "TAB" },
+    },
   },
 
   win = {
@@ -1596,12 +1831,39 @@ wk.add({
   -- FZF
   { "<leader>f", "<cmd>Files<CR>", desc = "Find Files" },
 
-  -- AI Completion
-  { "<leader>cp", '<cmd>let g:copilot_enabled = !g:copilot_enabled<CR>:echo "Copilot " . (g:copilot_enabled ? "enabled" : "disabled")<CR>', desc = "Toggle Copilot" },
-
   -- LSP actions
   { "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Code Action" },
   { "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", desc = "Rename Symbol" },
+
+  -- LSP diagnostics
+  { "<leader>l", group = "LSP / Diagnostics" },
+  { "<leader>ld", "<cmd>LintLocations<CR>", desc = "List buffer diagnostics" },
+  { "<leader>lD", "<cmd>DiagnosticsWorkspace<CR>", desc = "List workspace diagnostics" },
+  { "<leader>lh", "<cmd>ShowDiagnostics<CR>", desc = "Show line diagnostics" },
+  { "<leader>ln", function()
+      _G.UserDiagnostics.jump(1)
+    end, desc = "Next diagnostic" },
+  { "<leader>lp", function()
+      _G.UserDiagnostics.jump(-1)
+    end, desc = "Previous diagnostic" },
+  { "<leader>le", function()
+      _G.UserDiagnostics.jump(1, vim.diagnostic.severity.ERROR)
+    end, desc = "Next error" },
+  { "<leader>lE", function()
+      _G.UserDiagnostics.jump(-1, vim.diagnostic.severity.ERROR)
+    end, desc = "Previous error" },
+  { "<leader>lw", function()
+      _G.UserDiagnostics.jump(1, vim.diagnostic.severity.WARN)
+    end, desc = "Next warning" },
+  { "<leader>lW", function()
+      _G.UserDiagnostics.jump(-1, vim.diagnostic.severity.WARN)
+    end, desc = "Previous warning" },
+  { "[d", function()
+      _G.UserDiagnostics.jump(-1)
+    end, desc = "Previous diagnostic" },
+  { "]d", function()
+      _G.UserDiagnostics.jump(1)
+    end, desc = "Next diagnostic" },
 
   -- IPython/Slime integration
   { "<localleader>c", "<cmd>call SlimeSendCell()<CR>", desc = "Send Cell to IPython" },
@@ -1609,16 +1871,22 @@ wk.add({
   { "<localleader>v", "<cmd>SlimeSend<CR>", desc = "Send to IPython" },
 
   -- Format
-  { "<leader>==", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file or selection" },
+  { "<leader>==", function()
+      require('conform').format({ lsp_format = "fallback" })
+    end, desc = "Format file" },
   { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
-  { "<leader>tw", "<cmd>call SpeakWord()<CR>", desc = "Speak Word" },
-  { "<leader>tc", "<cmd>call SpeakCurrentLine()<CR>", desc = "Speak Current Line" },
-  { "<leader>tp", "<cmd>call SpeakCurrentParagraph()<CR>", desc = "Speak Paragraph" },
-  { "<leader>tf", "<cmd>call SpeakCurrentFile()<CR>", desc = "Speak File" },
-  { "<leader>tv", "<cmd>call SpeakVisualSelection()<CR>", desc = "Speak Selection" },
+  { "<leader>tw", _G.PiperTTS.word, desc = "Speak Word" },
+  { "<leader>tc", _G.PiperTTS.line, desc = "Speak Current Line" },
+  { "<leader>tp", _G.PiperTTS.paragraph, desc = "Speak Paragraph" },
+  { "<leader>tf", _G.PiperTTS.file, desc = "Speak File" },
+
+  -- Markdown and Marp
+  { "<leader>m", group = "Markdown / Marp" },
+  { "<leader>mp", function() _G.ToggleMarpPreview() end, desc = "Toggle Marp Preview" },
+  { "<leader>mr", "<cmd>RenderMarkdown toggle<CR>", desc = "Toggle Markdown Rendering" },
 
   -- Git operations with conflict resolution
   { "<leader>g", group = "Git" },
@@ -1638,8 +1906,8 @@ wk.add({
   { "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", desc = "Go to Definition" },
   { "gi", "<cmd>lua vim.lsp.buf.implementation()<CR>", desc = "Go to Implementation" },
   { "gr", "<cmd>lua vim.lsp.buf.references()<CR>", desc = "Find References" },
-  { "gh", "<cmd>lua vim.diagnostic.open_float(nil, {focus=true})<CR>", desc = "Show Diagnostics" },
-  { "gnn", "Initialize Treesitter Selection" },
+  { "gh", "<cmd>ShowDiagnostics<CR>", desc = "Show Diagnostics" },
+  { "gnn", desc = "Initialize Treesitter Selection" },
 
   -- [ and ] mappings
   { "[c", "<cmd>?^# %%<CR>", desc = "Previous Cell" },
@@ -1667,7 +1935,9 @@ wk.add({
 
   -- Deno commands
   { "<leader>d", group = "Deno" },
-  { "<leader>df", "<cmd>lua require('conform').format({ lsp_fallback = true })<CR>", desc = "Format file" },
+  { "<leader>df", function()
+      require('conform').format({ lsp_format = "fallback" })
+    end, desc = "Format file" },
   { "<leader>dt", "<cmd>!deno test %<CR>", desc = "Run tests for current file" },
   { "<leader>dc", "<cmd>!deno cache --reload %<CR>", desc = "Reload cache for current file" },
   { "<leader>dl", "<cmd>!deno lint %<CR>", desc = "Lint current file" },
@@ -1702,9 +1972,15 @@ wk.add({
 
 -- Visual mode mappings
 wk.add({
+  mode = "x",
   -- IPython
   { "<localleader>v", ":'<,'>SlimeSend<CR>", desc = "Send Selection to IPython" },
-}, { mode = "v" })
+  { "<leader>==", function()
+      require('conform').format({ lsp_format = "fallback" })
+    end, desc = "Format selection" },
+  { "<leader>t", group = "Text-to-Speech" },
+  { "<leader>tv", _G.PiperTTS.visual, desc = "Speak Selection" },
+})
 
 -- Operator pending mode mappings
 wk.add({}, { mode = "o" })
@@ -1712,47 +1988,59 @@ EOF
 """ which-key configuration
 
 """ Jupyter notebook
-" ─────────────────────────────────────────────────────────────
-" 1) autocommand group to intercept *.ipynb reads/writes
 augroup NotebookInplace
   autocmd!
-  autocmd BufReadPost  *.ipynb call s:OpenNotebook(expand('<afile>'))
-  autocmd BufWritePre *.ipynb call s:SaveNotebook()
+  autocmd BufReadCmd *.ipynb call s:OpenNotebook(fnamemodify(expand('<amatch>'), ':p'))
+  autocmd BufWriteCmd *.ipynb call s:SaveNotebook()
 augroup END
 
-" ─────────────────────────────────────────────────────────────
-" 2) Convert .ipynb → percent-formatted lines in current buffer
 function! s:OpenNotebook(path) abort
-  " read the raw JSON and pipe through jupytext (stdin→stdout)
-  " percent format keeps #%% cell markers
-  let l:json = join(readfile(a:path), "\n")
-  let l:py   = system('jupytext --to py:percent --from ipynb -', l:json)
-
-  " wipe out the buffer and replace with the py:percent lines
-  execute 'setlocal buftype='
-  execute 'setlocal filetype=python'
-  silent 0delete _
-  call append(0, split(l:py, "\n"))
-  " remember the real path in a buffer-local var
-  let b:__real_ipynb = a:path
-  setlocal buftype=acwrite       " trigger BufWritePre
-  setlocal bufhidden=wipe        " no leftover if aborted
-  file    `=fnamemodify(a:path, ':t')`  " show correct name in status
-endfunction
-
-" ─────────────────────────────────────────────────────────────
-" 3) On write, convert buffer → JSON and overwrite the real .ipynb
-function! s:SaveNotebook() abort
-  if !exists('b:__real_ipynb')
+  if !executable('jupytext')
+    echoerr 'jupytext is required to open notebooks'
     return
   endif
-  " grab all lines in the buffer
+
+  let l:json = join(readfile(a:path), "\n")
+  let l:py = system(['jupytext', '--to', 'py:percent', '--from', 'ipynb', '-'], l:json)
+  if v:shell_error != 0
+    echoerr 'jupytext could not convert ' . a:path
+    return
+  endif
+
+  silent %delete _
+  call setline(1, split(l:py, "\n", 1))
+  let b:__real_ipynb = a:path
+  setlocal buftype=acwrite
+  setlocal bufhidden=hide
+  setlocal filetype=python
+  setlocal noswapfile
+  setlocal nomodified
+endfunction
+
+function! s:SaveNotebook() abort
+  if !exists('b:__real_ipynb')
+    echoerr 'Notebook path is unavailable'
+    return
+  endif
+
   let l:cells = join(getbufline('%', 1, '$'), "\n")
-  " pipe them to jupytext to re-encode as notebook JSON
-  let l:json  = system('jupytext --to ipynb --from py:percent -', l:cells)
-  " overwrite the real notebook
-  call writefile(split(l:json, "\n"), b:__real_ipynb)
-  " prevent Vim thinking we still need to write this buffer
+  let l:json = system(['jupytext', '--to', 'ipynb', '--from', 'py:percent', '-'], l:cells)
+  if v:shell_error != 0
+    echoerr 'jupytext could not convert this notebook; the original was not changed'
+    return
+  endif
+
+  try
+    call json_decode(l:json)
+  catch
+    echoerr 'jupytext returned invalid notebook JSON; the original was not changed'
+    return
+  endtry
+
+  if writefile(split(l:json, "\n"), b:__real_ipynb) != 0
+    echoerr 'Could not write notebook: ' . b:__real_ipynb
+    return
+  endif
   setlocal nomodified
 endfunction
 """ Jupyter notebook
@@ -1763,8 +2051,65 @@ require("colorizer").setup()
 EOF
 """ nvim-colorizer
 
-""" Markdown preview 
-lua << EOF 
-require('render-markdown').setup({})
+""" Markdown and Marp
+lua << EOF
+require('render-markdown').setup({
+  completions = { lsp = { enabled = true } },
+})
+
+local marp_process
+local stopping_marp = false
+
+local function marp_executable()
+  local from_path = vim.fn.exepath("marp")
+  if from_path ~= "" then
+    return from_path
+  end
+  for _, candidate in ipairs({ "~/AppImages/marp", "~/.local/bin/marp" }) do
+    local path = vim.fn.expand(candidate)
+    if vim.fn.executable(path) == 1 then
+      return path
+    end
+  end
+end
+
+_G.ToggleMarpPreview = function()
+  if marp_process then
+    if stopping_marp then
+      vim.notify("Marp preview is still stopping")
+      return
+    end
+    stopping_marp = true
+    marp_process:kill(15)
+    vim.notify("Marp preview stopped")
+    return
+  end
+
+  local executable = marp_executable()
+  local file = vim.api.nvim_buf_get_name(0)
+  if not executable then
+    vim.notify("Marp executable not found", vim.log.levels.ERROR)
+    return
+  elseif vim.bo.filetype ~= "markdown" or file == "" then
+    vim.notify("Marp preview requires a saved Markdown file", vim.log.levels.ERROR)
+    return
+  end
+
+  stopping_marp = false
+  local process
+  process = vim.system({ executable, "--preview", file }, { text = true }, function(result)
+    vim.schedule(function()
+      if marp_process == process then
+        marp_process = nil
+      end
+      if result.code ~= 0 and not stopping_marp then
+        vim.notify("Marp preview failed: " .. vim.trim(result.stderr or ""), vim.log.levels.ERROR)
+      end
+      stopping_marp = false
+    end)
+  end)
+  marp_process = process
+  vim.notify("Marp preview started")
+end
 EOF
-""" Markdown preview
+""" Markdown and Marp
