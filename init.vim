@@ -658,28 +658,67 @@ hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
 hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
 """ Spelling mistakes will be coloured up red.
 
-""" TypeScript/Deno configuration for tagbar (matches .ctags TypeScript definitions)
+""" TypeScript/Deno configuration for Tagbar's Universal Ctags parser
+let g:tagbar_ctags_bin = '/usr/bin/ctags-universal'
+
 let g:tagbar_type_typescript = {
   \ 'ctagstype': 'TypeScript',
   \ 'kinds': [
-    \ 'f:functions',
-    \ 'c:classes',
+    \ 'n:namespaces',
     \ 'i:interfaces',
-    \ 't:types',
-    \ 'e:enums',
+    \ 'g:enums',
+    \ 'e:enumerators',
+    \ 'c:classes',
+    \ 'C:constants',
+    \ 'f:functions',
+    \ 'G:generators',
+    \ 'p:properties',
     \ 'v:variables',
+    \ 'm:methods',
+    \ 'a:type aliases',
   \ ],
+  \ 'sro': '.',
+  \ 'kind2scope': {
+    \ 'c': 'class',
+    \ 'i': 'interface',
+    \ 'g': 'enum',
+    \ 'n': 'namespace',
+  \ },
+  \ 'scope2kind': {
+    \ 'class': 'c',
+    \ 'interface': 'i',
+    \ 'enum': 'g',
+    \ 'namespace': 'n',
+  \ },
   \ 'sort': 0
   \ }
 
-" JavaScript configuration for tagbar (covers .mjs, .cjs from .ctags)
+" JavaScript configuration for Tagbar's Universal Ctags parser
 let g:tagbar_type_javascript = {
   \ 'ctagstype': 'JavaScript',
   \ 'kinds': [
-    \ 'f:functions',
+    \ 'v:global variables',
+    \ 'C:constants',
     \ 'c:classes',
-    \ 'v:variables',
+    \ 'g:generators',
+    \ 'G:getters',
+    \ 'S:setters',
+    \ 'M:fields',
+    \ 'p:properties',
+    \ 'm:methods',
+    \ 'f:functions',
   \ ],
+  \ 'sro': '.',
+  \ 'kind2scope': {
+    \ 'c': 'class',
+    \ 'f': 'function',
+    \ 'm': 'method',
+    \ 'p': 'property',
+  \ },
+  \ 'scope2kind': {
+    \ 'class': 'c',
+    \ 'function': 'f',
+  \ },
   \ 'sort': 0
   \ }
 
@@ -691,11 +730,11 @@ let g:tagbar_autofocus = 0 " If you set this option the cursor will move to the 
 let g:tagbar_compact = 1 " 0: Show short help and blank lines between top-level scopes
                          " 1: Don't show the short help or the blank lines.
                          " 2: Don't show the short help but show the blank lines.
-let g:tagbar_show_data_type = 1
+let g:tagbar_show_data_type = 0
 let g:tagbar_show_linenumbers = 1
 let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 
-" Elixir configuration for tagbar (via .ctags regex definitions)
+" Elixir configuration for Tagbar's Universal Ctags parser
 let g:tagbar_type_elixir = {
   \ 'ctagstype': 'Elixir',
   \ 'kinds': [
@@ -1366,9 +1405,22 @@ local ensure_installed = {
   "json",
 }
 
--- The rewritten plugin uses tree-sitter-cli to build parsers. Keep startup
--- clean on machines where it is not installed; :checkhealth reports details.
-if vim.fn.executable("tree-sitter") == 1 then
+-- The rewritten plugin uses tree-sitter-cli to build parsers. executable()
+-- alone is insufficient: an incompatible ELF binary can have execute bits but
+-- still fail with ENOENT when its program loader is unavailable.
+local function tree_sitter_cli_works()
+  local executable = vim.fn.exepath("tree-sitter")
+  if executable == "" then
+    return false
+  end
+
+  local ok, result = pcall(function()
+    return vim.system({ executable, "--version" }, { text = true }):wait()
+  end)
+  return ok and result.code == 0
+end
+
+if tree_sitter_cli_works() then
   treesitter.install(ensure_installed)
 end
 
