@@ -1724,13 +1724,97 @@ wk.setup({
 -- Define conflict resolution functions in global scope
 _G.conflict = {}
 
--- Open conflicts in diffview
-_G.conflict.open_conflicts = function()
-  if vim.fn.search('<<<<<<< ', 'n') > 0 then
-    vim.cmd('DiffviewOpen --merge')
-  else
-    vim.notify('No merge conflicts found', vim.log.levels.INFO)
+local git_conflict_heads = {
+  "MERGE_HEAD",
+  "REBASE_HEAD",
+  "REVERT_HEAD",
+  "CHERRY_PICK_HEAD",
+}
+
+local function git_command(cwd, args)
+  local command = { "git", "-C", cwd }
+  vim.list_extend(command, args)
+  return vim.system(command, { text = true }):wait()
+end
+
+local function current_git_root()
+  local cwd = vim.fn.expand("%:p:h")
+  if cwd == "" or vim.fn.isdirectory(cwd) == 0 then
+    cwd = vim.uv.cwd()
   end
+
+  local result = git_command(cwd, { "rev-parse", "--show-toplevel" })
+  if result.code ~= 0 then
+    return nil
+  end
+
+  return vim.trim(result.stdout)
+end
+
+local function missing_merge_base(root)
+  for _, head in ipairs(git_conflict_heads) do
+    local exists = git_command(root, { "rev-parse", "--verify", "--quiet", head })
+    if exists.code == 0 then
+      local merge_base = git_command(root, { "merge-base", "HEAD", head })
+      if merge_base.code ~= 0 then
+        return head
+      end
+      return nil
+    end
+  end
+end
+
+local function open_fugitive_conflict(root, conflicts, conflict_head)
+  local current_file = vim.fs.normalize(vim.api.nvim_buf_get_name(0))
+  local selected_file = conflicts[1]
+
+  for _, path in ipairs(conflicts) do
+    if current_file == vim.fs.normalize(root .. "/" .. path) then
+      selected_file = path
+      break
+    end
+  end
+
+  local selected_path = vim.fs.normalize(root .. "/" .. selected_file)
+  if current_file ~= selected_path then
+    vim.cmd("tabedit " .. vim.fn.fnameescape(selected_path))
+  end
+
+  vim.notify(
+    string.format("No merge base for %s; using Fugitive's index-stage conflict view", conflict_head),
+    vim.log.levels.WARN
+  )
+  vim.cmd("Gdiffsplit!")
+end
+
+-- Open Git's unmerged files, falling back when Diffview cannot find a merge base.
+_G.conflict.open_conflicts = function()
+  local root = current_git_root()
+  if not root then
+    vim.notify("Current buffer is not in a Git repository", vim.log.levels.ERROR)
+    return
+  end
+
+  local result = git_command(root, { "diff", "--name-only", "--diff-filter=U", "-z" })
+  if result.code ~= 0 then
+    local message = vim.trim(result.stderr or "")
+    vim.notify(message ~= "" and message or "Could not inspect Git conflicts", vim.log.levels.ERROR)
+    return
+  end
+
+  local conflicts = vim.split(result.stdout, "\0", { plain = true, trimempty = true })
+  if #conflicts == 0 then
+    vim.notify("No merge conflicts found", vim.log.levels.INFO)
+    return
+  end
+
+  local conflict_head = missing_merge_base(root)
+  if conflict_head then
+    open_fugitive_conflict(root, conflicts, conflict_head)
+    return
+  end
+
+  vim.cmd("DiffviewOpen")
 end
 
 -- More reliable method to handle conflict resolution
@@ -1948,7 +2032,7 @@ wk.add({
   -- Git operations with conflict resolution
   { "<leader>g", group = "Git" },
   { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diff View" },
-  { "<leader>gm", "<cmd>DiffviewOpen --merge<CR>", desc = "Merge Conflicts View" },
+  { "<leader>gm", "<cmd>lua _G.conflict.open_conflicts()<CR>", desc = "Merge Conflicts View" },
   { "<leader>gc", "<cmd>lua _G.conflict.open_conflicts()<CR>", desc = "Open Conflicts" },
   { "<leader>gx", "<cmd>DiffviewClose<CR>", desc = "Close Diff View" },
   { "<leader>go", "<cmd>lua _G.conflict.accept_current()<CR>", desc = "Accept Current Changes" },
