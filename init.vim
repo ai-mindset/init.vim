@@ -534,6 +534,10 @@ call SetupStatusline()
 
 """ Piper TTS
 lua << EOF
+if _G.PiperTTS and type(_G.PiperTTS.stop) == "function" then
+  _G.PiperTTS.stop(false)
+end
+
 local function first_executable(candidates)
   for _, candidate in ipairs(candidates) do
     local path = candidate == "piper" and vim.fn.exepath(candidate) or vim.fn.expand(candidate)
@@ -567,10 +571,57 @@ local function player_command(path)
   end
 end
 
+local speech = {
+  request = 0,
+  synthesis = nil,
+  playback = nil,
+  outputs = {},
+}
+
+local function remove_output(path)
+  speech.outputs[path] = nil
+  pcall(vim.uv.fs_unlink, path)
+end
+
+local function terminate(process)
+  if process then
+    pcall(function()
+      process:kill(15)
+    end)
+  end
+end
+
+local function stop(notify)
+  local was_active = speech.synthesis ~= nil
+    or speech.playback ~= nil
+    or next(speech.outputs) ~= nil
+
+  -- Invalidate callbacks before terminating anything. A Piper process that
+  -- exits concurrently must not be allowed to start another audio player.
+  speech.request = speech.request + 1
+  terminate(speech.synthesis)
+  terminate(speech.playback)
+  speech.synthesis = nil
+  speech.playback = nil
+
+  for path in pairs(speech.outputs) do
+    remove_output(path)
+  end
+
+  if notify ~= false then
+    vim.notify(was_active and "Speech stopped" or "No speech is running")
+  end
+end
+
 local function speak(text)
   if not text or not text:match("%S") then
     return
   end
+
+  -- Speech is deliberately single-owner: a new request replaces any current
+  -- synthesis or playback instead of allowing overlapping audio streams.
+  stop(false)
+  local request = speech.request
 
   local piper = first_executable({
     "piper",
@@ -589,37 +640,57 @@ local function speak(text)
   end
 
   local output = vim.fn.tempname() .. ".wav"
-  vim.system({ piper, "--model", voice, "--output_file", output }, {
+  speech.outputs[output] = true
+
+  local synthesis
+  synthesis = vim.system({ piper, "--model", voice, "--output_file", output }, {
     stdin = text,
     text = true,
   }, function(result)
     vim.schedule(function()
+      if speech.synthesis == synthesis then
+        speech.synthesis = nil
+      end
+      if request ~= speech.request then
+        remove_output(output)
+        return
+      end
       if result.code ~= 0 then
-        vim.uv.fs_unlink(output)
+        remove_output(output)
         vim.notify("Piper failed: " .. vim.trim(result.stderr or ""), vim.log.levels.ERROR)
         return
       end
 
       local command = player_command(output)
       if not command then
-        vim.uv.fs_unlink(output)
+        remove_output(output)
         vim.notify("No supported audio player found", vim.log.levels.ERROR)
         return
       end
 
-      vim.system(command, { text = true }, function(playback)
+      local playback
+      playback = vim.system(command, { text = true }, function(result)
         vim.schedule(function()
-          vim.uv.fs_unlink(output)
-          if playback.code ~= 0 then
+          if speech.playback == playback then
+            speech.playback = nil
+          end
+          remove_output(output)
+          if request ~= speech.request then
+            return
+          end
+          if result.code ~= 0 then
             vim.notify("Audio playback failed", vim.log.levels.ERROR)
           end
         end)
       end)
+      speech.playback = playback
     end)
   end)
+  speech.synthesis = synthesis
 end
 
 _G.PiperTTS = {
+  stop = stop,
   word = function()
     speak(vim.fn.expand("<cword>"))
   end,
@@ -647,6 +718,17 @@ _G.PiperTTS = {
     speak(table.concat(region, "\n"))
   end,
 }
+
+vim.api.nvim_create_user_command("PiperStop", function()
+  stop(true)
+end, { desc = "Stop Piper speech", force = true })
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+  group = vim.api.nvim_create_augroup("PiperTTS", { clear = true }),
+  callback = function()
+    stop(false)
+  end,
+})
 EOF
 """ Piper TTS
 
@@ -2019,6 +2101,7 @@ wk.add({
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
+  { "<leader>ts", _G.PiperTTS.stop, desc = "Stop Speech" },
   { "<leader>tw", _G.PiperTTS.word, desc = "Speak Word" },
   { "<leader>tc", _G.PiperTTS.line, desc = "Speak Current Line" },
   { "<leader>tp", _G.PiperTTS.paragraph, desc = "Speak Paragraph" },
@@ -2120,6 +2203,7 @@ wk.add({
       require('conform').format({ lsp_format = "fallback" })
     end, desc = "Format selection" },
   { "<leader>t", group = "Text-to-Speech" },
+  { "<leader>ts", _G.PiperTTS.stop, desc = "Stop Speech" },
   { "<leader>tv", _G.PiperTTS.visual, desc = "Speak Selection" },
 })
 
