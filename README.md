@@ -86,6 +86,6 @@ Grouped commands live under `<leader>l` (diagnostics), `<leader>g` (Git),
 
 ## Customising
 
-Everything lives in [`init.vim`](init.vim). Search for `mason_packages`,
+Search for `mason_packages`,
 `lsp_servers`, `linters_by_ft`, `formatters_by_ft`, or `wk.add` to change the
 installed tools, language behavior, formatting, or mappings.
