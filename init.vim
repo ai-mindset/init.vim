@@ -87,18 +87,25 @@ lua << EOF
 require("catppuccin").setup({
   flavour = "macchiato",
   term_colors = true,
-  no_italic = false,
+  dim_inactive = {
+    enabled = true,
+    shade = "dark",
+    percentage = 0.15,
+  },
+  -- Weight and colour carry the hierarchy; slanted terminal glyphs can be
+  -- harder to scan and should not be the only semantic cue.
+  no_italic = true,
   no_bold = false,
   styles = {
     comments = {},
-    conditionals = {},
-    loops = {},
-    functions = {},
-    keywords = {},
+    conditionals = { "bold" },
+    loops = { "bold" },
+    functions = { "bold" },
+    keywords = { "bold" },
     strings = {},
     variables = {},
     numbers = {},
-    booleans = {},
+    booleans = { "bold" },
     properties = {},
     types = {},
   },
@@ -112,53 +119,132 @@ require("catppuccin").setup({
   },
   integrations = {
     cmp = true,
+    diffview = true,
     gitsigns = true,
     which_key = true,
     treesitter = true,
     mason = true,
-    indent_blankline = { enabled = true },
+    indent_blankline = {
+      enabled = true,
+      scope_color = "lavender",
+    },
   },
+  custom_highlights = function(colors)
+    -- A midpoint between base and surface0. Overlay2 (the dimmest text colour)
+    -- still reaches 4.5:1 on this background.
+    local focus = "#2d3045"
+
+    return {
+      -- Editor surfaces: keep the buffer dark while separating its layers.
+      LineNr = { fg = colors.subtext0, bg = colors.mantle },
+      LineNrAbove = { link = "LineNr" },
+      LineNrBelow = { link = "LineNr" },
+      CursorLineNr = { fg = colors.yellow, bg = colors.surface0, style = { "bold" } },
+      SignColumn = { fg = colors.overlay1, bg = colors.mantle },
+      FoldColumn = { fg = colors.overlay1, bg = colors.mantle },
+      CursorLine = { bg = focus },
+      CursorColumn = { bg = colors.mantle },
+      ColorColumn = { bg = colors.mantle },
+      WinSeparator = { fg = colors.overlay0 },
+      Folded = { fg = colors.sapphire, bg = colors.mantle },
+      Conceal = { fg = colors.overlay2 },
+      Dimmed = { fg = colors.overlay2 },
+
+      -- Window chrome uses one lavender accent instead of competing colours.
+      StatusLine = { fg = colors.text, bg = colors.mantle },
+      StatusLineNC = { fg = colors.subtext0, bg = colors.crust },
+      TabLine = { fg = colors.subtext0, bg = colors.crust },
+      TabLineFill = { bg = colors.mantle },
+      TabLineSel = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
+      WinBar = { fg = colors.lavender, bg = colors.base, style = { "bold" } },
+      WinBarNC = { fg = colors.subtext0, bg = colors.base },
+      Directory = { fg = colors.blue, style = { "bold" } },
+      Title = { fg = colors.lavender, style = { "bold" } },
+
+      -- Navigation aids are visible without competing with the cursor.
+      TreesitterContext = { fg = colors.text, bg = colors.mantle },
+      TreesitterContextBottom = { sp = colors.overlay0, style = { "underline" } },
+      TreesitterContextLineNumber = {
+        fg = colors.yellow,
+        bg = colors.mantle,
+        style = { "bold" },
+      },
+      IblIndent = { fg = colors.surface0 },
+      IblScope = { fg = colors.lavender },
+      GitSignsCurrentLineBlame = { fg = colors.overlay2 },
+      DiffviewStatusIgnored = { fg = colors.overlay2 },
+      LspReferenceText = { fg = colors.text, bg = colors.surface0 },
+      LspReferenceRead = { link = "LspReferenceText" },
+      LspReferenceWrite = { fg = colors.base, bg = colors.peach, style = { "bold" } },
+      LspCodeLens = { fg = colors.overlay2 },
+      LspCodeLensSeparator = { link = "LspCodeLens" },
+      LspInlayHint = { fg = colors.overlay2, bg = colors.mantle },
+
+      -- Strong, colour-blind-friendly interaction states. Colour is paired
+      -- with inverse contrast or bold text instead of acting alone.
+      Visual = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
+      VisualNOS = { link = "Visual" },
+      Search = { fg = colors.yellow, bg = colors.surface0, style = { "bold" } },
+      CurSearch = { fg = colors.base, bg = colors.yellow, style = { "bold" } },
+      IncSearch = { fg = colors.base, bg = colors.peach, style = { "bold" } },
+      Substitute = { fg = colors.base, bg = colors.green, style = { "bold" } },
+      MatchParen = { fg = colors.base, bg = colors.teal, style = { "bold" } },
+      HoverWord = { fg = colors.base, bg = colors.sky, style = { "bold" } },
+      UserSpell = { fg = colors.red, sp = colors.red, style = { "underline" } },
+      SpellBad = { link = "UserSpell" },
+      SpellCap = { link = "UserSpell" },
+      SpellLocal = { link = "UserSpell" },
+      SpellRare = { link = "UserSpell" },
+      WildMenu = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
+
+      -- Floating windows and completion should read as a layer above code.
+      NormalFloat = { fg = colors.text, bg = colors.mantle },
+      FloatBorder = { fg = colors.blue, bg = colors.mantle },
+      FloatTitle = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
+      Pmenu = { fg = colors.subtext1, bg = colors.mantle },
+      PmenuBorder = { fg = colors.blue, bg = colors.mantle },
+      PmenuSel = { fg = colors.base, bg = colors.blue, style = { "bold" } },
+      PmenuMatch = { fg = colors.sapphire, style = { "bold" } },
+      PmenuMatchSel = { fg = colors.base, bg = colors.blue, style = { "bold" } },
+      PmenuExtra = { fg = colors.overlay2, bg = colors.mantle },
+      PmenuExtraSel = { link = "PmenuSel" },
+      QuickFixLine = { fg = colors.base, bg = colors.sapphire, style = { "bold" } },
+
+      -- Prompts and messages use semantic colours plus weight, never hue alone.
+      ModeMsg = { fg = colors.green, style = { "bold" } },
+      MoreMsg = { fg = colors.teal, style = { "bold" } },
+      Question = { fg = colors.teal, style = { "bold" } },
+      WarningMsg = { fg = colors.yellow, style = { "bold" } },
+      ErrorMsg = { fg = colors.red, style = { "bold" } },
+
+      -- Diagnostics remain readable in the dedicated dark gutter.
+      DiagnosticSignError = { fg = colors.red, bg = colors.mantle, style = { "bold" } },
+      DiagnosticSignWarn = { fg = colors.yellow, bg = colors.mantle, style = { "bold" } },
+      DiagnosticSignInfo = { fg = colors.sapphire, bg = colors.mantle, style = { "bold" } },
+      DiagnosticSignHint = { fg = colors.teal, bg = colors.mantle, style = { "bold" } },
+      DiagnosticLineNrError = { link = "DiagnosticSignError" },
+      DiagnosticLineNrWarn = { link = "DiagnosticSignWarn" },
+      DiagnosticLineNrInfo = { link = "DiagnosticSignInfo" },
+      DiagnosticLineNrHint = { link = "DiagnosticSignHint" },
+
+      -- Keep the custom statusline in the same Macchiato palette.
+      StModeNormal = { fg = colors.base, bg = colors.blue, style = { "bold" } },
+      StModeInsert = { fg = colors.base, bg = colors.green, style = { "bold" } },
+      StModeVisual = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
+      StModeReplace = { fg = colors.base, bg = colors.red, style = { "bold" } },
+      StModeCommand = { fg = colors.base, bg = colors.peach, style = { "bold" } },
+      StInfo = { fg = colors.subtext1, bg = colors.mantle },
+      StPath = { fg = colors.text, bg = colors.surface0 },
+      StGit = { fg = colors.green, bg = colors.mantle, style = { "bold" } },
+      StVenv = { fg = colors.mauve, bg = colors.mantle, style = { "bold" } },
+      StPosition = { fg = colors.text, bg = colors.surface0, style = { "bold" } },
+    }
+  end,
 })
 EOF
 
 " Set the theme
 colorscheme catppuccin
-
-lua << EOF
-local function apply_accessible_ui_highlights()
-  local palette = require("catppuccin.palettes").get_palette("macchiato")
-  local highlights = {
-    LineNr = { fg = palette.subtext0, bg = palette.mantle },
-    LineNrAbove = { fg = palette.subtext0, bg = palette.mantle },
-    LineNrBelow = { fg = palette.subtext0, bg = palette.mantle },
-    CursorLineNr = { fg = palette.yellow, bg = palette.surface0, bold = true },
-    SignColumn = { fg = palette.overlay1, bg = palette.mantle },
-    FoldColumn = { fg = palette.overlay1, bg = palette.mantle },
-    ColorColumn = { bg = palette.surface0 },
-    CursorColumn = { bg = palette.surface0 },
-    CursorLine = { bg = palette.surface0 },
-    HoverWord = { fg = palette.base, bg = palette.yellow, bold = true },
-    DiagnosticSignError = { fg = palette.red, bg = palette.mantle, bold = true },
-    DiagnosticSignWarn = { fg = palette.yellow, bg = palette.mantle, bold = true },
-    DiagnosticSignInfo = { fg = palette.sapphire, bg = palette.mantle, bold = true },
-    DiagnosticSignHint = { fg = palette.teal, bg = palette.mantle, bold = true },
-    DiagnosticLineNrError = { fg = palette.red, bg = palette.mantle, bold = true },
-    DiagnosticLineNrWarn = { fg = palette.yellow, bg = palette.mantle, bold = true },
-    DiagnosticLineNrInfo = { fg = palette.sapphire, bg = palette.mantle, bold = true },
-    DiagnosticLineNrHint = { fg = palette.teal, bg = palette.mantle, bold = true },
-  }
-
-  for group, spec in pairs(highlights) do
-    vim.api.nvim_set_hl(0, group, spec)
-  end
-end
-
-apply_accessible_ui_highlights()
-vim.api.nvim_create_autocmd("ColorScheme", {
-  pattern = "catppuccin*",
-  callback = apply_accessible_ui_highlights,
-})
-EOF
 """ Catppuccin theme
 
 """ Use jq for JSON formatting
@@ -187,9 +273,9 @@ function! FlashCurrentCell()
   let cursorline_enabled = &cursorline
   let hl_cursorline = execute('highlight CursorLine')
 
-  " Enable cursorline and set to bright yellow temporarily
+  " Flash with an accessible inverse of Catppuccin Macchiato yellow.
   set cursorline
-  highlight CursorLine ctermbg=yellow guibg=#FFFF00
+  highlight CursorLine guifg=#24273a guibg=#eed49f gui=bold
 
   " Redraw screen to show highlight
   redraw
@@ -207,7 +293,7 @@ function! FlashCurrentCell()
       execute 'highlight CursorLine ' . matches[1]
     else
       " Fallback to a standard style if parsing fails
-      highlight CursorLine guibg=#303030 ctermbg=236
+      highlight CursorLine guifg=NONE guibg=#2d3045 gui=NONE
     endif
   endif
 
@@ -349,6 +435,7 @@ set hlsearch                                    " Highlight search results
 set incsearch                                   " Makes search act like search in modern browsers
 set encoding=utf8                               " Set utf8 as standard encoding
 set ffs=unix,dos,mac                            " Use Unix as the standard file type
+set spell                                       " Check spelling in every buffer
 set spelllang=en_gb
 set clipboard=unnamedplus                       " Clipboard Settings
 set background=dark                             " Set dark background
@@ -364,7 +451,7 @@ set foldlevelstart=99
 
 augroup ProseSettings
     autocmd!
-    autocmd FileType markdown,gitcommit,text setlocal spell wrap linebreak
+    autocmd FileType markdown,gitcommit,text setlocal wrap linebreak
 augroup END
 
 """ Highlight on hover
@@ -464,29 +551,8 @@ function! GitInfo()
     return ' branch:' . l:branch . ' '
 endfunction
 
-" Statusline colours - simplified to use a single setup function
+" Statusline groups are defined with the Catppuccin palette above.
 function! SetupStatusline()
-    " Define base colors
-    let l:fg = '#F8F8F2'
-    let l:bg_normal = '#005F87'
-    let l:bg_insert = '#AF5F00'
-
-    " Apply highlights using variables
-    exe 'hi StModeNormal guifg=' . l:fg . ' guibg=' . l:bg_normal . ' gui=bold'
-
-    " Define highlight groups with accessible, harmonious colours
-    hi StModeNormal   guifg=#F8F8F2 guibg=#005F87 ctermfg=255 ctermbg=24  gui=bold   " Blue (unchanged, kept for reference)
-    hi StModeInsert   guifg=#1e1e2e guibg=#a6e3a1 ctermfg=235 ctermbg=150 gui=bold   " Green‑mint insert"
-    hi StModeVisual   guifg=#1e1e2e guibg=#f5c2e7 ctermfg=235 ctermbg=224 gui=bold   " Pink visual"
-    hi StModeReplace  guifg=#1e1e2e guibg=#f38ba8 ctermfg=235 ctermbg=210 gui=bold   " Rose replace"
-    hi StModeCommand  guifg=#1e1e2e guibg=#89b4fa ctermfg=235 ctermbg=111 gui=bold   " Calm blue command"
-
-    hi StInfo         guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
-    hi StPath         guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
-    hi StGit          guifg=#cdd6f4 guibg=#5f8700 ctermfg=255 ctermbg=64  gui=NONE   " Green"
-    hi StVenv         guifg=#cdd6f4 guibg=#5f5f87 ctermfg=255 ctermbg=60  gui=NONE   " Slate"
-    hi StPosition     guifg=#cdd6f4 guibg=#3b4252 ctermfg=255 ctermbg=236 gui=NONE   " Dark gray base"
-
     " Update statusline with dynamically coloured mode segment
     let &statusline = ''
     let &statusline .= 'mode:%{%StatuslineMode()%}'                                           " Mode with dynamic colours
@@ -732,13 +798,6 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 EOF
 """ Piper TTS
 
-
-""" Spelling mistakes will be coloured up red.
-hi SpellBad cterm=underline ctermfg=203 guifg=#ff5f5f
-hi SpellLocal cterm=underline ctermfg=203 guifg=#ff5f5f
-hi SpellRare cterm=underline ctermfg=203 guifg=#ff5f5f
-hi SpellCap cterm=underline ctermfg=203 guifg=#ff5f5f
-""" Spelling mistakes will be coloured up red.
 
 """ TypeScript/Deno configuration for Tagbar's Universal Ctags parser
 let g:tagbar_ctags_bin = '/usr/bin/ctags-universal'
