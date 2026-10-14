@@ -1,7 +1,7 @@
 # init.vim
 
-A self-bootstrapping Neovim IDE for Python, Deno
-TypeScript/JavaScript, Elixir, Markdown, and technical writing.
+A self-bootstrapping Neovim IDE for Python, TypeScript/JavaScript with Bun,
+Elixir, Markdown, and technical writing.
 
 ## What you get
 
@@ -12,12 +12,12 @@ TypeScript/JavaScript, Elixir, Markdown, and technical writing.
 - Which-key discovery: press `Space` and pause to see available commands.
 - Optional notebooks/IPython, Common Lisp, Marp, Piper speech, and Ollama.
 
-| Language              | Default tooling                                                     |
-| --------------------- | ------------------------------------------------------------------- |
-| Python                | Jedi navigation/completion, Pyright type checking, Ruff lint/format |
-| TypeScript/JavaScript | Deno LSP, linting, tests, and formatting                            |
-| Elixir                | ElixirLS, Mix formatting, and project-local Credo                   |
-| Markdown              | markdown-oxide, markdownlint-cli2, Deno formatting                  |
+| Language              | Default tooling                                                       |
+| --------------------- | --------------------------------------------------------------------- |
+| Python                | Jedi navigation/completion, Pyright type checking, Ruff lint/format   |
+| TypeScript/JavaScript | TypeScript 7 LSP; Bun lint, type check, test, and format               |
+| Elixir                | ElixirLS, Mix formatting, and project-local Credo                     |
+| Markdown              | markdown-oxide, markdownlint-cli2, Bun formatting                     |
 
 ## Five-minute setup
 
@@ -26,9 +26,9 @@ Install:
 - Neovim 0.12 or newer;
 - Git and curl;
 - a C compiler and `tree-sitter-cli` 0.26.1 or newer;
-- Node.js and Python for the default language tools.
+- Node.js, Python, and [Bun canary](https://bun.com/guides/util/upgrade).
 
-Confirm that `nvim`, `node`, `python`, and `tree-sitter --version` work, then:
+Confirm that `nvim`, `node`, `python`, `bun`, and `tree-sitter --version` work, then:
 
 ```bash
 mkdir -p ~/.config
@@ -43,8 +43,8 @@ parsers install separately when its CLI is available. Initial setup may take a
 few minutes; use `:Mason` and `:checkhealth` if anything fails.
 
 Mason installs `actionlint`, `jedi-language-server`, `pyright`, `ruff`,
-`markdown-oxide`, `markdownlint-cli2`, `deno`, and `elixir-ls`. Erlang and
-Elixir are additionally required when working on Elixir projects.
+`markdown-oxide`, `markdownlint-cli2`, TypeScript 7 (`tsc`), and `elixir-ls`.
+Erlang and Elixir are additionally required when working on Elixir projects.
 
 ## Everyday keys
 
@@ -64,7 +64,7 @@ Elixir are additionally required when working on Elixir projects.
 | `<F8>`                      | Toggle Tagbar                            |
 
 Grouped commands live under `<leader>l` (diagnostics), `<leader>g` (Git),
-`<leader>d` (Deno), `<leader>e` (Elixir), `<leader>s` (spelling), and
+`<leader>b` (Bun), `<leader>e` (Elixir), `<leader>s` (spelling), and
 `<leader>o` (Ollama).
 
 ## Optional integrations

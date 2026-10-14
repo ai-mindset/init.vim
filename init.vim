@@ -799,7 +799,7 @@ EOF
 """ Piper TTS
 
 
-""" TypeScript/Deno configuration for Tagbar's Universal Ctags parser
+""" TypeScript configuration for Tagbar's Universal Ctags parser
 let g:tagbar_ctags_bin = '/usr/bin/ctags-universal'
 
 let g:tagbar_type_typescript = {
@@ -932,7 +932,7 @@ local mason_packages = {
   "ruff",                  -- Python linter and formatter
   "markdown-oxide",        -- Markdown LSP
   "markdownlint-cli2",     -- Markdown linter
-  "deno",                  -- Deno runtime and LSP
+  "tsc",                   -- TypeScript 7 language server for JS/TS
   "elixir-ls",             -- Elixir LSP
 }
 
@@ -1133,7 +1133,7 @@ local lsp_servers = {
   'jedi_language_server',
   'pyright',
   'markdown_oxide',
-  'denols',
+  'tsc',
   'elixirls',
 }
 
@@ -1143,13 +1143,56 @@ for _, server in ipairs(lsp_servers) do
   end
 end
 
--- This configuration intentionally targets Deno projects and plain JS/TS only.
-vim.lsp.config('denols', {
-  filetypes = { 'javascript', 'typescript' },
-  settings = {
-    deno = { lint = true },
+-- Define TypeScript 7 explicitly until nvim-lspconfig supplies a tsc config.
+vim.lsp.config('tsc', {
+  cmd = {
+    vim.fs.joinpath(vim.fn.stdpath('data'), 'mason', 'bin', 'tsc'),
+    '--lsp', '--stdio',
   },
+  filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+  root_dir = function(bufnr, on_dir)
+    local root = vim.fs.root(bufnr, {
+      'tsconfig.json', 'jsconfig.json', 'package.json', 'bun.lock', 'bun.lockb', '.git',
+    })
+    on_dir(root or vim.fn.getcwd())
+  end,
 })
+
+-- GUI launches may miss Bun's default installation directory.
+local bun_dir = vim.fn.expand('~/.bun/bin')
+if vim.fn.exepath('bun') == ''
+    and vim.fn.executable(vim.fs.joinpath(bun_dir, 'bun')) == 1 then
+  local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
+  vim.env.PATH = bun_dir .. path_separator .. (vim.env.PATH or '')
+end
+
+vim.api.nvim_create_user_command('BunHealth', function()
+  local bun = vim.fn.exepath('bun')
+  if bun == '' then
+    vim.notify('Bun executable not found', vim.log.levels.ERROR)
+    return
+  end
+
+  local missing = {}
+  for _, command in ipairs({ 'fmt', 'lint', 'check', 'test' }) do
+    local result = vim.system(
+      { bun, command, '--help' },
+      { cwd = vim.fn.stdpath('data'), text = true }
+    ):wait()
+    if result.code ~= 0 then
+      table.insert(missing, command)
+    end
+  end
+
+  if #missing == 0 then
+    vim.notify('Bun formatter, linter, type checker, and test runner are ready')
+  else
+    vim.notify(
+      'Bun is missing: ' .. table.concat(missing, ', ') .. '. Upgrade to a build with these commands.',
+      vim.log.levels.ERROR
+    )
+  end
+end, {})
 
 local function find_node_executable()
   local from_path = vim.fn.exepath('node')
@@ -1253,6 +1296,28 @@ lint.linters_by_ft = {
   python = {'ruff'},
   elixir = {'credo'},
   markdown = {'markdownlint-cli2'},
+  javascript = {'bun'},
+  javascriptreact = {'bun'},
+  typescript = {'bun'},
+  typescriptreact = {'bun'},
+}
+
+-- Bun's JSON reporter uses ESLint's format. Lint saved files to match disk.
+lint.linters.bun = {
+  cmd = 'bun',
+  args = { 'lint', '--format', 'json', function()
+    return vim.api.nvim_buf_get_name(0)
+  end },
+  stdin = false,
+  stream = 'stdout',
+  ignore_exitcode = true,
+  parser = function(output, bufnr)
+    local diagnostics = require('lint.linters.eslint').parser(output, bufnr)
+    for _, diagnostic in ipairs(diagnostics) do
+      diagnostic.source = 'bun'
+    end
+    return diagnostics
+  end,
 }
 
 local function diagnostic_format(diag)
@@ -1373,6 +1438,9 @@ local function lint_buffer(bufnr)
       lint.try_lint("actionlint")
     elseif filetype == "python" then
       lint.try_lint("ruff")
+    elseif filetype == "javascript" or filetype == "javascriptreact"
+        or filetype == "typescript" or filetype == "typescriptreact" then
+      lint.try_lint("bun")
     elseif filetype == "markdown" then
       lint.try_lint("markdownlint-cli2")
     elseif filetype == "elixir" then
@@ -1388,7 +1456,10 @@ end
 -- file is opened and saved to keep the IDE responsive and results current.
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost" }, {
   group = diagnostic_group,
-  pattern = { "*.py", "*.ex", "*.exs", "*.md", "*.markdown", "*.yml", "*.yaml" },
+  pattern = {
+    "*.py", "*.ex", "*.exs", "*.md", "*.markdown", "*.yml", "*.yaml",
+    "*.js", "*.jsx", "*.mjs", "*.cjs", "*.ts", "*.tsx", "*.mts", "*.cts",
+  },
   callback = function(args)
     lint_buffer(args.buf)
   end,
@@ -1486,19 +1557,23 @@ end, {})
 require("conform").setup({
   formatters_by_ft = {
     python = { "ruff_organize_imports", "ruff_format" },
-    typescript = { "deno_fmt" },
-    javascript = { "deno_fmt" },
-    json = { "deno_fmt" },
-    jsonc = { "deno_fmt" },
-    markdown = { "deno_fmt" },
+    typescript = { "bun_fmt" },
+    typescriptreact = { "bun_fmt" },
+    javascript = { "bun_fmt" },
+    javascriptreact = { "bun_fmt" },
+    json = { "bun_fmt" },
+    jsonc = { "bun_fmt" },
+    markdown = { "bun_fmt" },
     elixir = { "mix" },
     eelixir = { "mix" },
     heex = { "mix" },
   },
   formatters = {
-     deno_fmt = {
-       append_args = { "--prose-wrap", "preserve" },
-     },
+    bun_fmt = {
+      command = "bun",
+      args = { "fmt", "--stdin-filepath", "$FILENAME" },
+      stdin = true,
+    },
   },
   default_format_opts = {
     lsp_format = "fallback",
@@ -2216,14 +2291,18 @@ wk.add({
   { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
   { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
 
-  -- Deno commands
-  { "<leader>d", group = "Deno" },
-  { "<leader>df", function()
+  -- Bun commands
+  { "<leader>b", group = "Bun" },
+  { "<leader>bf", function()
       require('conform').format({ lsp_format = "fallback" })
     end, desc = "Format file" },
-  { "<leader>dt", "<cmd>!deno test %<CR>", desc = "Run tests for current file" },
-  { "<leader>dc", "<cmd>!deno cache --reload %<CR>", desc = "Reload cache for current file" },
-  { "<leader>dl", "<cmd>!deno lint %<CR>", desc = "Lint current file" },
+  { "<leader>br", "<cmd>!bun run %<CR>", desc = "Run current file" },
+  { "<leader>bt", "<cmd>!bun test --check %<CR>", desc = "Test current file" },
+  { "<leader>bT", "<cmd>!bun test --check<CR>", desc = "Test project" },
+  { "<leader>bc", "<cmd>!bun --check<CR>", desc = "Type-check project" },
+  { "<leader>bl", "<cmd>!bun lint %<CR>", desc = "Lint current file" },
+  { "<leader>bL", "<cmd>!bun lint<CR>", desc = "Lint project" },
+  { "<leader>bi", "<cmd>!bun install<CR>", desc = "Install project dependencies" },
 
   -- Common Lisp / Vlime
   { "<localleader>r", group = "SWANK Server" },
