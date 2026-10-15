@@ -68,6 +68,7 @@ Plug 'jakobkhansen/journal.nvim'                               " Keep notes
 Plug 'folke/which-key.nvim'                                    " Helps you remember your Neovim keymaps
 Plug 'catgoose/nvim-colorizer.lua'                             " Colour preview
 Plug 'MeanderingProgrammer/render-markdown.nvim'               " Better markdown rendering in Neovim 
+Plug 'brianhuster/live-preview.nvim'                           " Live Markdown and HTML preview in browser
 call plug#end()
 
 " Do not execute plugin configuration until a fresh install has completed.
@@ -2245,6 +2246,7 @@ wk.add({
   { "<leader>m", group = "Markdown / Marp" },
   { "<leader>mp", function() _G.ToggleMarpPreview() end, desc = "Toggle Marp Preview" },
   { "<leader>mr", "<cmd>RenderMarkdown toggle<CR>", desc = "Toggle Markdown Rendering" },
+  { "<leader>mv", "<cmd>LivePreview start<CR>", desc = "Preview Markdown in Browser" },
 
   -- Git operations with conflict resolution
   { "<leader>g", group = "Git" },
