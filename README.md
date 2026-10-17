@@ -1,6 +1,6 @@
 # init.vim
 
-A self-bootstrapping Neovim IDE for Python, TypeScript/JavaScript with Bun,
+A self-bootstrapping Neovim IDE for Python, TypeScript/JavaScript,
 Elixir, Markdown, and technical writing.
 
 ## What you get
@@ -12,12 +12,12 @@ Elixir, Markdown, and technical writing.
 - Which-key discovery: press `Space` and pause to see available commands.
 - Optional notebooks/IPython, Common Lisp, Marp, Piper speech, and Ollama.
 
-| Language              | Default tooling                                                       |
-| --------------------- | --------------------------------------------------------------------- |
-| Python                | Jedi navigation/completion, Pyright type checking, Ruff lint/format   |
-| TypeScript/JavaScript | TypeScript 7 LSP; Bun lint, type check, test, and format               |
-| Elixir                | ElixirLS, Mix formatting, and project-local Credo                     |
-| Markdown              | markdown-oxide, markdownlint-cli2, Bun formatting                     |
+| Language              | Default tooling                                                     |
+| --------------------- | ------------------------------------------------------------------- |
+| Python                | Jedi navigation/completion, Pyright type checking, Ruff lint/format |
+| TypeScript/JavaScript | TypeScript 7 LSP and Prettier formatting                             |
+| Elixir                | ElixirLS, Mix formatting, and project-local Credo                   |
+| Markdown              | markdown-oxide, markdownlint-cli2, Prettier formatting              |
 
 ## Five-minute setup
 
@@ -26,9 +26,9 @@ Install:
 - Neovim 0.12 or newer;
 - Git and curl;
 - a C compiler and `tree-sitter-cli` 0.26.1 or newer;
-- Node.js, Python, and [Bun canary](https://bun.com/guides/util/upgrade).
+- Node.js and Python for the default language tools.
 
-Confirm that `nvim`, `node`, `python`, `bun`, and `tree-sitter --version` work, then:
+Confirm that `nvim`, `node`, `python`, and `tree-sitter --version` work, then:
 
 ```bash
 mkdir -p ~/.config
@@ -43,7 +43,7 @@ parsers install separately when its CLI is available. Initial setup may take a
 few minutes; use `:Mason` and `:checkhealth` if anything fails.
 
 Mason installs `actionlint`, `jedi-language-server`, `pyright`, `ruff`,
-`markdown-oxide`, `markdownlint-cli2`, TypeScript 7 (`tsc`), and `elixir-ls`.
+`markdown-oxide`, `markdownlint-cli2`, TypeScript 7 (`tsc`), `prettier`, and `elixir-ls`.
 Erlang and Elixir are additionally required when working on Elixir projects.
 
 ## Everyday keys
@@ -64,7 +64,7 @@ Erlang and Elixir are additionally required when working on Elixir projects.
 | `<F8>`                      | Toggle Tagbar                            |
 
 Grouped commands live under `<leader>l` (diagnostics), `<leader>g` (Git),
-`<leader>b` (Bun), `<leader>e` (Elixir), `<leader>s` (spelling), and
+`<leader>e` (Elixir), `<leader>s` (spelling), and
 `<leader>o` (Ollama).
 
 ## Optional integrations
