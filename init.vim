@@ -15,6 +15,8 @@ Plug 'mason-org/mason.nvim'                                   " Mason
 Plug 'neovim/nvim-lspconfig'                                  " LSP Configuration
 Plug 'mfussenegger/nvim-lint'                                 " Linting engine
 Plug 'stevearc/conform.nvim'                                  " Formatting engine
+Plug 'mfussenegger/nvim-dap'                                  " Debug adapter client
+Plug 'leoluz/nvim-dap-go'                                     " Delve integration
 Plug 'hrsh7th/nvim-cmp'                                       " Completion Engine
 Plug 'hrsh7th/cmp-nvim-lsp'                                   " LSP completion
 Plug 'hrsh7th/cmp-buffer'                                     " Buffer completion
@@ -38,7 +40,7 @@ Plug 'jpalardy/vim-slime'
 Plug 'hat0uma/csvview.nvim'                                   " A Neovim plugin for CSV file editing.
 
 " Theme
-Plug 'catppuccin/nvim', { 'as': 'catppuccin' }                " Catppuccin theme
+Plug 'miikanissi/modus-themes.nvim'                          " High-contrast Modus theme
 
 " Fuzzy finding and dependencies
 Plug 'nvim-lua/plenary.nvim'                                  " Plugin dependency
@@ -83,170 +85,18 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 EOF
 
-""" Catppuccin theme
+""" Modus Vivendi tinted: high contrast on a softened dark background
+set termguicolors
+set background=dark
 lua << EOF
-require("catppuccin").setup({
-  flavour = "macchiato",
-  term_colors = true,
-  dim_inactive = {
-    enabled = true,
-    shade = "dark",
-    percentage = 0.15,
-  },
-  -- Weight and colour carry the hierarchy; slanted terminal glyphs can be
-  -- harder to scan and should not be the only semantic cue.
-  no_italic = true,
-  no_bold = false,
-  styles = {
-    comments = {},
-    conditionals = { "bold" },
-    loops = { "bold" },
-    functions = { "bold" },
-    keywords = { "bold" },
-    strings = {},
-    variables = {},
-    numbers = {},
-    booleans = { "bold" },
-    properties = {},
-    types = {},
-  },
-  lsp_styles = {
-    underlines = {
-      errors = { "underline" },
-      hints = { "underline" },
-      warnings = { "underline" },
-      information = { "underline" },
-    },
-  },
-  integrations = {
-    cmp = true,
-    diffview = true,
-    gitsigns = true,
-    which_key = true,
-    treesitter = true,
-    mason = true,
-    indent_blankline = {
-      enabled = true,
-      scope_color = "lavender",
-    },
-  },
-  custom_highlights = function(colors)
-    -- A midpoint between base and surface0. Overlay2 (the dimmest text colour)
-    -- still reaches 4.5:1 on this background.
-    local focus = "#2d3045"
-
-    return {
-      -- Editor surfaces: keep the buffer dark while separating its layers.
-      LineNr = { fg = colors.subtext0, bg = colors.mantle },
-      LineNrAbove = { link = "LineNr" },
-      LineNrBelow = { link = "LineNr" },
-      CursorLineNr = { fg = colors.yellow, bg = colors.surface0, style = { "bold" } },
-      SignColumn = { fg = colors.overlay1, bg = colors.mantle },
-      FoldColumn = { fg = colors.overlay1, bg = colors.mantle },
-      CursorLine = { bg = focus },
-      CursorColumn = { bg = colors.mantle },
-      ColorColumn = { bg = colors.mantle },
-      WinSeparator = { fg = colors.overlay0 },
-      Folded = { fg = colors.sapphire, bg = colors.mantle },
-      Conceal = { fg = colors.overlay2 },
-      Dimmed = { fg = colors.overlay2 },
-
-      -- Window chrome uses one lavender accent instead of competing colours.
-      StatusLine = { fg = colors.text, bg = colors.mantle },
-      StatusLineNC = { fg = colors.subtext0, bg = colors.crust },
-      TabLine = { fg = colors.subtext0, bg = colors.crust },
-      TabLineFill = { bg = colors.mantle },
-      TabLineSel = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
-      WinBar = { fg = colors.lavender, bg = colors.base, style = { "bold" } },
-      WinBarNC = { fg = colors.subtext0, bg = colors.base },
-      Directory = { fg = colors.blue, style = { "bold" } },
-      Title = { fg = colors.lavender, style = { "bold" } },
-
-      -- Navigation aids are visible without competing with the cursor.
-      TreesitterContext = { fg = colors.text, bg = colors.mantle },
-      TreesitterContextBottom = { sp = colors.overlay0, style = { "underline" } },
-      TreesitterContextLineNumber = {
-        fg = colors.yellow,
-        bg = colors.mantle,
-        style = { "bold" },
-      },
-      IblIndent = { fg = colors.surface0 },
-      IblScope = { fg = colors.lavender },
-      GitSignsCurrentLineBlame = { fg = colors.overlay2 },
-      DiffviewStatusIgnored = { fg = colors.overlay2 },
-      LspReferenceText = { fg = colors.text, bg = colors.surface0 },
-      LspReferenceRead = { link = "LspReferenceText" },
-      LspReferenceWrite = { fg = colors.base, bg = colors.peach, style = { "bold" } },
-      LspCodeLens = { fg = colors.overlay2 },
-      LspCodeLensSeparator = { link = "LspCodeLens" },
-      LspInlayHint = { fg = colors.overlay2, bg = colors.mantle },
-
-      -- Strong, colour-blind-friendly interaction states. Colour is paired
-      -- with inverse contrast or bold text instead of acting alone.
-      Visual = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
-      VisualNOS = { link = "Visual" },
-      Search = { fg = colors.yellow, bg = colors.surface0, style = { "bold" } },
-      CurSearch = { fg = colors.base, bg = colors.yellow, style = { "bold" } },
-      IncSearch = { fg = colors.base, bg = colors.peach, style = { "bold" } },
-      Substitute = { fg = colors.base, bg = colors.green, style = { "bold" } },
-      MatchParen = { fg = colors.base, bg = colors.teal, style = { "bold" } },
-      HoverWord = { fg = colors.base, bg = colors.sky, style = { "bold" } },
-      UserSpell = { fg = colors.red, sp = colors.red, style = { "underline" } },
-      SpellBad = { link = "UserSpell" },
-      SpellCap = { link = "UserSpell" },
-      SpellLocal = { link = "UserSpell" },
-      SpellRare = { link = "UserSpell" },
-      WildMenu = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
-
-      -- Floating windows and completion should read as a layer above code.
-      NormalFloat = { fg = colors.text, bg = colors.mantle },
-      FloatBorder = { fg = colors.blue, bg = colors.mantle },
-      FloatTitle = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
-      Pmenu = { fg = colors.subtext1, bg = colors.mantle },
-      PmenuBorder = { fg = colors.blue, bg = colors.mantle },
-      PmenuSel = { fg = colors.base, bg = colors.blue, style = { "bold" } },
-      PmenuMatch = { fg = colors.sapphire, style = { "bold" } },
-      PmenuMatchSel = { fg = colors.base, bg = colors.blue, style = { "bold" } },
-      PmenuExtra = { fg = colors.overlay2, bg = colors.mantle },
-      PmenuExtraSel = { link = "PmenuSel" },
-      QuickFixLine = { fg = colors.base, bg = colors.sapphire, style = { "bold" } },
-
-      -- Prompts and messages use semantic colours plus weight, never hue alone.
-      ModeMsg = { fg = colors.green, style = { "bold" } },
-      MoreMsg = { fg = colors.teal, style = { "bold" } },
-      Question = { fg = colors.teal, style = { "bold" } },
-      WarningMsg = { fg = colors.yellow, style = { "bold" } },
-      ErrorMsg = { fg = colors.red, style = { "bold" } },
-
-      -- Diagnostics remain readable in the dedicated dark gutter.
-      DiagnosticSignError = { fg = colors.red, bg = colors.mantle, style = { "bold" } },
-      DiagnosticSignWarn = { fg = colors.yellow, bg = colors.mantle, style = { "bold" } },
-      DiagnosticSignInfo = { fg = colors.sapphire, bg = colors.mantle, style = { "bold" } },
-      DiagnosticSignHint = { fg = colors.teal, bg = colors.mantle, style = { "bold" } },
-      DiagnosticLineNrError = { link = "DiagnosticSignError" },
-      DiagnosticLineNrWarn = { link = "DiagnosticSignWarn" },
-      DiagnosticLineNrInfo = { link = "DiagnosticSignInfo" },
-      DiagnosticLineNrHint = { link = "DiagnosticSignHint" },
-
-      -- Keep the custom statusline in the same Macchiato palette.
-      StModeNormal = { fg = colors.base, bg = colors.blue, style = { "bold" } },
-      StModeInsert = { fg = colors.base, bg = colors.green, style = { "bold" } },
-      StModeVisual = { fg = colors.base, bg = colors.lavender, style = { "bold" } },
-      StModeReplace = { fg = colors.base, bg = colors.red, style = { "bold" } },
-      StModeCommand = { fg = colors.base, bg = colors.peach, style = { "bold" } },
-      StInfo = { fg = colors.subtext1, bg = colors.mantle },
-      StPath = { fg = colors.text, bg = colors.surface0 },
-      StGit = { fg = colors.green, bg = colors.mantle, style = { "bold" } },
-      StVenv = { fg = colors.mauve, bg = colors.mantle, style = { "bold" } },
-      StPosition = { fg = colors.text, bg = colors.surface0, style = { "bold" } },
-    }
-  end,
+require("modus-themes").setup({
+  style = "modus_vivendi",
+  variants = { modus_vivendi = "tinted" },
+  styles = { comments = { italic = false }, keywords = { italic = false } },
 })
 EOF
-
-" Set the theme
-colorscheme catppuccin
-""" Catppuccin theme
+colorscheme modus
+""" Modus theme
 
 """ Use jq for JSON formatting
 " Makes :Format run `:%!jq .`
@@ -268,38 +118,16 @@ let g:slime_send_as_block = 1    " Global setting for proper multi-line selectio
 silent! unmap [c
 silent! unmap ]c
 
-" Your existing FlashCurrentCell function (keep as-is)
-function! FlashCurrentCell()
-  " Save current CursorLine highlight settings
-  let cursorline_enabled = &cursorline
-  let hl_cursorline = execute('highlight CursorLine')
-
-  " Flash with an accessible inverse of Catppuccin Macchiato yellow.
-  set cursorline
-  highlight CursorLine guifg=#24273a guibg=#eed49f gui=bold
-
-  " Redraw screen to show highlight
-  redraw
-
-  " Wait briefly
-  sleep 100m
-
-  " Restore original CursorLine settings
-  if !cursorline_enabled
-    set nocursorline
-  else
-    " Parse the original highlight command to restore it
-    let matches = matchlist(hl_cursorline, 'xxx\s\+\(.*\)')
-    if len(matches) > 1
-      execute 'highlight CursorLine ' . matches[1]
-    else
-      " Fallback to a standard style if parsing fails
-      highlight CursorLine guifg=NONE guibg=#2d3045 gui=NONE
-    endif
-  endif
-
-  " Redraw again to apply restored settings
-  redraw
+" Briefly flash the current line with the theme's active-search highlight.
+function! FlashCurrentCell() abort
+  let l:match = matchaddpos('CurSearch', [line('.')], 20)
+  try
+    redraw
+    sleep 100m
+  finally
+    call matchdelete(l:match)
+    redraw
+  endtry
 endfunction
 
 
@@ -439,11 +267,9 @@ set ffs=unix,dos,mac                            " Use Unix as the standard file 
 set spell                                       " Check spelling in every buffer
 set spelllang=en_gb
 set clipboard=unnamedplus                       " Clipboard Settings
-set background=dark                             " Set dark background
 if $COLORTERM == 'gnome-terminal'
   set t_Co=256                                  " 256 colours
 endif
-set termguicolors                               " True colour support
 """ Basic Settings
 
 " Tree-sitter folding is enabled later only for supported filetypes.
@@ -455,6 +281,11 @@ augroup ProseSettings
     autocmd FileType markdown,gitcommit,text setlocal wrap linebreak
 augroup END
 
+augroup GoSettings
+    autocmd!
+    autocmd FileType go,gomod,gowork,gosum setlocal nospell noexpandtab tabstop=4 shiftwidth=4 softtabstop=0
+augroup END
+
 """ Highlight on hover
 function! s:HighlightWordUnderCursor() abort
     let l:word = expand('<cword>')
@@ -463,7 +294,7 @@ function! s:HighlightWordUnderCursor() abort
         return
     endif
 
-    execute printf('match HoverWord /\V\<%s\>/', escape(l:word, '/\'))
+    execute printf('match Search /\V\<%s\>/', escape(l:word, '/\'))
 endfunction
 
 augroup HighlightOnHover
@@ -552,37 +383,16 @@ function! GitInfo()
     return ' branch:' . l:branch . ' '
 endfunction
 
-" Statusline groups are defined with the Catppuccin palette above.
+" Use the theme's StatusLine highlight throughout.
 function! SetupStatusline()
-    " Update statusline with dynamically coloured mode segment
-    let &statusline = ''
-    let &statusline .= 'mode:%{%StatuslineMode()%}'                                           " Mode with dynamic colours
-    let &statusline .= '%#StInfo# fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()} '         " Format and states
-    let &statusline .= '%#StPath# path:%{PWDPath()} ' " File path relative to home
-    let &statusline .= '%#StGit#%{GitInfo()}%*'                                               " Git status
-    let &statusline .= '%#StInfo# %{get(g:, ''diagnostic_status'', '''')}%*'                  " Diagnostics
-    let &statusline .= '%='                                                                   " Switch sides
-    let &statusline .= '%#StVenv#%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'         " Virtual env if exists
-    let &statusline .= '%#StPosition# Ln:%l Col:%c %p%% '                                     " Position info (clearer labels)
-endfunction
-
-" Dynamic mode colours function - more reliable
-function! StatuslineMode()
-    let l:mode = mode()
-
-    if l:mode =~# '^n'
-        return '%#StModeNormal#NORMAL '
-    elseif l:mode =~# '^i'
-        return '%#StModeInsert#INSERT '
-    elseif l:mode ==# 'v' || l:mode ==# 'V' || l:mode ==# "\<C-v>"
-        return '%#StModeVisual#VISUAL '
-    elseif l:mode =~# '^R'
-        return '%#StModeReplace#REPLACE '
-    elseif l:mode =~# '^c'
-        return '%#StModeCommand#COMMAND '
-    else
-        return '%#StModeNormal#  ' . get(g:currentmode, l:mode, l:mode) . ' '
-    endif
+    let &statusline = ' mode:%{CurrentMode()}'
+    let &statusline .= ' fmt:%{&ff} state:%{StatusPaste()}%{StatusSpell()}'
+    let &statusline .= ' path:%{PWDPath()}'
+    let &statusline .= '%{GitInfo()}'
+    let &statusline .= ' %{get(g:, ''diagnostic_status'', '''')}'
+    let &statusline .= '%='
+    let &statusline .= '%{StatusVenv()!=""?(" venv:(".StatusVenv().")"):""}'
+    let &statusline .= ' Ln:%l Col:%c %p%% '
 endfunction
 
 " Initialize the statusline when vim starts and ensure it updates properly
@@ -923,6 +733,17 @@ EOF
 
 """ Mason Configuration
 lua << EOF
+-- Desktop launches may not inherit .zshrc; find the official Go installation
+-- and tools installed into the default GOPATH before configuring Mason/gopls.
+for _, directory in ipairs({ '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
+  if vim.fn.isdirectory(directory) == 1 then
+    local entries = vim.split(vim.env.PATH or '', ':', { plain = true })
+    if not vim.list_contains(entries, directory) then
+      vim.env.PATH = directory .. ':' .. (vim.env.PATH or '')
+    end
+  end
+end
+
 require("mason").setup()
 
 -- Use Mason package names here, not nvim-lspconfig server names.
@@ -935,7 +756,17 @@ local mason_packages = {
   "markdownlint-cli2",     -- Markdown linter
   "tsc",                   -- TypeScript 7 language server for JS/TS
   "elixir-ls",             -- Elixir LSP
+  "gopls",                 -- Go LSP
+  "goimports",             -- Go formatter and import organiser
+  "delve",                 -- Go debugger
 }
+
+-- Mason builds these three packages with Go; wait until the toolchain exists.
+local go_packages = { gopls = true, goimports = true, delve = true }
+local has_go = vim.fn.executable('go') == 1
+local installable_packages = vim.tbl_filter(function(name)
+  return has_go or not go_packages[name]
+end, mason_packages)
 
 local registry = require("mason-registry")
 registry.refresh(vim.schedule_wrap(function(success)
@@ -947,7 +778,7 @@ registry.refresh(vim.schedule_wrap(function(success)
     return
   end
 
-  for _, name in ipairs(mason_packages) do
+  for _, name in ipairs(installable_packages) do
     local package_name = name
     local found, package = pcall(registry.get_package, name)
     if not found then
@@ -1035,6 +866,7 @@ lua << EOF
 vim.g.markdown_fenced_languages = {
   "py=python",
   "ex=elixir",
+  "go",
   "js=javascript",
   "ts=typescript",
 }
@@ -1137,6 +969,10 @@ local lsp_servers = {
   'tsc',
   'elixirls',
 }
+
+if vim.fn.executable('go') == 1 then
+  table.insert(lsp_servers, 'gopls')
+end
 
 for _, server in ipairs(lsp_servers) do
   if server ~= 'pyright' then
@@ -1287,6 +1123,72 @@ augroup lisp_vlime
   autocmd!
   autocmd FileType lisp setlocal omnifunc=vlime#plugin#CompleteFunc
 augroup END
+
+""" Go development
+lua << EOF
+local dap_ready, dap = pcall(require, 'dap')
+local dap_go_ready, dap_go = pcall(require, 'dap-go')
+if dap_ready and dap_go_ready then
+  dap_go.setup()
+end
+
+vim.fn.sign_define('DapBreakpoint', { text = '●', texthl = 'DiagnosticSignError' })
+vim.fn.sign_define('DapStopped', { text = '▶', texthl = 'DiagnosticSignWarn' })
+
+local function go_terminal(arguments, current_package)
+  local file = vim.api.nvim_buf_get_name(0)
+  if vim.bo.filetype ~= 'go' or file == '' then
+    vim.notify('Open a saved Go file first', vim.log.levels.WARN)
+    return
+  end
+  if vim.fn.executable('go') ~= 1 then
+    vim.notify('Go is not on PATH', vim.log.levels.ERROR)
+    return
+  end
+
+  vim.cmd('update')
+  local cwd = current_package and vim.fs.dirname(file)
+    or vim.fs.root(file, { 'go.work', 'go.mod' })
+    or vim.fs.dirname(file)
+  vim.cmd('botright 12split')
+  vim.fn.termopen(vim.list_extend({ 'go' }, arguments), { cwd = cwd })
+  vim.cmd('startinsert')
+end
+
+vim.api.nvim_create_user_command('GoTest', function()
+  go_terminal({ 'test', './...' })
+end, {})
+vim.api.nvim_create_user_command('GoBuild', function()
+  go_terminal({ 'build', './...' })
+end, {})
+vim.api.nvim_create_user_command('GoVet', function()
+  go_terminal({ 'vet', './...' })
+end, {})
+vim.api.nvim_create_user_command('GoRun', function()
+  go_terminal({ 'run', '.' }, true)
+end, {})
+
+local function debug_action(callback)
+  return function()
+    if not dap_ready or not dap_go_ready then
+      vim.notify('Install Go debugger plugins with :PlugInstall', vim.log.levels.WARN)
+      return
+    end
+    callback()
+  end
+end
+
+_G.GoDebug = {
+  continue = debug_action(function() dap.continue() end),
+  breakpoint = debug_action(function() dap.toggle_breakpoint() end),
+  next = debug_action(function() dap.step_over() end),
+  into = debug_action(function() dap.step_into() end),
+  out = debug_action(function() dap.step_out() end),
+  stop = debug_action(function() dap.terminate() end),
+  test = debug_action(function() dap_go.debug_test() end),
+}
+EOF
+""" Go development
 
 """ Linting and Formatting Configuration
 lua << EOF
@@ -1557,6 +1459,7 @@ end, {})
 
 require("conform").setup({
   formatters_by_ft = {
+    go = { "goimports" },
     python = { "ruff_organize_imports", "ruff_format" },
     typescript = { "bun_fmt" },
     typescriptreact = { "bun_fmt" },
@@ -1608,6 +1511,10 @@ local ensure_installed = {
   "vimdoc",
   "query",
   "python",
+  "go",
+  "gomod",
+  "gowork",
+  "gosum",
   "commonlisp",
   "elixir",
   "eex",
@@ -1642,6 +1549,7 @@ if tree_sitter_cli_works() then
 end
 
 local fold_filetypes = {
+  go = true,
   python = true,
   lisp = true,
   elixir = true,
@@ -2292,6 +2200,20 @@ wk.add({
   { "<leader>ec", "<cmd>!mix compile<CR>", desc = "Compile project" },
   { "<leader>er", "<cmd>LspRestart elixirls<CR>", desc = "Restart Elixir LS" },
   { "<leader>eq", "<cmd>!mix credo suggest<CR>", desc = "Run Credo analysis" },
+
+  -- Go build, test, and Delve debugging
+  { "<leader>G", group = "Go" },
+  { "<leader>Gt", "<cmd>GoTest<CR>", desc = "Test all packages" },
+  { "<leader>Gb", "<cmd>GoBuild<CR>", desc = "Build all packages" },
+  { "<leader>Gr", "<cmd>GoRun<CR>", desc = "Run current package" },
+  { "<leader>Gv", "<cmd>GoVet<CR>", desc = "Vet all packages" },
+  { "<leader>Gc", _G.GoDebug.continue, desc = "Start or continue debugger" },
+  { "<leader>Gp", _G.GoDebug.breakpoint, desc = "Toggle breakpoint" },
+  { "<leader>Gn", _G.GoDebug.next, desc = "Step over" },
+  { "<leader>Gi", _G.GoDebug.into, desc = "Step into" },
+  { "<leader>Go", _G.GoDebug.out, desc = "Step out" },
+  { "<leader>Gq", _G.GoDebug.stop, desc = "Stop debugger" },
+  { "<leader>Gd", _G.GoDebug.test, desc = "Debug nearest test" },
 
   -- Bun commands
   { "<leader>b", group = "Bun" },
