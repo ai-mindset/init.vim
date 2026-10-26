@@ -61,6 +61,7 @@ Plug 'lewis6991/gitsigns.nvim'                                " Git integration 
 
 " Additional Quality of Life Improvements
 Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main', 'do': ':TSUpdate' } " Neovim 0.12 API
+Plug 'jaseci-labs/tree-sitter-jac'                             " Official Jac grammar, queries, and filetype settings
 Plug 'nvim-treesitter/nvim-treesitter-context'                 " Show code context 
 Plug 'lukas-reineke/indent-blankline.nvim'                     " Vertical indentation guide lines
 Plug 'windwp/nvim-autopairs'                                   " Autopairs for auto closing brackets
@@ -733,9 +734,9 @@ EOF
 
 """ Mason Configuration
 lua << EOF
--- Desktop launches may not inherit .zshrc; find the official Go installation
--- and tools installed into the default GOPATH before configuring Mason/gopls.
-for _, directory in ipairs({ '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
+-- Desktop launches may not inherit .zshrc. Include Jac's official install
+-- directory and the Go toolchain before configuring language tools.
+for _, directory in ipairs({ vim.fn.expand('~/.local/bin'), '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
   if vim.fn.isdirectory(directory) == 1 then
     local entries = vim.split(vim.env.PATH or '', ':', { plain = true })
     if not vim.list_contains(entries, directory) then
@@ -862,12 +863,121 @@ cmp.setup.cmdline(':', {
 EOF
 """ Completion setup
 
+""" Jac development
+lua << EOF
+-- All variants (*.impl.jac, *.test.jac, *.cl.jac, etc.) share this extension.
+vim.filetype.add({ extension = { jac = 'jac' } })
+
+local function jac_executable()
+  return vim.fn.expand(vim.g.jac_executable or 'jac')
+end
+
+local function jac_root(bufnr)
+  -- Prefer the nearest Jac project over an enclosing monorepo's Git root.
+  return vim.fs.root(bufnr, 'jac.toml')
+    or vim.fs.root(bufnr, '.git')
+    or vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr))
+    or vim.fn.getcwd()
+end
+
+local jac_group = vim.api.nvim_create_augroup('UserJac', { clear = true })
+vim.api.nvim_create_autocmd('FileType', {
+  group = jac_group,
+  pattern = 'jac',
+  callback = function(args)
+    local options = vim.bo[args.buf]
+    options.commentstring = '# %s'
+    options.expandtab = true
+    options.shiftwidth = 4
+    options.softtabstop = 4
+    options.tabstop = 4
+    options.autoindent = true
+    -- Brace indentation remains usable while the parser is being installed.
+    options.smartindent = true
+    options.formatoptions = options.formatoptions:gsub('[cro]', '')
+  end,
+})
+
+local function jac_terminal(arguments, current_file, extra_arguments)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local file = vim.api.nvim_buf_get_name(bufnr)
+  if vim.bo[bufnr].filetype ~= 'jac' or file == '' or vim.bo[bufnr].buftype ~= '' then
+    vim.notify('Open a saved Jac file first', vim.log.levels.WARN)
+    return
+  end
+  local executable = jac_executable()
+  if vim.fn.executable(executable) ~= 1 then
+    vim.notify('Jac was not found. Install Jac or set g:jac_executable; see :JacInfo', vim.log.levels.ERROR)
+    return
+  end
+
+  vim.cmd('update')
+  local root = jac_root(bufnr)
+  local command = vim.list_extend({ executable }, vim.deepcopy(arguments))
+  if current_file then
+    table.insert(command, file)
+  end
+  vim.list_extend(command, extra_arguments)
+  -- A split alone shares the source buffer. Starting a terminal in it would
+  -- rename that source buffer to term://... while its LSP stays attached.
+  vim.cmd('botright 12new')
+  vim.fn.jobstart(command, { cwd = root, term = true })
+  vim.cmd('startinsert')
+end
+
+local tasks = {
+  JacRun = { { 'run' }, true, 'Run the current Jac file' },
+  JacTest = { { 'test' }, true, 'Test the current Jac module' },
+  JacTestProject = { { 'test' }, false, 'Test the Jac project' },
+  JacCheck = { { 'check', '.' }, false, 'Type-check the Jac project' },
+  JacLint = { { 'check', '.', '--lint' }, false, 'Lint the Jac project' },
+  JacDebug = { { 'run', '--debug' }, true, 'Debug the current Jac file in Jdb' },
+  JacStart = { { 'run', '--serve', '--dev' }, false, 'Start the Jac project development server' },
+}
+for name, task in pairs(tasks) do
+  vim.api.nvim_create_user_command(name, function(opts)
+    jac_terminal(task[1], task[2], opts.fargs)
+  end, { nargs = '*', desc = task[3], force = true })
+end
+
+vim.api.nvim_create_user_command('JacInfo', function()
+  local executable = jac_executable()
+  local clients = vim.lsp.get_clients({ bufnr = 0, name = 'jac' })
+  local parser_ok, parser = pcall(vim.treesitter.language.add, 'jac')
+  local hover_files = vim.api.nvim_get_runtime_file('lua/jac_hover.lua', false)
+  vim.notify(table.concat({
+    'Jac executable: ' .. (vim.fn.exepath(executable) ~= '' and vim.fn.exepath(executable) or executable),
+    'Executable available: ' .. tostring(vim.fn.executable(executable) == 1),
+    'Project root: ' .. jac_root(0),
+    'Attached Jac servers: ' .. #clients,
+    'Tree-sitter parser available: ' .. tostring(parser_ok and parser == true),
+    'Hover module: ' .. (hover_files[1] or 'MISSING: run python3 scripts/install.py from the init.vim repository'),
+    'Hover lookup details: :JacHoverInfo',
+    'LSP details: :checkhealth vim.lsp; parser details: :checkhealth nvim-treesitter',
+  }, '\n'))
+end, { desc = 'Show Jac tooling status', force = true })
+
+vim.api.nvim_create_user_command('JacHoverInfo', function()
+  local ok, hover = pcall(require, 'jac_hover')
+  if ok then
+    vim.notify(vim.inspect(hover.info()))
+  else
+    vim.notify('Jac hover module is missing. Run python3 scripts/install.py from the init.vim repository.\n' .. hover,
+      vim.log.levels.ERROR)
+  end
+end, { desc = 'Diagnose Jac hover documentation', force = true })
+
+_G.Jac = { executable = jac_executable, root = jac_root }
+EOF
+""" Jac development
+
 """ LSP Configuration
 lua << EOF
 vim.g.markdown_fenced_languages = {
   "py=python",
   "ex=elixir",
   "go",
+  "jac",
   "js=javascript",
   "ts=typescript",
 }
@@ -888,7 +998,17 @@ local function show_hover()
   end
   vim.b.auto_diagnostic_float_win = nil
 
-  vim.lsp.buf.hover({
+  local hover = vim.lsp.buf.hover
+  if vim.bo.filetype == 'jac' then
+    local ok, jac_hover = pcall(require, 'jac_hover')
+    if ok then
+      hover = jac_hover.hover
+    else
+      vim.notify_once('Jac hover files are missing. Run python3 scripts/install.py from the init.vim repository, then restart Neovim.',
+        vim.log.levels.WARN)
+    end
+  end
+  hover({
     border = "rounded",
     focusable = true,
     max_width = math.min(100, math.floor(vim.o.columns * 0.6)),
@@ -969,6 +1089,7 @@ local lsp_servers = {
   'markdown_oxide',
   'tsc',
   'elixirls',
+  'jac',
 }
 
 if vim.fn.executable('go') == 1 then
@@ -980,6 +1101,20 @@ for _, server in ipairs(lsp_servers) do
     vim.lsp.config(server, { capabilities = capabilities })
   end
 end
+
+-- Jac ships its own stdio LSP; it does not need a Mason package or Python LSP.
+vim.lsp.config('jac', {
+  cmd = { _G.Jac.executable(), 'lsp' },
+  filetypes = { 'jac' },
+  capabilities = capabilities,
+  root_dir = function(bufnr, on_dir)
+    if vim.bo[bufnr].buftype ~= ''
+      or vim.api.nvim_buf_get_name(bufnr):match('^%a[%w+.-]*://') then
+      return
+    end
+    on_dir(_G.Jac.root(bufnr))
+  end,
+})
 
 -- Define TypeScript 7 explicitly until nvim-lspconfig supplies a tsc config.
 vim.lsp.config('tsc', {
@@ -1398,6 +1533,7 @@ end, {})
 
 require("conform").setup({
   formatters_by_ft = {
+    jac = { lsp_format = 'prefer' }, -- The Jac LSP formats the in-memory buffer.
     go = { "goimports" },
     python = { "ruff_organize_imports", "ruff_format" },
     typescript = { "prettier" },
@@ -1438,11 +1574,31 @@ treesitter.setup({
   install_dir = vim.fn.stdpath("data") .. "/site",
 })
 
+-- nvim-treesitter MAIN uses a parser table and TSUpdate event, not the old
+-- get_parser_configs()/configs.setup() APIs in many Jac setup examples.
+local function register_jac_parser()
+  require('nvim-treesitter.parsers').jac = {
+    install_info = {
+      url = 'https://github.com/jaseci-labs/tree-sitter-jac',
+      branch = 'main',
+      queries = 'queries/jac',
+    },
+    tier = 2,
+  }
+end
+vim.api.nvim_create_autocmd('User', {
+  group = vim.api.nvim_create_augroup('UserJacParser', { clear = true }),
+  pattern = 'TSUpdate',
+  callback = register_jac_parser,
+})
+register_jac_parser()
+
 local ensure_installed = {
   "vim",
   "vimdoc",
   "query",
   "python",
+  "jac",
   "go",
   "gomod",
   "gowork",
@@ -1459,6 +1615,7 @@ local ensure_installed = {
   "html",
   "yaml",
   "json",
+  "toml",
 }
 
 -- The rewritten plugin uses tree-sitter-cli to build parsers. executable()
@@ -1481,6 +1638,8 @@ if tree_sitter_cli_works() then
 end
 
 local fold_filetypes = {
+  jac = true,
+  toml = true,
   go = true,
   python = true,
   lisp = true,
@@ -2124,6 +2283,18 @@ wk.add({
   { "<leader>o", group = "Ollama" },
   { "<leader>os", "<cmd>lua require('ollama').serve_start()<CR>", desc = "Start Ollama Server" },
   { "<leader>ox", "<cmd>lua require('ollama').serve_stop()<CR>", desc = "Stop Ollama Server" },
+
+  -- Jac commands (shared LSP mappings provide hover, navigation, rename, etc.).
+  { "<leader>j", group = "Jac" },
+  { "<leader>jr", "<cmd>JacRun<CR>", desc = "Run current file" },
+  { "<leader>jt", "<cmd>JacTest<CR>", desc = "Test current module" },
+  { "<leader>jT", "<cmd>JacTestProject<CR>", desc = "Test project" },
+  { "<leader>jc", "<cmd>JacCheck<CR>", desc = "Type-check project" },
+  { "<leader>jl", "<cmd>JacLint<CR>", desc = "Lint project" },
+  { "<leader>jd", "<cmd>JacDebug<CR>", desc = "Debug current file (Jdb)" },
+  { "<leader>jS", "<cmd>JacStart<CR>", desc = "Start development server" },
+  { "<leader>js", vim.lsp.buf.document_symbol, desc = "Document symbols" },
+  { "<leader>ji", "<cmd>JacInfo<CR>", desc = "Jac tooling status" },
 
   -- Elixir commands
   { "<leader>e", group = "Elixir" },

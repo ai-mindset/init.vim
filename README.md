@@ -1,91 +1,83 @@
 # init.vim
 
-A self-bootstrapping Neovim IDE for Python, TypeScript/JavaScript,
-Elixir, Markdown, and technical writing.
+A Neovim IDE for Jac, Python, Go, JavaScript/TypeScript, Elixir, and Markdown.
+Includes LSP completion and navigation, diagnostics, formatting, Tree-sitter,
+FZF, Git tools, and the Modus theme.
 
-## What you get
+## Setup
 
-- LSP completion, navigation, code actions, and visible diagnostics.
-- Linting and format-on-save, with an explicit `<leader>==` formatter.
-- Tree-sitter highlighting, indentation, folding, and sticky context.
-- FZF search, Git tooling, snippets, autopairs, and Catppuccin Macchiato.
-- Which-key discovery: press `Space` and pause to see available commands.
-- Optional notebooks/IPython, Common Lisp, Marp, Piper speech, and Ollama.
+Requires Neovim 0.12+, Git, curl, a C compiler, and `tree-sitter-cli` 0.26.1+.
+Node.js and Python support the default language tools; Go and Elixir tooling
+require their respective runtimes.
 
-| Language              | Default tooling                                                     |
-| --------------------- | ------------------------------------------------------------------- |
-| Python                | Jedi navigation/completion, Pyright type checking, Ruff lint/format |
-| TypeScript/JavaScript | TypeScript 7 LSP and Prettier formatting                             |
-| Elixir                | ElixirLS, Mix formatting, and project-local Credo                   |
-| Markdown              | markdown-oxide, markdownlint-cli2, Prettier formatting              |
-
-## Five-minute setup
-
-Install:
-
-- Neovim 0.12 or newer;
-- Git and curl;
-- a C compiler and `tree-sitter-cli` 0.26.1 or newer;
-- Node.js and Python for the default language tools.
-
-Confirm that `nvim`, `node`, `python`, and `tree-sitter --version` work, then:
+Back up your existing Neovim configuration, then:
 
 ```bash
-mkdir -p ~/.config
-mv ~/.config/nvim ~/.config/nvim.backup  # only if it already exists
-git clone https://github.com/ai-mindset/init.vim ~/.config/nvim
+git clone https://github.com/ai-mindset/init.vim
+cd init.vim
+python3 scripts/install.py
 nvim
 ```
 
-The first launch downloads vim-plug, installs plugins, reloads the
-configuration, and starts installing language tools through Mason. Tree-sitter
-parsers install separately when its CLI is available. Initial setup may take a
-few minutes; use `:Mason` and `:checkhealth` if anything fails.
+The installer copies all required files into `~/.config/nvim` and backs up
+replaced files. Use `--target /path/to/nvim` for another location. Run it again
+from your checkout to install updates, then restart Neovim.
 
-Mason installs `actionlint`, `jedi-language-server`, `pyright`, `ruff`,
-`markdown-oxide`, `markdownlint-cli2`, TypeScript 7 (`tsc`), `prettier`, and `elixir-ls`.
-Erlang and Elixir are additionally required when working on Elixir projects.
+First launch installs plugins and language tools automatically. Use
+`:PlugInstall` to retry plugin installation and `:Mason` to inspect tools.
 
-## Everyday keys
+## Keys
 
-`<leader>` is `Space`; `<localleader>` is `,`. Which-key exposes the full map.
+`<leader>` is `Space`; `<localleader>` is `,`. Press `Space` and pause to
+browse all mappings with which-key.
 
-| Mapping                     | Action                                   |
-| --------------------------- | ---------------------------------------- |
-| `K`                         | Hover documentation                      |
-| `gd` / `gr`                 | Go to definition / find references       |
-| `[d` / `]d`                 | Previous / next diagnostic               |
-| `<leader>ca` / `<leader>rn` | Code action / rename                     |
-| `<leader>==`                | Format file or selection                 |
-| `<leader>f`                 | Find files                               |
-| `<leader>mr` / `<leader>mp` | Render Markdown / toggle Marp preview    |
-| `<leader>tw/tc/tp/tf/tv`    | Speak word/line/paragraph/file/selection |
-| `<leader>ts`                | Stop speech                              |
-| `<F8>`                      | Toggle Tagbar                            |
+| Keys | Action |
+| ---- | ------ |
+| `K` | Hover documentation; press again to focus |
+| `gd` / `gr` | Definition / references |
+| `[d` / `]d` | Previous / next diagnostic |
+| `<leader>ca` / `<leader>rn` | Code action / rename |
+| `<leader>==` | Format file or selection |
+| `<leader>f` | Find files |
+| `<leader>j` | Jac commands |
+| `<leader>l` / `<leader>g` | Diagnostics / Git |
+| `<leader>mr` / `<leader>mp` | Render Markdown / Marp preview |
+| `<F8>` | Toggle Tagbar |
 
-Grouped commands live under `<leader>l` (diagnostics), `<leader>g` (Git),
-`<leader>e` (Elixir), `<leader>s` (spelling), and
-`<leader>o` (Ollama).
+## Jac
 
-## Optional integrations
+Install Jac using the [official guide](https://docs.jaseci.org/quick-guide/install/).
+Neovim includes `~/.local/bin` in its PATH. Run `jac install` inside your project
+to resolve dependencies. Use `:TSInstall jac` to retry parser installation.
 
-- **IPython and notebooks:** install IPython, tmux, and Jupytext. Python cells
-  use `# %%`; `.ipynb` files are edited through Jupytext.
-- **Piper TTS:** install
-  [Piper](https://github.com/OHF-Voice/piper1-gpl), an audio player (`aplay`,
-  `pw-play`, `afplay`, or `ffplay`), and `en_GB-alba-medium.onnx` under
-  `~/.local/share/piper-voices/` or `/usr/share/piper-voices/`. New speech
-  replaces current speech; `<leader>ts` or `:PiperStop` stops it.
-- **Ollama:** install [Ollama](https://ollama.com/), run
-  `ollama pull mistral`, then use `<leader>os` / `<leader>ox` to start/stop it
-  and `<C-x><C-o>` for completion.
-- **Marp:** install the Marp CLI for `<leader>mp` slide previews.
-- **Extras:** ripgrep improves search, Universal Ctags at
-  `/usr/bin/ctags-universal` enables Tagbar, `jq` enables explicit JSON
-  formatting, and a Nerd Font enables file icons.
+| Command | Action |
+| ------- | ------ |
+| `:JacRun [args]` | Run the current file |
+| `:JacTest` / `:JacTestProject` | Test the current module / project |
+| `:JacCheck` / `:JacLint` | Type-check / lint the project |
+| `:JacDebug` | Debug in the Jdb terminal debugger |
+| `:JacStart` | Start the development server with hot reload |
+| `:JacInfo` / `:JacHoverInfo` | Inspect tooling / hover lookup status |
 
-## Customising
+Tasks save the current file and run in a separate terminal at the project root.
+Press `<C-\><C-n>` to leave terminal mode, or `Ctrl-C` to stop the program.
 
-Search for `mason_packages`,
-`lsp_servers`, `linters_by_ft`, `formatters_by_ft`, or `wk.add` to change the
-installed tools, language behavior, formatting, or mappings.
+Hover appears immediately; additional Python documentation loads asynchronously
+and is cached. Jac function docstrings go before `def`; the file's first
+string documents the module. To disable the Python documentation fallback,
+set `let g:jac_hover_python_docs = v:false`.
+
+For runtime node/edge graphs, call `printgraph(root, file="graph.dot");` after
+building the graph, then execute the program normally with `:JacRun`.
+
+## Optional tools
+
+- **Notebooks/IPython:** IPython, tmux, and Jupytext; Python cells use `# %%`.
+- **Ollama:** run `ollama pull mistral`; commands are under `<leader>o`.
+- **Marp:** install the Marp CLI for slide previews.
+- **Piper speech:** install Piper, an audio player, and `en_GB-alba-medium.onnx`
+  in `~/.local/share/piper-voices/`; commands are under `<leader>t`.
+- **Extras:** ripgrep, Universal Ctags, jq, and a Nerd Font.
+
+Troubleshoot with `:checkhealth`, `:Mason`, `:ConformInfo`, or the Jac status
+commands above. Configuration lives in `init.vim`.
