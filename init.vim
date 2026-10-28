@@ -94,6 +94,24 @@ require("modus-themes").setup({
   style = "modus_vivendi",
   variants = { modus_vivendi = "tinted" },
   styles = { comments = { italic = false }, keywords = { italic = false } },
+  on_highlights = function(highlights, colors)
+    -- Bold keys remain distinct from values even without colour perception.
+    -- Share the palette between Tree-sitter and the built-in JSON syntax.
+    highlights["@property.json"] = { fg = colors.magenta, bold = true }
+    highlights["@string.json"] = { fg = colors.blue_cooler }
+    highlights["@number.json"] = { fg = colors.yellow }
+    highlights["@boolean.json"] = { fg = colors.cyan, bold = true }
+    highlights["@constant.builtin.json"] = { fg = colors.cyan, bold = true }
+    -- These remain readable against the tinted CursorLine background too.
+    highlights["@comment.json"] = { fg = colors.fg_alt }
+    highlights.jsonKeyword = { link = "@property.json" }
+    highlights.jsonString = { link = "@string.json" }
+    highlights.jsonNumber = { link = "@number.json" }
+    highlights.jsonBoolean = { link = "@boolean.json" }
+    highlights.jsonNull = { link = "@constant.builtin.json" }
+    highlights.jsonComment = { link = "@comment.json" }
+    highlights.jsonLineComment = { link = "@comment.json" }
+  end,
 })
 EOF
 colorscheme modus
@@ -286,6 +304,32 @@ augroup GoSettings
     autocmd!
     autocmd FileType go,gomod,gowork,gosum setlocal nospell noexpandtab tabstop=4 shiftwidth=4 softtabstop=0
 augroup END
+
+function! s:SetupJsonBuffer() abort
+    let b:undo_ftplugin = get(b:, 'undo_ftplugin', '') .
+        \ printf(' | let &l:spell = %d | let &l:conceallevel = %d', &l:spell, &l:conceallevel)
+    setlocal nospell conceallevel=0
+endfunction
+
+augroup JsonSettings
+    autocmd!
+    autocmd FileType json,jsonc call <SID>SetupJsonBuffer()
+augroup END
+
+lua << EOF
+local json_syntax_group = vim.api.nvim_create_augroup("JsonSyntaxHighlights", { clear = true })
+vim.api.nvim_create_autocmd("Syntax", {
+  group = json_syntax_group,
+  pattern = "jsonc",
+  callback = function()
+    -- Run after the syntax loader, even when :syntax on reorders its handlers.
+    vim.schedule(function()
+      vim.api.nvim_set_hl(0, "jsonComment", { link = "@comment.json" })
+      vim.api.nvim_set_hl(0, "jsonLineComment", { link = "@comment.json" })
+    end)
+  end,
+})
+EOF
 
 """ Highlight on hover
 function! s:HighlightWordUnderCursor() abort
@@ -1574,6 +1618,12 @@ treesitter.setup({
   install_dir = vim.fn.stdpath("data") .. "/site",
 })
 
+-- On main, queries are installed separately from parsers. Keep the bundled
+-- queries available when the CLI cannot run or installation is incomplete.
+vim.opt.runtimepath:append(vim.fs.joinpath(vim.g.plugs["nvim-treesitter"].dir, "runtime"))
+-- The JSON grammar also accepts comments; use its queries for JSONC buffers.
+vim.treesitter.language.register("json", "jsonc")
+
 -- nvim-treesitter MAIN uses a parser table and TSUpdate event, not the old
 -- get_parser_configs()/configs.setup() APIs in many Jac setup examples.
 local function register_jac_parser()
@@ -1666,7 +1716,19 @@ vim.api.nvim_create_autocmd("FileType", {
 
     local filetype = vim.bo[args.buf].filetype
     local language = vim.treesitter.language.get_lang(filetype)
-    if not language or not vim.treesitter.language.add(language) then
+    if not language then
+      return
+    end
+
+    local loaded, available = pcall(vim.treesitter.language.add, language)
+    if not loaded or not available then
+      return
+    end
+
+    -- Starting without a usable query disables regex syntax but adds no colour.
+    -- Leave the built-in syntax active when parsers/queries are unavailable.
+    local queried, highlights = pcall(vim.treesitter.query.get, language, "highlights")
+    if not queried or not highlights then
       return
     end
 
