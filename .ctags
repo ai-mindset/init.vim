@@ -1,24 +1,32 @@
+# Keep the custom Elixir rules separate from Universal Ctags' built-in parser.
+--langdef=ElixirCustom
+--langmap=ElixirCustom:.ex.exs
+--regex-ElixirCustom=/^[ \t]*def(p?)[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\2/f,functions/
+--regex-ElixirCustom=/^[ \t]*defmacro(p?)[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\2/a,macros/
+--regex-ElixirCustom=/^[ \t]*defmodule[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/m,modules/
+--regex-ElixirCustom=/^[ \t]*defprotocol[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/p,protocols/
+--regex-ElixirCustom=/^[ \t]*defimpl[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/i,implementations/
+--regex-ElixirCustom=/^[ \t]*defexception[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/e,exceptions/
+--regex-ElixirCustom=/^[ \t]*defdelegate[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\1/d,delegates/
+--regex-ElixirCustom=/^[ \t]*defrecord[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\1/r,records/
+--regex-ElixirCustom=/^[ \t]*test[ \t]+"([^"]*)"/\1/t,tests/
+--regex-ElixirCustom=/^[ \t]*@callback[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\1/c,callbacks/
+--regex-ElixirCustom=/^[ \t]*defoperator[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\1/o,operators/
 
---langdef=Elixir
---langmap=Elixir:.ex.exs
---regex-Elixir=/^[ \t]*def(p?)[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\2/f,functions/
---regex-Elixir=/^[ \t]*defmacro(p?)[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\2/a,macros/
---regex-Elixir=/^[ \t]*defmodule[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/m,modules/
---regex-Elixir=/^[ \t]*defprotocol[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/p,protocols/
---regex-Elixir=/^[ \t]*defimpl[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/i,implementations/
---regex-Elixir=/^[ \t]*defexception[ \t]+([A-Z][a-zA-Z0-9_.]*)/\1/e,exceptions/
---regex-Elixir=/^[ \t]*defdelegate[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\1/d,delegates/
---regex-Elixir=/^[ \t]*defrecord[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\1/r,records/
---regex-Elixir=/^[ \t]*test[ \t]+"([^"]*)"/\1/t,tests/
---regex-Elixir=/^[ \t]*@callback[ \t]+([a-zA-Z_][a-zA-Z0-9_?!]*)/\1/c,callbacks/
---regex-Elixir=/^[ \t]*defoperator[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\1/o,operators/
-
---langdef=Zig
---langmap=Zig:.zig
---regex-Zig=/^[ \t]*(export[ \t]+|pub[ \t]+|inline[ \t]+)*fn[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\2/f,functions/
---regex-Zig=/^[ \t]*(pub[ \t]+)?const[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*=[ \t]*struct/\2/s,structs/
---regex-Zig=/^[ \t]*(pub[ \t]+)?const[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*=[ \t]*enum/\2/e,enums/
---regex-Zig=/^[ \t]*(pub[ \t]+)?const[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*=[ \t]*union/\2/u,unions/
---regex-Zig=/^[ \t]*(pub[ \t]+)?const[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\2/c,constants/
---regex-Zig=/^[ \t]*(pub[ \t]+)?var[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\2/v,variables/
---regex-Zig=/^[ \t]*test[ \t]+"([^"]*)"/\1/t,tests/
+--langdef=Jac
+--langmap=Jac:.jac
+--regex-Jac=/^[ \t]*(async[ \t]+)?(obj|class)(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\4/o,objects/
+--regex-Jac=/^[ \t]*(async[ \t]+)?node(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\3/n,nodes/
+--regex-Jac=/^[ \t]*(async[ \t]+)?edge(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\3/e,edges/
+--regex-Jac=/^[ \t]*(async[ \t]+)?walker(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\3/w,walkers/
+--regex-Jac=/^[ \t]*enum(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\2/g,enums/
+--regex-Jac=/^[ \t]*((async|static|override|abstract|class)[ \t]+)*def(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\4/f,functions/
+--regex-Jac=/^[ \t]*((async|static|override|abstract)[ \t]+)*can(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\4/a,abilities/
+--regex-Jac=/^[ \t]*impl[ \t]+([a-zA-Z_][a-zA-Z0-9_.]*)/\1/i,implementations/
+--regex-Jac=/^[ \t]*type(:[a-z]+)?[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\2/y,types/
+--regex-Jac=/^[ \t]*test[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)/\1/t,tests/
+--regex-Jac=/^[ \t]*test[ \t]+["']([^"']+)["']/\1/t,tests/
+# Typed variables, parameters and has/glob fields, including comma continuations.
+--mline-regex-Jac=/(^|[,;{(\n])[ \t]*(static[ \t]+)?((has|glob)(:[a-z]+)?[ \t]+|let[ \t]+)?([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*:[ \t]*[a-zA-Z_]/\6/v,variables/{mgroup=6}
+# Inferred variables; exclude equality comparisons.
+--mline-regex-Jac=/(^|[;{\n])[ \t]*((glob(:[a-z]+)?|let)[ \t]+)?([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*=[ \t]*[^=]/\5/v,variables/{mgroup=5}

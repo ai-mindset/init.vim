@@ -50,6 +50,11 @@ Install Jac using the [official guide](https://docs.jaseci.org/quick-guide/insta
 Neovim includes `~/.local/bin` in its PATH. Run `jac install` inside your project
 to resolve dependencies. Use `:TSInstall jac` to retry parser installation.
 
+With Universal Ctags installed, `<F8>` lists Jac objects, nodes, edges, walkers,
+functions, abilities, implementations, variables, types, enums, and tests.
+Tagbar loads the bundled `.ctags` rules, which the installer copies alongside
+`init.vim`.
+
 | Command | Action |
 | ------- | ------ |
 | `:JacRun [args]` | Run the current file |

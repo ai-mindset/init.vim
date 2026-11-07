@@ -657,6 +657,8 @@ EOF
 
 """ TypeScript configuration for Tagbar's Universal Ctags parser
 let g:tagbar_ctags_bin = '/usr/bin/ctags-universal'
+" Load the bundled definitions explicitly; avoid duplicate rules from ~/.ctags.
+let g:tagbar_ctags_options = ['NONE', expand('<sfile>:p:h') . '/.ctags']
 
 let g:tagbar_type_typescript = {
   \ 'ctagstype': 'TypeScript',
@@ -719,6 +721,25 @@ let g:tagbar_type_javascript = {
   \ 'sort': 0
   \ }
 
+" Jac configuration for the bundled Universal Ctags definitions
+let g:tagbar_type_jac = {
+  \ 'ctagstype': 'Jac',
+  \ 'kinds': [
+    \ 'o:objects',
+    \ 'n:nodes',
+    \ 'e:edges',
+    \ 'w:walkers',
+    \ 'g:enums',
+    \ 'y:types',
+    \ 'f:functions',
+    \ 'a:abilities',
+    \ 'i:implementations',
+    \ 'v:variables',
+    \ 't:tests',
+  \ ],
+  \ 'sort': 0
+  \ }
+
 """ tagbar
 " https://github.com/preservim/tagbar/blob/d55d454bd3d5b027ebf0e8c75b8f88e4eddad8d8/doc/tagbar.txt#L512
 let g:tagbar_left = 1
@@ -733,7 +754,7 @@ let g:tagbar_iconchars = ['▶', '▼']  " (default on Linux and Mac OS X)
 
 " Elixir configuration for Tagbar's Universal Ctags parser
 let g:tagbar_type_elixir = {
-  \ 'ctagstype': 'Elixir',
+  \ 'ctagstype': 'ElixirCustom',
   \ 'kinds': [
     \ 'f:functions',
     \ 'c:callbacks',

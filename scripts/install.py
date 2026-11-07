@@ -10,6 +10,7 @@ import tempfile
 
 FILES = (
     "init.vim",
+    ".ctags",
     "lua/jac_hover.lua",
     "scripts/jac_hover_docs.py",
     "syntax/jac.vim",
