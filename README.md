@@ -8,7 +8,15 @@ FZF, Git tools, and the Modus theme.
 
 Requires Neovim 0.12+, Git, curl, a C compiler, and `tree-sitter-cli` 0.26.1+.
 Node.js and Python support the default language tools; Go and Elixir tooling
-require their respective runtimes.
+require their respective runtimes. Install [Ende](https://docs.ende.sh/) for
+JavaScript/TypeScript language support and JS/TS, JSON/JSONC, and Markdown
+formatting. Neovim includes `~/.ende/bin` in its PATH.
+
+Ende provides JS/TS type and lint diagnostics. JSON/JSONC validation uses
+`jsonls`; associate a JSON Schema through `$schema` for validation of fields
+and values. Markdown linting uses `markdownlint-cli2` on open and save.
+Ende formats these filetypes, using the file's directory to discover
+`ende.json`/`ende.jsonc` and `.editorconfig`.
 
 Back up your existing Neovim configuration, then:
 
@@ -82,7 +90,7 @@ building the graph, then execute the program normally with `:JacRun`.
 - **Marp:** install the Marp CLI for slide previews.
 - **Piper speech:** install Piper, an audio player, and `en_GB-alba-medium.onnx`
   in `~/.local/share/piper-voices/`; commands are under `<leader>t`.
-- **Extras:** ripgrep, Universal Ctags, jq, and a Nerd Font.
+- **Extras:** ripgrep, Universal Ctags, and a Nerd Font.
 
 Troubleshoot with `:checkhealth`, `:Mason`, `:ConformInfo`, or the Jac status
 commands above. Configuration lives in `init.vim`.

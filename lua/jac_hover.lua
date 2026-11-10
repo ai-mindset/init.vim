@@ -20,10 +20,15 @@ local function remember(key, value)
   cache[key] = value
 end
 
+local function is_plaintext(contents)
+  -- Jac 0.39 also emits the enum's name instead of the LSP value.
+  return type(contents) == 'table'
+    and (contents.kind == 'plaintext' or contents.kind == 'MarkupKind.PlainText')
+end
+
 local function signature_only(result)
   local contents = result and result.contents
-  if type(contents) ~= 'table' or contents.kind ~= 'plaintext'
-    or not contents.value:match('^%(') then
+  if not is_plaintext(contents) or not contents.value:match('^%(') then
     return false
   end
   local first = true
@@ -91,7 +96,7 @@ function M.hover(options)
         return
       end
       local contents = result.contents
-      local plaintext = type(contents) == 'table' and contents.kind == 'plaintext'
+      local plaintext = is_plaintext(contents)
       local lines = plaintext and vim.split(contents.value, '\n', { plain = true })
         or vim.lsp.util.convert_input_to_markdown_lines(contents)
       if doc and doc ~= '' then

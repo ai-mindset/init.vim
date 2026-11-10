@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Install this Neovim configuration and its runtime files together."""
 
 import argparse

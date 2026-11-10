@@ -29,10 +29,6 @@ Plug 'nomnivore/ollama.nvim'                                  " Ollama AI comple
 " Elixir Development
 Plug 'elixir-editors/vim-elixir'                              "  Vim configuration files for Elixir
 
-" Common Lisp Development
-Plug 'vlime/vlime', { 'rtp': 'vim/', 'for': 'lisp' }           " Vim plugin for Common Lisp (lazy-load)
-Plug 'hrsh7th/cmp-omni'
-
 " Neovim <-> IPython
 Plug 'jpalardy/vim-slime'
 
@@ -117,10 +113,8 @@ EOF
 colorscheme modus
 """ Modus theme
 
-""" Use jq for JSON formatting
-" Makes :Format run `:%!jq .`
-command! Format %!jq .
-""" Use jq for JSON formatting
+" Use the configured formatter for :Format as well as the format mappings.
+command! Format lua require('conform').format({ lsp_format = 'fallback' })
 
 """ vim-slime configuration for IPython
 let g:slime_target = "tmux"
@@ -799,9 +793,9 @@ EOF
 
 """ Mason Configuration
 lua << EOF
--- Desktop launches may not inherit .zshrc. Include Jac's official install
--- directory and the Go toolchain before configuring language tools.
-for _, directory in ipairs({ vim.fn.expand('~/.local/bin'), '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
+-- Desktop launches may not inherit .zshrc. Include the runtime install
+-- directories before configuring language tools.
+for _, directory in ipairs({ vim.fn.expand('~/.local/bin'), vim.fn.expand('~/.ende/bin'), '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
   if vim.fn.isdirectory(directory) == 1 then
     local entries = vim.split(vim.env.PATH or '', ':', { plain = true })
     if not vim.list_contains(entries, directory) then
@@ -818,10 +812,9 @@ local mason_packages = {
   "jedi-language-server",  -- Python LSP
   "pyright",               -- Python type-checking LSP
   "ruff",                  -- Python linter and formatter
+  "json-lsp",              -- JSON/JSONC syntax and schema validation
   "markdown-oxide",        -- Markdown LSP
   "markdownlint-cli2",     -- Markdown linter
-  "tsc",                   -- TypeScript 7 language server for JS/TS
-  "prettier",              -- JS/TS, JSON, and Markdown formatter
   "elixir-ls",             -- Elixir LSP
   "gopls",                 -- Go LSP
   "goimports",             -- Go formatter and import organiser
@@ -907,14 +900,6 @@ cmp.event:on(
   require("nvim-autopairs.completion.cmp").on_confirm_done()
 )
 
--- Common Lisp: use Vlime's omni completion via cmp-omni
-cmp.setup.filetype('lisp', {
-  sources = cmp.config.sources({
-    { name = "omni" },
-    { name = "buffer" },
-  })
-})
-
 cmp.setup.cmdline({ '/', '?' }, {
   mapping = cmp.mapping.preset.cmdline(),
   sources = { { name = 'buffer' } },
@@ -994,7 +979,7 @@ local tasks = {
   JacRun = { { 'run' }, true, 'Run the current Jac file' },
   JacTest = { { 'test' }, true, 'Test the current Jac module' },
   JacTestProject = { { 'test' }, false, 'Test the Jac project' },
-  JacCheck = { { 'check', '.' }, false, 'Type-check the Jac project' },
+  JacCheck = { { 'check' }, false, 'Type-check the Jac project' },
   JacLint = { { 'check', '.', '--lint' }, false, 'Lint the Jac project' },
   JacDebug = { { 'run', '--debug' }, true, 'Debug the current Jac file in Jdb' },
   JacStart = { { 'run', '--serve', '--dev' }, false, 'Start the Jac project development server' },
@@ -1106,10 +1091,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
       client.server_capabilities.documentRangeFormattingProvider = false
     end
 
-    -- Don't override omnifunc for Common Lisp (Vlime handles it).
-    if filetype ~= 'lisp' then
-      vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-    end
+    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
 
     vim.keymap.set('n', 'K', show_hover, {
       buffer = bufnr,
@@ -1151,8 +1133,9 @@ local capabilities = require('cmp_nvim_lsp').default_capabilities()
 local lsp_servers = {
   'jedi_language_server',
   'pyright',
+  'jsonls',
   'markdown_oxide',
-  'tsc',
+  'denols',
   'elixirls',
   'jac',
 }
@@ -1166,6 +1149,17 @@ for _, server in ipairs(lsp_servers) do
     vim.lsp.config(server, { capabilities = capabilities })
   end
 end
+
+-- Validate JSON/JSONC with schemas; Ende remains the formatter.
+vim.lsp.config('jsonls', {
+  init_options = { provideFormatter = false },
+  settings = {
+    json = {
+      validate = { enable = true },
+      format = { enable = false },
+    },
+  },
+})
 
 -- Jac ships its own stdio LSP; it does not need a Mason package or Python LSP.
 vim.lsp.config('jac', {
@@ -1181,18 +1175,20 @@ vim.lsp.config('jac', {
   end,
 })
 
--- Define TypeScript 7 explicitly until nvim-lspconfig supplies a tsc config.
-vim.lsp.config('tsc', {
-  cmd = {
-    vim.fs.joinpath(vim.fn.stdpath('data'), 'mason', 'bin', 'tsc'),
-    '--lsp', '--stdio',
-  },
-  filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+-- Reuse denols' handlers and compatibility settings with Ende's bundled LSP.
+-- Override root_dir: denols' default function only recognises Deno projects.
+vim.lsp.config('denols', {
+  cmd = { 'ende', 'lsp' },
+  settings = { deno = { enable = true, lint = true } },
   root_dir = function(bufnr, on_dir)
-    local root = vim.fs.root(bufnr, {
-      'tsconfig.json', 'jsconfig.json', 'package.json', '.git',
-    })
-    on_dir(root or vim.fn.getcwd())
+    local file = vim.api.nvim_buf_get_name(bufnr)
+    if vim.bo[bufnr].buftype ~= '' or file == ''
+      or file:match('^%a[%w+.-]*://') then
+      return
+    end
+    on_dir(vim.fs.root(bufnr, { 'ende.json', 'ende.jsonc' })
+      or vim.fs.root(bufnr, '.git')
+      or vim.fs.dirname(file))
   end,
 })
 
@@ -1253,7 +1249,7 @@ end
 local node = find_node_executable()
 if node then
   -- GUI-launched Nvim may not inherit asdf's Node.js path. Mason's npm tools
-  -- (Pyright and markdownlint-cli2) need it in their child-process PATH.
+  -- (such as Pyright) need it in their child-process PATH.
   local node_dir = vim.fs.dirname(node)
   local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
   local path_entries = vim.split(vim.env.PATH or '', path_separator, { plain = true })
@@ -1283,11 +1279,6 @@ vim.lsp.config('pyright', pyright_config)
 vim.lsp.enable(lsp_servers)
 EOF
 """ LSP Configuration
-
-augroup lisp_vlime
-  autocmd!
-  autocmd FileType lisp setlocal omnifunc=vlime#plugin#CompleteFunc
-augroup END
 
 """ Go development
 lua << EOF
@@ -1485,7 +1476,9 @@ local function lint_buffer(bufnr)
     elseif filetype == "python" then
       lint.try_lint("ruff")
     elseif filetype == "markdown" then
-      lint.try_lint("markdownlint-cli2")
+      lint.try_lint("markdownlint-cli2", {
+        cwd = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr)),
+      })
     elseif filetype == "elixir" then
       local root = vim.fs.root(bufnr, { "mix.exs" })
       if root then
@@ -1500,7 +1493,8 @@ end
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost" }, {
   group = diagnostic_group,
   pattern = {
-    "*.py", "*.ex", "*.exs", "*.md", "*.markdown", "*.yml", "*.yaml",
+    "*.py", "*.ex", "*.exs", "*.md", "*.markdown", "*.mkd", "*.mkdn",
+    "*.mdwn", "*.mdown", "*.yml", "*.yaml",
   },
   callback = function(args)
     lint_buffer(args.buf)
@@ -1597,17 +1591,25 @@ end, {})
 
 
 require("conform").setup({
+  formatters = {
+    ende_fmt = {
+      inherit = "deno_fmt",
+      command = "ende",
+      -- Discover ende.json and .editorconfig relative to the file being edited.
+      cwd = function(_, ctx) return ctx.dirname end,
+    },
+  },
   formatters_by_ft = {
     jac = { lsp_format = 'prefer' }, -- The Jac LSP formats the in-memory buffer.
     go = { "goimports" },
     python = { "ruff_organize_imports", "ruff_format" },
-    typescript = { "prettier" },
-    typescriptreact = { "prettier" },
-    javascript = { "prettier" },
-    javascriptreact = { "prettier" },
-    json = { "prettier" },
-    jsonc = { "prettier" },
-    markdown = { "prettier" },
+    typescript = { "ende_fmt" },
+    typescriptreact = { "ende_fmt" },
+    javascript = { "ende_fmt" },
+    javascriptreact = { "ende_fmt" },
+    json = { "ende_fmt" },
+    jsonc = { "ende_fmt" },
+    markdown = { "ende_fmt" },
     elixir = { "mix" },
     eelixir = { "mix" },
     heex = { "mix" },
@@ -1674,7 +1676,6 @@ local ensure_installed = {
   "gomod",
   "gowork",
   "gosum",
-  "commonlisp",
   "elixir",
   "eex",
   "heex",
@@ -1713,7 +1714,6 @@ local fold_filetypes = {
   toml = true,
   go = true,
   python = true,
-  lisp = true,
   elixir = true,
   eelixir = true,
   heex = true,
@@ -2314,7 +2314,7 @@ wk.add({
   { "<leader>==", function()
       require('conform').format({ lsp_format = "fallback" })
     end, desc = "Format file" },
-  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with jq"},
+  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with Ende"},
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },
@@ -2400,13 +2400,6 @@ wk.add({
   { "<leader>Go", _G.GoDebug.out, desc = "Step out" },
   { "<leader>Gq", _G.GoDebug.stop, desc = "Stop debugger" },
   { "<leader>Gd", _G.GoDebug.test, desc = "Debug nearest test" },
-
-  -- Common Lisp / Vlime
-  { "<localleader>r", group = "SWANK Server" },
-  { "<localleader>s", group = "Eval / Send" },
-  { "<localleader>d", group = "Describe / Doc" },
-  { "<localleader>w", group = "Window" },
-  { "<localleader>I", group = "Inspect" },
 
 }, { mode = "n" })
 
