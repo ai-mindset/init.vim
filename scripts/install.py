@@ -13,6 +13,8 @@ FILES = (
     "init.vim",
     ".ctags",
     "lua/jac_hover.lua",
+    "lua/bun_tools.lua",
+    "scripts/bun_lint.config.mjs",
     "scripts/jac_hover_docs.py",
     "syntax/jac.vim",
 )

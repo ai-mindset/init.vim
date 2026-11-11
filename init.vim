@@ -795,7 +795,7 @@ EOF
 lua << EOF
 -- Desktop launches may not inherit .zshrc. Include the runtime install
 -- directories before configuring language tools.
-for _, directory in ipairs({ vim.fn.expand('~/.local/bin'), vim.fn.expand('~/.ende/bin'), '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
+for _, directory in ipairs({ vim.fn.expand('~/.local/bin'), vim.fn.expand('~/.bun/bin'), '/usr/local/go/bin', vim.fn.expand('~/go/bin') }) do
   if vim.fn.isdirectory(directory) == 1 then
     local entries = vim.split(vim.env.PATH or '', ':', { plain = true })
     if not vim.list_contains(entries, directory) then
@@ -812,9 +812,9 @@ local mason_packages = {
   "jedi-language-server",  -- Python LSP
   "pyright",               -- Python type-checking LSP
   "ruff",                  -- Python linter and formatter
+  "typescript-language-server", -- JS/TS completion, navigation and type diagnostics
   "json-lsp",              -- JSON/JSONC syntax and schema validation
   "markdown-oxide",        -- Markdown LSP
-  "markdownlint-cli2",     -- Markdown linter
   "elixir-ls",             -- Elixir LSP
   "gopls",                 -- Go LSP
   "goimports",             -- Go formatter and import organiser
@@ -1135,7 +1135,7 @@ local lsp_servers = {
   'pyright',
   'jsonls',
   'markdown_oxide',
-  'denols',
+  'ts_ls',
   'elixirls',
   'jac',
 }
@@ -1150,7 +1150,7 @@ for _, server in ipairs(lsp_servers) do
   end
 end
 
--- Validate JSON/JSONC with schemas; Ende remains the formatter.
+-- Bun formats JSON/JSONC; jsonls supplies syntax and schema validation.
 vim.lsp.config('jsonls', {
   init_options = { provideFormatter = false },
   settings = {
@@ -1175,18 +1175,16 @@ vim.lsp.config('jac', {
   end,
 })
 
--- Reuse denols' handlers and compatibility settings with Ende's bundled LSP.
--- Override root_dir: denols' default function only recognises Deno projects.
-vim.lsp.config('denols', {
-  cmd = { 'ende', 'lsp' },
-  settings = { deno = { enable = true, lint = true } },
+-- Bun has no language server. Keep the TypeScript editor service on Node,
+-- while Bun owns application execution, formatting and linting.
+vim.lsp.config('ts_ls', {
   root_dir = function(bufnr, on_dir)
     local file = vim.api.nvim_buf_get_name(bufnr)
     if vim.bo[bufnr].buftype ~= '' or file == ''
       or file:match('^%a[%w+.-]*://') then
       return
     end
-    on_dir(vim.fs.root(bufnr, { 'ende.json', 'ende.jsonc' })
+    on_dir(vim.fs.root(bufnr, { 'tsconfig.json', 'jsconfig.json', 'package.json', 'bunfig.toml' })
       or vim.fs.root(bufnr, '.git')
       or vim.fs.dirname(file))
   end,
@@ -1350,11 +1348,21 @@ EOF
 lua << EOF
 -- Linting Configuration
 local lint = require('lint')
+local bun_tools = require('bun_tools')
+
+lint.linters.bun = bun_tools.linter
 
 lint.linters_by_ft = {
   python = {'ruff'},
   elixir = {'credo'},
-  markdown = {'markdownlint-cli2'},
+  javascript = {'bun'},
+  javascriptreact = {'bun'},
+  typescript = {'bun'},
+  typescriptreact = {'bun'},
+  json = {'bun'},
+  jsonc = {'bun'},
+  json5 = {'bun'},
+  markdown = {'bun'},
 }
 
 local function diagnostic_format(diag)
@@ -1471,14 +1479,15 @@ local function lint_buffer(bufnr)
   vim.api.nvim_buf_call(bufnr, function()
     local path = vim.api.nvim_buf_get_name(bufnr):gsub("\\", "/")
     local filetype = vim.bo[bufnr].filetype
-    if path:match("%.github/workflows/") then
+    if path == '' or path:match('^%a[%w+.-]*://') then
+      return
+    end
+    if path:match("%.github/workflows/") and filetype:match('^yaml') then
       lint.try_lint("actionlint")
     elseif filetype == "python" then
       lint.try_lint("ruff")
-    elseif filetype == "markdown" then
-      lint.try_lint("markdownlint-cli2", {
-        cwd = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr)),
-      })
+    elseif vim.tbl_contains(lint.linters_by_ft[filetype] or {}, 'bun') then
+      lint.try_lint('bun', { cwd = vim.fs.dirname(path) })
     elseif filetype == "elixir" then
       local root = vim.fs.root(bufnr, { "mix.exs" })
       if root then
@@ -1492,10 +1501,6 @@ end
 -- file is opened and saved to keep the IDE responsive and results current.
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost" }, {
   group = diagnostic_group,
-  pattern = {
-    "*.py", "*.ex", "*.exs", "*.md", "*.markdown", "*.mkd", "*.mkdn",
-    "*.mdwn", "*.mdown", "*.yml", "*.yaml",
-  },
   callback = function(args)
     lint_buffer(args.buf)
   end,
@@ -1592,24 +1597,30 @@ end, {})
 
 require("conform").setup({
   formatters = {
-    ende_fmt = {
-      inherit = "deno_fmt",
-      command = "ende",
-      -- Discover ende.json and .editorconfig relative to the file being edited.
-      cwd = function(_, ctx) return ctx.dirname end,
-    },
+    bun_fmt = bun_tools.formatter,
   },
   formatters_by_ft = {
     jac = { lsp_format = 'prefer' }, -- The Jac LSP formats the in-memory buffer.
     go = { "goimports" },
     python = { "ruff_organize_imports", "ruff_format" },
-    typescript = { "ende_fmt" },
-    typescriptreact = { "ende_fmt" },
-    javascript = { "ende_fmt" },
-    javascriptreact = { "ende_fmt" },
-    json = { "ende_fmt" },
-    jsonc = { "ende_fmt" },
-    markdown = { "ende_fmt" },
+    typescript = { "bun_fmt" },
+    typescriptreact = { "bun_fmt" },
+    javascript = { "bun_fmt" },
+    javascriptreact = { "bun_fmt" },
+    json = { "bun_fmt" },
+    jsonc = { "bun_fmt" },
+    json5 = { "bun_fmt" },
+    markdown = { "bun_fmt" },
+    ["markdown.mdx"] = { "bun_fmt" },
+    css = { "bun_fmt" },
+    scss = { "bun_fmt" },
+    less = { "bun_fmt" },
+    html = { "bun_fmt" },
+    vue = { "bun_fmt" },
+    svelte = { "bun_fmt" },
+    yaml = { "bun_fmt" },
+    toml = { "bun_fmt" },
+    graphql = { "bun_fmt" },
     elixir = { "mix" },
     eelixir = { "mix" },
     heex = { "mix" },
@@ -2314,7 +2325,7 @@ wk.add({
   { "<leader>==", function()
       require('conform').format({ lsp_format = "fallback" })
     end, desc = "Format file" },
-  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with Ende"},
+  { "<leader>=j", "<cmd>Format<CR>", desc = "Format JSON with Bun"},
 
   -- Text-to-Speech group
   { "<leader>t", group = "Text-to-Speech" },

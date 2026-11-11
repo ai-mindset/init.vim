@@ -8,15 +8,26 @@ FZF, Git tools, and the Modus theme.
 
 Requires Neovim 0.12+, Git, curl, a C compiler, and `tree-sitter-cli` 0.26.1+.
 Node.js and Python support the default language tools; Go and Elixir tooling
-require their respective runtimes. Install [Ende](https://docs.ende.sh/) for
-JavaScript/TypeScript language support and JS/TS, JSON/JSONC, and Markdown
-formatting. Neovim includes `~/.ende/bin` in its PATH.
+require their respective runtimes. [Bun](https://bun.sh/docs/installation) is
+the JS/TS application runtime, formatter and linter. Use a build with `bun fmt`
+and native Markdown/JSON linting (tested with `1.4.4-canary.1+447ff870b`).
+Neovim includes `~/.bun/bin` in its PATH.
 
-Ende provides JS/TS type and lint diagnostics. JSON/JSONC validation uses
-`jsonls`; associate a JSON Schema through `$schema` for validation of fields
-and values. Markdown linting uses `markdownlint-cli2` on open and save.
-Ende formats these filetypes, using the file's directory to discover
-`ende.json`/`ende.jsonc` and `.editorconfig`.
+`bun fmt` formats JS/TS, JSON/JSONC/JSON5, Markdown/MDX, CSS/SCSS/Less, HTML,
+Vue, Svelte, YAML, TOML and GraphQL, including selections. It discovers project
+settings from the file's directory and bypasses package scripts.
+`bun lint` checks JS/TS, JSON/JSONC/JSON5 and Markdown on open and save, using
+the buffer contents. Project ESLint configs take precedence; otherwise JSON
+and Markdown use the bundled Bun-native rules, with no extra packages.
+Markdown diagnostics use Bun's rules, replacing `markdownlint-cli2`'s rule set.
+
+Bun has no language server. Mason installs `typescript-language-server` for
+JS/TS completion, navigation and type diagnostics, running on Node.js.
+For Bun API types, run `bun add --dev @types/bun` in your project.
+JSON/JSONC validation still uses `jsonls`; associate a JSON Schema through
+`$schema` for validation of fields and values. Bun linting does not replace
+schema validation. Python, Go, Elixir and GitHub Actions retain their language
+tools.
 
 Back up your existing Neovim configuration, then:
 
